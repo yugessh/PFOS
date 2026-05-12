@@ -19,6 +19,20 @@ export interface Transaction {
   account: string;
 }
 
+export type TransactionStatus = 'posted' | 'pending' | 'failed' | 'cleared';
+
+/** Row shape for `TransactionsTable` and ledger-style UIs. */
+export interface TransactionTableRow {
+  id: string;
+  title: string;
+  amount: number;
+  type: 'expense' | 'income';
+  category: string;
+  account: string;
+  status: TransactionStatus;
+  date: Date;
+}
+
 // Goal Types
 export interface SavingsGoal {
   id: string;

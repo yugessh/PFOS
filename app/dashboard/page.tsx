@@ -8,6 +8,7 @@ import { ChartCard } from '@/components/charts';
 import { Button } from '@/components/ui/button';
 import { ReminderCard } from '@/components/reminder-card';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
+import { TransactionsTable } from '@/components/tables';
 import { QuickActionsPanel } from '@/components/quick-actions-panel';
 import { EMIProgressCard } from '@/components/emi-progress-card';
 import { GoalCard } from '@/components/goal-card';
@@ -16,6 +17,7 @@ import { DashboardGrid, DashboardSection, DashboardWidget } from '@/components/d
 import {
   accounts,
   transactions,
+  transactionTableRows,
   savingsGoals,
   investments,
   reminders,
@@ -176,6 +178,17 @@ export default function Dashboard() {
           <QuickActionsPanel />
         </DashboardWidget>
       </DashboardGrid>
+
+      <DashboardSection
+        title="Transaction ledger"
+        description="Full-width table layout — swap in filters or exports later."
+      >
+        <TransactionsTable
+          transactions={transactionTableRows}
+          limit={8}
+          emptyMessage="No ledger entries yet."
+        />
+      </DashboardSection>
 
       {/* Savings Goals Section */}
       <div>
