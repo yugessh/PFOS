@@ -1,33 +1,8 @@
 'use client';
 
-import type { StatCardProps, StatCardTrend } from './types';
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import type { StatCardProps } from './types';
+import { statCardTrendConfig } from './trend-config';
 import { cn } from '@/lib/utils';
-
-const trendConfig: Record<
-  StatCardTrend,
-  {
-    Icon: typeof ArrowUpRight;
-    rowClass: string;
-    iconWrapClass: string;
-  }
-> = {
-  positive: {
-    Icon: ArrowUpRight,
-    rowClass: 'text-emerald-600 dark:text-emerald-400',
-    iconWrapClass: 'bg-emerald-500/10 dark:bg-emerald-400/10',
-  },
-  negative: {
-    Icon: ArrowDownRight,
-    rowClass: 'text-rose-600 dark:text-rose-400',
-    iconWrapClass: 'bg-rose-500/10 dark:bg-rose-400/10',
-  },
-  neutral: {
-    Icon: Minus,
-    rowClass: 'text-muted-foreground',
-    iconWrapClass: 'bg-muted',
-  },
-};
 
 export function StatCard({
   title,
@@ -38,14 +13,15 @@ export function StatCard({
   description,
   className,
 }: StatCardProps) {
-  const { Icon: TrendIcon, rowClass, iconWrapClass } = trendConfig[trend];
+  const { Icon: TrendIcon, rowClass, iconWrapClass } = statCardTrendConfig[trend];
 
   return (
     <div
       className={cn(
         'group relative flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200',
         'hover:-translate-y-0.5 hover:border-primary/15 hover:shadow-md',
-        'dark:border-border/80 dark:hover:border-primary/25',
+        'focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2 focus-within:ring-offset-background',
+        'dark:border-border/80 dark:hover:border-primary/25 dark:focus-within:ring-offset-background',
         className
       )}
     >
@@ -54,7 +30,7 @@ export function StatCard({
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {title}
           </p>
-          <p className="truncate text-2xl font-semibold tracking-tight text-card-foreground tabular-nums">
+          <p className="truncate text-2xl font-semibold tracking-tight text-card-foreground tabular-nums sm:text-[1.65rem]">
             {value}
           </p>
         </div>

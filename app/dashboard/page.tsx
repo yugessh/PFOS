@@ -71,9 +71,9 @@ export default function Dashboard() {
           title="Monthly Expenses"
           value={`₹${(totalExpenses / 1000).toFixed(1)}K`}
           icon={<CreditCard size={20} />}
-          trend="positive"
-          change="−3.1% vs last month"
-          description="Lower spend than prior period"
+          trend="negative"
+          change="+4.2% vs last month"
+          description="Higher spend than prior period"
         />
         <StatCard
           title="Net Worth"
