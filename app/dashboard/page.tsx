@@ -21,7 +21,7 @@ import {
   monthlySpending,
   expenseBreakdown,
 } from '@/lib/demo-data';
-import { Zap, TrendingUp, CreditCard, AlertCircle, Target } from 'lucide-react';
+import { Wallet, TrendingUp, CreditCard, Landmark, Target } from 'lucide-react';
 
 export default function Dashboard() {
   // Calculate summary metrics
@@ -32,7 +32,9 @@ export default function Dashboard() {
   const totalExpenses = transactions
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
-  const pendingEMI = emis.reduce((sum, emi) => sum + emi.remainingAmount, 0);
+  const netWorth =
+    accounts.reduce((sum, acc) => sum + acc.balance, 0) +
+    investments.reduce((sum, inv) => sum + inv.currentValue, 0);
 
   return (
     <div className="space-y-8">
@@ -48,34 +50,38 @@ export default function Dashboard() {
       <NetWorthCard accounts={accounts} investments={investments} />
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Total Balance"
+          title="Total Balance"
           value={`₹${(totalBalance / 100000).toFixed(2)}L`}
-          icon={<Zap size={20} />}
-          change={8}
-          changeLabel="from last month"
+          icon={<Wallet size={20} />}
+          trend="positive"
+          change="+8.0% vs last month"
+          description="Cash across all accounts"
         />
         <StatCard
-          label="Monthly Income"
+          title="Monthly Income"
           value={`₹${(totalIncome / 1000).toFixed(1)}K`}
-          icon={<TrendingUp size={20} className="text-green-600" />}
-          change={5}
-          changeLabel="increase"
+          icon={<TrendingUp size={20} />}
+          trend="positive"
+          change="+5.2% vs last month"
+          description="Salary, interest, and credits"
         />
         <StatCard
-          label="Monthly Expenses"
+          title="Monthly Expenses"
           value={`₹${(totalExpenses / 1000).toFixed(1)}K`}
-          icon={<CreditCard size={20} className="text-red-600" />}
-          change={-3}
-          changeLabel="decrease"
+          icon={<CreditCard size={20} />}
+          trend="positive"
+          change="−3.1% vs last month"
+          description="Lower spend than prior period"
         />
         <StatCard
-          label="Pending EMI"
-          value={`₹${(pendingEMI / 100000).toFixed(2)}L`}
-          icon={<AlertCircle size={20} className="text-amber-600" />}
-          change={-8}
-          changeLabel="reduction"
+          title="Net Worth"
+          value={`₹${(netWorth / 100000).toFixed(2)}L`}
+          icon={<Landmark size={20} />}
+          trend="neutral"
+          change="Flat vs last month"
+          description="Assets including investments"
         />
       </div>
 
