@@ -1,0 +1,167 @@
+'use client';
+
+import { StatCard } from '@/components/stat-card';
+import { NetWorthCard } from '@/components/net-worth-card';
+import { IncomeExpenseChart } from '@/components/income-expense-chart';
+import { InvestmentAllocationChart } from '@/components/investment-allocation-chart';
+import { ChartCard } from '@/components/chart-card';
+import { ReminderCard } from '@/components/reminder-card';
+import { RecentTransactionsTable } from '@/components/recent-transactions-table';
+import { QuickActionsPanel } from '@/components/quick-actions-panel';
+import { EMIProgressCard } from '@/components/emi-progress-card';
+import { GoalCard } from '@/components/goal-card';
+import { ExpensePieChart } from '@/components/expense-pie-chart';
+import {
+  accounts,
+  transactions,
+  savingsGoals,
+  investments,
+  reminders,
+  emis,
+  monthlySpending,
+  expenseBreakdown,
+} from '@/lib/demo-data';
+import { Zap, TrendingUp, CreditCard, AlertCircle, Target } from 'lucide-react';
+
+export default function Dashboard() {
+  // Calculate summary metrics
+  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const totalIncome = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const pendingEMI = emis.reduce((sum, emi) => sum + emi.remainingAmount, 0);
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Your personal finance overview</p>
+        </div>
+      </div>
+
+      {/* Net Worth Card */}
+      <NetWorthCard accounts={accounts} investments={investments} />
+
+      {/* Financial Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Balance"
+          value={`₹${(totalBalance / 100000).toFixed(2)}L`}
+          icon={<Zap size={20} />}
+          change={8}
+          changeLabel="from last month"
+        />
+        <StatCard
+          label="Monthly Income"
+          value={`₹${(totalIncome / 1000).toFixed(1)}K`}
+          icon={<TrendingUp size={20} className="text-green-600" />}
+          change={5}
+          changeLabel="increase"
+        />
+        <StatCard
+          label="Monthly Expenses"
+          value={`₹${(totalExpenses / 1000).toFixed(1)}K`}
+          icon={<CreditCard size={20} className="text-red-600" />}
+          change={-3}
+          changeLabel="decrease"
+        />
+        <StatCard
+          label="Pending EMI"
+          value={`₹${(pendingEMI / 100000).toFixed(2)}L`}
+          icon={<AlertCircle size={20} className="text-amber-600" />}
+          change={-8}
+          changeLabel="reduction"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <IncomeExpenseChart data={monthlySpending} />
+        <ExpensePieChart data={expenseBreakdown} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <InvestmentAllocationChart investments={investments} />
+        <ChartCard title="Savings Progress" description="Monthly savings trend">
+          <div className="space-y-4">
+            {monthlySpending.map((month) => {
+              const savings = month.income - month.spending;
+              const savingsRate = (savings / month.income) * 100;
+              return (
+                <div key={month.month}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-muted-foreground">{month.month}</span>
+                    <span className="text-sm font-bold text-primary">
+                      ₹{(savings / 1000).toFixed(1)}K ({savingsRate.toFixed(0)}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${savingsRate}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Transactions */}
+        <div className="lg:col-span-2">
+          <div className="bg-card rounded-lg p-6 border border-border">
+            <h2 className="text-xl font-bold text-foreground mb-4">Recent Transactions</h2>
+            <RecentTransactionsTable transactions={transactions} limit={6} />
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-lg font-bold text-foreground mb-4">Quick Actions</h2>
+          <QuickActionsPanel />
+        </div>
+      </div>
+
+      {/* Savings Goals Section */}
+      <div>
+        <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+          <Target size={24} />
+          Savings Goals
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {savingsGoals.map((goal) => (
+            <GoalCard key={goal.id} goal={goal} />
+          ))}
+        </div>
+      </div>
+
+      {/* Reminders Section */}
+      <div>
+        <h2 className="text-xl font-bold text-foreground mb-4">Upcoming Reminders</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {reminders.map((reminder) => (
+            <ReminderCard key={reminder.id} reminder={reminder} />
+          ))}
+        </div>
+      </div>
+
+      {/* EMI Progress Section */}
+      <div>
+        <h2 className="text-xl font-bold text-foreground mb-4">EMI Tracking</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {emis.map((emi) => (
+            <EMIProgressCard key={emi.id} emi={emi} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
