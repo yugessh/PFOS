@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { StatCard } from '@/components/stat-card';
 import { NetWorthCard } from '@/components/net-worth-card';
 import { IncomeExpenseChart } from '@/components/income-expense-chart';
@@ -15,6 +16,11 @@ import { GoalCard } from '@/components/goal-card';
 import { ExpensePieChart } from '@/components/expense-pie-chart';
 import { DashboardGrid, DashboardSection, DashboardWidget } from '@/components/dashboard-grid';
 import {
+  createDefaultFinanceFilters,
+  FilterBar,
+  FINANCE_FILTER_ALL,
+} from '@/components/filters';
+import {
   accounts,
   transactions,
   transactionTableRows,
@@ -28,6 +34,24 @@ import {
 import { Wallet, TrendingUp, CreditCard, Landmark, Target, BarChart3 } from 'lucide-react';
 
 export default function Dashboard() {
+  const [ledgerFilters, setLedgerFilters] = useState(createDefaultFinanceFilters);
+
+  const ledgerCategoryOptions = useMemo(() => {
+    const uniq = [...new Set(transactionTableRows.map((t) => t.category))].sort();
+    return [
+      { value: FINANCE_FILTER_ALL, label: 'All categories' },
+      ...uniq.map((c) => ({ value: c, label: c })),
+    ];
+  }, []);
+
+  const ledgerAccountOptions = useMemo(
+    () => [
+      { value: FINANCE_FILTER_ALL, label: 'All accounts' },
+      ...accounts.map((a) => ({ value: a.name, label: a.name })),
+    ],
+    []
+  );
+
   // Calculate summary metrics
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
   const totalIncome = transactions
@@ -181,13 +205,22 @@ export default function Dashboard() {
 
       <DashboardSection
         title="Transaction ledger"
-        description="Full-width table layout — swap in filters or exports later."
+        description="Filter bar is UI-only — state is local; connect to queries when ready."
       >
-        <TransactionsTable
-          transactions={transactionTableRows}
-          limit={8}
-          emptyMessage="No ledger entries yet."
-        />
+        <div className="space-y-4">
+          <FilterBar
+            filters={ledgerFilters}
+            onChange={setLedgerFilters}
+            onReset={() => setLedgerFilters(createDefaultFinanceFilters())}
+            categoryOptions={ledgerCategoryOptions}
+            accountOptions={ledgerAccountOptions}
+          />
+          <TransactionsTable
+            transactions={transactionTableRows}
+            limit={8}
+            emptyMessage="No ledger entries yet."
+          />
+        </div>
       </DashboardSection>
 
       {/* Savings Goals Section */}
