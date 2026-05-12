@@ -21,6 +21,7 @@ import {
   FINANCE_FILTER_ALL,
 } from '@/components/filters';
 import { AddTransactionModal } from '@/components/modals';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import {
   accounts,
   transactions,
@@ -32,7 +33,16 @@ import {
   monthlySpending,
   expenseBreakdown,
 } from '@/lib/demo-data';
-import { Wallet, TrendingUp, CreditCard, Landmark, Target, BarChart3, Plus } from 'lucide-react';
+import {
+  Wallet,
+  TrendingUp,
+  CreditCard,
+  Landmark,
+  Target,
+  BarChart3,
+  Plus,
+  Receipt,
+} from 'lucide-react';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
@@ -233,6 +243,75 @@ export default function Dashboard() {
             limit={8}
             emptyMessage="No ledger entries yet."
           />
+        </div>
+      </DashboardSection>
+
+      <DashboardSection
+        title="Activity shell (UI examples)"
+        description="Empty, loading, and error patterns for tables, dashboards, and full-page waits."
+      >
+        <DashboardGrid>
+          <DashboardWidget colSpan={4}>
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card/30 dark:border-border/60">
+              <EmptyState
+                title="No transactions yet"
+                description="When the ledger is empty, use a short explanation and one primary action."
+                icon={<Receipt className="size-6 opacity-80" strokeWidth={1.75} aria-hidden />}
+                action={
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setAddTransactionOpen(true)}
+                  >
+                    Add transaction
+                  </Button>
+                }
+              />
+            </div>
+          </DashboardWidget>
+          <DashboardWidget colSpan={4}>
+            <div className="space-y-2 rounded-xl border border-border/80 bg-card/30 p-3 dark:border-border/60">
+              <p className="px-1 text-xs font-medium text-muted-foreground">LoadingState · table</p>
+              <LoadingState type="table" rows={4} />
+            </div>
+          </DashboardWidget>
+          <DashboardWidget colSpan={4}>
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card/30 dark:border-border/60">
+              <ErrorState
+                title="Couldn’t refresh balances"
+                description="Placeholder copy — map this to real API errors and retry handlers later."
+                retryAction={
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      /* Demo: attach retry handler when API exists */
+                    }}
+                  >
+                    Retry
+                  </Button>
+                }
+              />
+            </div>
+          </DashboardWidget>
+        </DashboardGrid>
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="space-y-2 rounded-xl border border-border/80 bg-card/30 p-3 dark:border-border/60">
+            <p className="px-1 text-xs font-medium text-muted-foreground">LoadingState · analytics</p>
+            <LoadingState type="analytics" />
+          </div>
+          <div className="space-y-2 rounded-xl border border-border/80 bg-card/30 p-3 dark:border-border/60">
+            <p className="px-1 text-xs font-medium text-muted-foreground">LoadingState · dashboard</p>
+            <LoadingState type="dashboard" />
+          </div>
+        </div>
+        <div className="mt-4 overflow-hidden rounded-xl border border-border/80 bg-card/30 dark:border-border/60">
+          <p className="border-b border-border/60 px-4 py-2 text-xs font-medium text-muted-foreground dark:border-border/50">
+            LoadingState · page
+          </p>
+          <LoadingState type="page" />
         </div>
       </DashboardSection>
 
