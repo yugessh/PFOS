@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/lib/date';
 import { Transaction } from '@/lib/types';
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
@@ -41,9 +42,7 @@ export function RecentTransactionsTable({ transactions, limit = 5 }: RecentTrans
               }`}>
                 {transaction.type === 'income' ? '+' : '-'}₹{(transaction.amount / 1000).toFixed(1)}K
               </p>
-              <p className="text-xs text-muted-foreground">
-                {transaction.date.toLocaleDateString()}
-              </p>
+              <p className="text-xs text-muted-foreground">{formatDate(transaction.date)}</p>
             </div>
           </div>
         ))
