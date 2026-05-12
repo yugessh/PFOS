@@ -20,6 +20,7 @@ import {
   FilterBar,
   FINANCE_FILTER_ALL,
 } from '@/components/filters';
+import { AddTransactionModal } from '@/components/modals';
 import {
   accounts,
   transactions,
@@ -31,9 +32,10 @@ import {
   monthlySpending,
   expenseBreakdown,
 } from '@/lib/demo-data';
-import { Wallet, TrendingUp, CreditCard, Landmark, Target, BarChart3 } from 'lucide-react';
+import { Wallet, TrendingUp, CreditCard, Landmark, Target, BarChart3, Plus } from 'lucide-react';
 
 export default function Dashboard() {
+  const [addTransactionOpen, setAddTransactionOpen] = useState(false);
   const [ledgerFilters, setLedgerFilters] = useState(createDefaultFinanceFilters);
 
   const ledgerCategoryOptions = useMemo(() => {
@@ -67,12 +69,23 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Your personal finance overview</p>
         </div>
+        <Button
+          type="button"
+          size="sm"
+          className="shrink-0 gap-1.5 self-start sm:self-auto"
+          onClick={() => setAddTransactionOpen(true)}
+        >
+          <Plus className="size-4" aria-hidden />
+          Add transaction
+        </Button>
       </div>
+
+      <AddTransactionModal open={addTransactionOpen} onOpenChange={setAddTransactionOpen} />
 
       {/* Net Worth Card */}
       <NetWorthCard accounts={accounts} investments={investments} />
