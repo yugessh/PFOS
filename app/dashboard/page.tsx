@@ -4,7 +4,8 @@ import { StatCard } from '@/components/stat-card';
 import { NetWorthCard } from '@/components/net-worth-card';
 import { IncomeExpenseChart } from '@/components/income-expense-chart';
 import { InvestmentAllocationChart } from '@/components/investment-allocation-chart';
-import { ChartCard } from '@/components/chart-card';
+import { ChartCard } from '@/components/charts';
+import { Button } from '@/components/ui/button';
 import { ReminderCard } from '@/components/reminder-card';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
 import { QuickActionsPanel } from '@/components/quick-actions-panel';
@@ -21,7 +22,7 @@ import {
   monthlySpending,
   expenseBreakdown,
 } from '@/lib/demo-data';
-import { Wallet, TrendingUp, CreditCard, Landmark, Target } from 'lucide-react';
+import { Wallet, TrendingUp, CreditCard, Landmark, Target, BarChart3 } from 'lucide-react';
 
 export default function Dashboard() {
   // Calculate summary metrics
@@ -118,6 +119,34 @@ export default function Dashboard() {
           </div>
         </ChartCard>
       </div>
+
+      <ChartCard
+        title="Cash runway"
+        description="Illustrative placeholder — swap in any chart or analytics view"
+        action={
+          <Button type="button" variant="outline" size="sm" className="shrink-0">
+            <BarChart3 className="size-4" aria-hidden />
+            Open
+          </Button>
+        }
+        footer={
+          <p className="text-xs text-muted-foreground">Prototype shell only · no live series wired</p>
+        }
+      >
+        <div
+          className="flex h-[220px] w-full items-end justify-between gap-1.5 sm:gap-2"
+          role="img"
+          aria-label="Placeholder bar chart"
+        >
+          {[42, 68, 55, 80, 63, 90, 74, 58].map((pct, i) => (
+            <div
+              key={i}
+              className="min-h-[12%] flex-1 rounded-t-md bg-primary/20 transition-colors hover:bg-primary/30 dark:bg-primary/25 dark:hover:bg-primary/35"
+              style={{ height: `${pct}%` }}
+            />
+          ))}
+        </div>
+      </ChartCard>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
