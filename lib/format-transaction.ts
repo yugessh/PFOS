@@ -1,4 +1,4 @@
-import type { TransactionStatus } from './types';
+import type { TransactionStatus } from '@/types';
 
 export function formatTransactionStatusLabel(status: TransactionStatus): string {
   switch (status) {

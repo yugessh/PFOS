@@ -1,7 +1,7 @@
 'use client';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { Investment } from '@/lib/types';
+import type { Investment } from '@/types';
 import { ChartCard } from './chart-card';
 
 interface InvestmentAllocationChartProps {

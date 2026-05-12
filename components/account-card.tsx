@@ -1,6 +1,6 @@
 'use client';
 
-import { Account } from '@/lib/types';
+import type { Account } from '@/types';
 import { CreditCard, Wallet, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

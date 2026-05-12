@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDate } from '@/lib/date';
-import { Transaction } from '@/lib/types';
+import type { Transaction } from '@/types';
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 interface RecentTransactionsTableProps {

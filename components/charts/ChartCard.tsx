@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { ChartCardProps } from './types';
+import type { ChartCardProps } from '@/types';
 
 export function ChartCard({
   title,

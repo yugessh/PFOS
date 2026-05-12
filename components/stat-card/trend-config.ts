@@ -1,5 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
-import type { StatCardTrend } from './types';
+import type { StatCardTrend } from '@/types';
 
 export const statCardTrendConfig: Record<
   StatCardTrend,

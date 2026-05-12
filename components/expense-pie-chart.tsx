@@ -1,15 +1,10 @@
 'use client';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import type { ExpenseBreakdownItem } from '@/types';
 
-interface ExpenseData {
-  category: string;
-  value: number;
-  percentage: number;
-}
-
-interface ExpensePieChartProps {
-  data: ExpenseData[];
+export interface ExpensePieChartProps {
+  data: ExpenseBreakdownItem[];
 }
 
 const COLORS = ['#0ea5e9', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];

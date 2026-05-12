@@ -1,6 +1,6 @@
 'use client';
 
-import { Transaction } from '@/lib/types';
+import type { Transaction } from '@/types';
 import { ShoppingBag, Zap, DollarSign, Utensils, Fuel, Tv } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

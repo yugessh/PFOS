@@ -1,6 +1,6 @@
 'use client';
 
-import type { StatCardProps } from './types';
+import type { StatCardProps } from '@/types';
 import { statCardTrendConfig } from './trend-config';
 import { cn } from '@/lib/utils';
 

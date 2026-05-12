@@ -1,7 +1,7 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
-import { Account, Investment } from '@/lib/types';
+import type { Account, Investment } from '@/types';
 
 interface NetWorthCardProps {
   accounts: Account[];

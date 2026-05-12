@@ -32,7 +32,7 @@ import {
   emis,
   monthlySpending,
   expenseBreakdown,
-} from '@/lib/demo-data';
+} from '@/data';
 import {
   Wallet,
   TrendingUp,

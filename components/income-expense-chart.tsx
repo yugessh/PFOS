@@ -1,16 +1,11 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import type { MonthlySpendingRow } from '@/types';
 import { ChartCard } from './chart-card';
 
-interface MonthlyData {
-  month: string;
-  spending: number;
-  income: number;
-}
-
-interface IncomeExpenseChartProps {
-  data: MonthlyData[];
+export interface IncomeExpenseChartProps {
+  data: MonthlySpendingRow[];
 }
 
 export function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {

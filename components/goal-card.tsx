@@ -1,6 +1,6 @@
 'use client';
 
-import { SavingsGoal } from '@/lib/types';
+import type { SavingsGoal } from '@/types';
 import { Target } from 'lucide-react';
 
 interface GoalCardProps {

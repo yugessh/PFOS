@@ -1,6 +1,6 @@
 'use client';
 
-import { Reminder } from '@/lib/types';
+import type { Reminder } from '@/types';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 interface ReminderCardProps {

@@ -1,2 +1,2 @@
 export { StatCard } from './StatCard';
-export type { StatCardProps, StatCardTrend } from './types';
+export type { StatCardProps, StatCardTrend } from '@/types';

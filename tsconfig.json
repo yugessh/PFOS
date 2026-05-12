@@ -23,6 +23,12 @@
       }
     ],
     "paths": {
+      "@/types": [
+        "./src/types/index.ts"
+      ],
+      "@/data": [
+        "./src/data/index.ts"
+      ],
       "@/*": [
         "./*"
       ]

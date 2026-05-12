@@ -1,6 +1,6 @@
 'use client';
 
-import { EMI } from '@/lib/types';
+import type { EMI } from '@/types';
 import { TrendingDown } from 'lucide-react';
 
 interface EMIProgressCardProps {

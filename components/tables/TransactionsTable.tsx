@@ -15,7 +15,7 @@ import {
   formatSignedTransactionAmount,
   formatTransactionStatusLabel,
 } from '@/lib/format-transaction';
-import type { TransactionStatus, TransactionTableRow } from '@/lib/types';
+import type { TransactionStatus, TransactionTableRow } from '@/types';
 import { cn } from '@/lib/utils';
 
 const statusBadgeClass: Record<TransactionStatus, string> = {
