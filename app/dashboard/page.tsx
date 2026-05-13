@@ -5,34 +5,34 @@ import { Button } from '@/components/ui/button';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
 import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
-import { accounts, transactions as MOCK_TRANSACTIONS, reminders, emis, monthlySpending } from '@/data';
 import { useTransactions } from '@/src/hooks/useTransactions';
-import { Wallet, TrendingUp, CreditCard, Plus, AlertCircle, PiggyBank } from 'lucide-react';
+import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
+import { Wallet, TrendingUp, CreditCard, Plus, PiggyBank } from 'lucide-react';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
-  const { transactions, addTransaction, getTotals, computeAccountBalances } = useTransactions();
+  const { transactions, addTransaction, getTotals, loading, error } = useTransactions();
 
-  // Calculate summary metrics
-  const adjustedAccounts = computeAccountBalances(accounts);
-  const totalBalance = adjustedAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+  // Calculate summary metrics from real transactions
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
-  const currentMonthSpending = monthlySpending[monthlySpending.length - 1]?.spending || 0;
+  const totalBalance = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
-  // Get upcoming reminders and EMI (next 7 days)
-  const today = new Date();
-  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  
-  const upcomingReminders = reminders.filter(r => {
-    const reminderDate = new Date(r.reminderDate);
-    return reminderDate >= today && reminderDate <= nextWeek;
-  }).slice(0, 3);
-
-  const upcomingEMI = emis.filter(e => {
-    const emiDate = new Date(e.nextDueDate);
-    return emiDate >= today && emiDate <= nextWeek;
-  }).slice(0, 2);
+  // If no transactions, show onboarding empty state
+  if (transactions.length === 0) {
+    return (
+      <div>
+        <EmptyFinanceState onAddTransaction={() => setAddTransactionOpen(true)} />
+        <AddTransactionModal
+          open={addTransactionOpen}
+          onOpenChange={setAddTransactionOpen}
+          onSave={(tx: TransactionFormData) => {
+            addTransaction(tx);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
@@ -94,40 +94,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upcoming Alerts */}
-        {(upcomingReminders.length > 0 || upcomingEMI.length > 0) && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertCircle className="size-5 text-orange-500" />
-              <h2 className="font-semibold text-gray-900 dark:text-white">Upcoming</h2>
-            </div>
-            <div className="space-y-2">
-              {upcomingReminders.slice(0, 2).map((reminder) => (
-                <div key={reminder.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{reminder.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(reminder.reminderDate).toLocaleDateString()}</p>
-                  </div>
-                  <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 px-2 py-1 rounded-full">
-                    Reminder
-                  </span>
-                </div>
-              ))}
-              {upcomingEMI.slice(0, 1).map((emi) => (
-                <div key={emi.id} className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{emi.loanName}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(emi.nextDueDate).toLocaleDateString()}</p>
-                  </div>
-                  <span className="text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded-full">
-                    ₹{emi.monthlyEmi.toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Recent Transactions */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
@@ -136,11 +102,30 @@ export default function Dashboard() {
               See All
             </Button>
           </div>
-          <RecentTransactionsTable transactions={transactions} limit={5} />
+          {loading ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-sm">Loading transactions...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              <p className="text-sm">{error}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="mt-2"
+              >
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <RecentTransactionsTable transactions={transactions} limit={5} />
+          )}
         </div>
       </div>
 
-      {/* Provide an onSave handler so AddTransactionModal can persist to local UI state. */}
+      {/* Add Transaction Modal */}
       <AddTransactionModal
         open={addTransactionOpen}
         onOpenChange={setAddTransactionOpen}
