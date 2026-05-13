@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import type { Transaction } from '@/src/types/transaction';
 import type { TransactionFormData, TransactionType } from '@/src/components/transactions/types';
 import { accounts as BASE_ACCOUNTS } from '@/src/data/mock-dashboard';
+import { computeAccountBalances as computeBalancesHelper, getMonthlyTotals } from '@/src/lib/finance';
 import { transactionsService } from '@/src/services/firestore/transactions.service';
 import { useAuthContext } from '@/src/context/AuthContext';
 
@@ -47,10 +48,11 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
       id: fx.id,
       description: fx.description || fx.desc || '',
       amount: fx.amount || 0,
-      type: (fx.type === 'income' ? 'income' : 'expense') as TransactionType,
+      type: (fx.type === 'transfer' ? 'transfer' : (fx.type === 'income' ? 'income' : 'expense')) as TransactionType,
       category: fx.category || 'uncategorized',
       date: fx.date ? new Date(fx.date) : new Date(),
       account: fx.accountId || fx.account || '',
+      ...(fx.toAccount ? { toAccount: fx.toAccount } : {}),
     };
   }
 
@@ -108,6 +110,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         const payload = {
           userId: auth.user.uid,
           accountId: form.account,
+          toAccount: (form as any).toAccount,
           amount: form.amount,
           type: form.type,
           category: form.category,
@@ -173,24 +176,12 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   }, [auth?.user?.uid, transactions]);
 
   const getTotals = useCallback(() => {
-    const income = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const expenses = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const { income, expenses } = getMonthlyTotals(transactions);
     return { income, expenses };
   }, [transactions]);
 
   const computeAccountBalances = useCallback((baseAccounts = BASE_ACCOUNTS) => {
-    const balances: Record<string, number> = {};
-    baseAccounts.forEach((a) => (balances[a.id] = a.balance));
-
-    transactions.forEach((t) => {
-      if (t.type === 'income') {
-        balances[t.account] = (balances[t.account] ?? 0) + t.amount;
-      } else if (t.type === 'expense') {
-        balances[t.account] = (balances[t.account] ?? 0) - t.amount;
-      }
-    });
-
-    return baseAccounts.map((a) => ({ ...a, balance: balances[a.id] ?? a.balance }));
+    return computeBalancesHelper(baseAccounts as any, transactions as any) as any;
   }, [transactions]);
 
   const value = useMemo(() => ({ transactions, loading, error, addTransaction, updateTransaction, removeTransaction, refresh, getTotals, computeAccountBalances }), [transactions, loading, error, addTransaction, updateTransaction, removeTransaction, refresh, getTotals, computeAccountBalances]);

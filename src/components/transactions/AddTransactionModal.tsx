@@ -9,7 +9,8 @@ import { CategorySelector } from './CategorySelector';
 import { AccountSelector } from './AccountSelector';
 import { NotesInput } from './NotesInput';
 import { DatePicker } from './DatePicker';
-import { getCategoriesByType, ACCOUNTS } from './mock-data';
+import { getCategoriesByType } from './mock-data';
+import { useAccounts } from '@/src/hooks/useAccounts';
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -30,6 +31,7 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
   });
 
   const [toAccount, setToAccount] = useState<string>('');
+  const { accounts } = useAccounts();
 
   const categories = getCategoriesByType(formData.type);
 
@@ -114,13 +116,13 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
           {formData.type === 'transfer' ? (
             <>
               <AccountSelector
-                accounts={ACCOUNTS}
+                accounts={accounts as any}
                 selectedAccount={formData.account}
                 onSelect={(accountId) => setFormData({ ...formData, account: accountId })}
                 label="From Account"
               />
               <AccountSelector
-                accounts={ACCOUNTS.filter(acc => acc.id !== formData.account)}
+                accounts={(accounts || []).filter((acc: any) => acc.id !== formData.account) as any}
                 selectedAccount={toAccount}
                 onSelect={(accountId) => setToAccount(accountId)}
                 label="To Account"
@@ -128,7 +130,7 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
             </>
           ) : (
             <AccountSelector
-              accounts={ACCOUNTS}
+              accounts={accounts as any}
               selectedAccount={formData.account}
               onSelect={(accountId) => setFormData({ ...formData, account: accountId })}
             />

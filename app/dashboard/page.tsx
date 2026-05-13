@@ -24,10 +24,11 @@ export default function Dashboard() {
     getTotals,
     loading: transactionsLoading,
     error: transactionsError,
+    computeAccountBalances,
   } = useTransactions();
-
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
-  const totalBalance = totalIncome - totalExpenses;
+  const computedAccounts = computeAccountBalances(accounts as any) as Account[];
+  const totalBalance = computedAccounts.reduce((s, a) => s + (a.balance || 0), 0);
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
   if (accounts.length === 0 && !accountsLoading) {
@@ -130,7 +131,7 @@ export default function Dashboard() {
             </Button>
           </div>
           <div className="space-y-2">
-            {accounts.map((account) => (
+            {computedAccounts.map((account) => (
               <div
                 key={account.id}
                 className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
