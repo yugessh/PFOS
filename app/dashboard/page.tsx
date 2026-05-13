@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
-import { AddTransactionModal } from '@/components/modals';
+import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
+import { TransactionFormData } from '@/src/components/transactions/types';
 import { accounts, transactions, reminders, emis, monthlySpending } from '@/data';
 import { Wallet, TrendingUp, CreditCard, Plus, AlertCircle, PiggyBank } from 'lucide-react';
 
