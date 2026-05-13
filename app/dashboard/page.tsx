@@ -5,20 +5,18 @@ import { Button } from '@/components/ui/button';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
 import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
-import { accounts, transactions, reminders, emis, monthlySpending } from '@/data';
+import { accounts, transactions as MOCK_TRANSACTIONS, reminders, emis, monthlySpending } from '@/data';
+import { useTransactions } from '@/hooks/useTransactions';
 import { Wallet, TrendingUp, CreditCard, Plus, AlertCircle, PiggyBank } from 'lucide-react';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
+  const { transactions, addTransaction, getTotals, computeAccountBalances } = useTransactions();
 
   // Calculate summary metrics
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const totalIncome = transactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const adjustedAccounts = computeAccountBalances(accounts);
+  const totalBalance = adjustedAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const { income: totalIncome, expenses: totalExpenses } = getTotals();
   const currentMonthSpending = monthlySpending[monthlySpending.length - 1]?.spending || 0;
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
@@ -142,7 +140,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <AddTransactionModal open={addTransactionOpen} onOpenChange={setAddTransactionOpen} />
+      {/* Provide an onSave handler so AddTransactionModal can persist to local UI state. */}
+      <AddTransactionModal
+        open={addTransactionOpen}
+        onOpenChange={setAddTransactionOpen}
+        onSave={(tx: TransactionFormData) => {
+          addTransaction(tx);
+        }}
+      />
     </div>
   );
 }

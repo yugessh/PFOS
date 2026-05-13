@@ -14,7 +14,9 @@ import { getCategoriesByType, ACCOUNTS } from './mock-data';
 interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (transaction: TransactionFormData) => void;
+  // onSave is optional to avoid crashes when parent doesn't provide a handler.
+  // When provided it will be called with TransactionFormData.
+  onSave?: (transaction: TransactionFormData) => void;
 }
 
 export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransactionModalProps) {
@@ -42,7 +44,18 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
       toAccount: formData.type === 'transfer' ? toAccount : undefined,
     };
 
-    onSave(transactionData);
+    if (typeof onSave === 'function') {
+      try {
+        onSave(transactionData);
+      } catch (err) {
+        // avoid bubbling runtime errors from parent handlers
+        // eslint-disable-next-line no-console
+        console.error('onSave handler threw an error', err);
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('AddTransactionModal: onSave handler not provided, transaction not persisted', transactionData);
+    }
     onOpenChange(false);
     
     // Reset form
