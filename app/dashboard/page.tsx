@@ -4,22 +4,48 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
 import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
+import { AddAccountModal } from '@/src/components/accounts/AddAccountModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
 import { useTransactions } from '@/src/hooks/useTransactions';
+import { useAccounts } from '@/src/hooks/useAccounts';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
-import { Wallet, TrendingUp, CreditCard, Plus, PiggyBank } from 'lucide-react';
+import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
+import { Plus, TrendingUp, CreditCard, PiggyBank } from 'lucide-react';
+import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
-  const { transactions, addTransaction, getTotals, loading, error } = useTransactions();
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
 
-  // Calculate summary metrics from real transactions
+  const { accounts, loading: accountsLoading, addAccount } = useAccounts();
+  const {
+    transactions,
+    addTransaction,
+    getTotals,
+    loading: transactionsLoading,
+    error: transactionsError,
+  } = useTransactions();
+
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
   const totalBalance = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
-  // If no transactions, show onboarding empty state
-  if (transactions.length === 0) {
+  if (accounts.length === 0 && !accountsLoading) {
+    return (
+      <div>
+        <EmptyAccountsState onAddAccount={() => setAddAccountOpen(true)} />
+        <AddAccountModal
+          open={addAccountOpen}
+          onOpenChange={setAddAccountOpen}
+          onSave={async (accountData: Partial<Account>) => {
+            await addAccount(accountData);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (transactions.length === 0 && !transactionsLoading) {
     return (
       <div>
         <EmptyFinanceState onAddTransaction={() => setAddTransactionOpen(true)} />
@@ -36,12 +62,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
-      {/* Mobile Header */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 text-white px-4 pt-6 pb-8 rounded-b-3xl shadow-lg">
         <div className="flex justify-between items-start mb-6">
           <div>
             <p className="text-blue-100 text-sm mb-1">Total Balance</p>
-            <h1 className="text-3xl font-bold">₹{(totalBalance / 100000).toFixed(2)}L</h1>
+            <h1 className="text-3xl font-bold">₹{(totalBalance / 1000).toFixed(1)}K</h1>
           </div>
           <Button
             type="button"
@@ -54,7 +79,6 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Monthly Summary */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
@@ -74,7 +98,6 @@ export default function Dashboard() {
       </div>
 
       <div className="px-4 -mt-4 space-y-4">
-        {/* Savings Insight Widget */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2 mb-3">
             <PiggyBank className="size-5 text-purple-600" />
@@ -94,7 +117,38 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Transactions */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Your Accounts</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-blue-600 dark:text-blue-400"
+              onClick={() => setAddAccountOpen(true)}
+            >
+              <Plus className="size-4" />
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {accounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{account.name}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {account.type.replace('_', ' ').charAt(0).toUpperCase() + account.type.replace('_', ' ').slice(1)}
+                  </p>
+                </div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  ₹{(account.balance / 1000).toFixed(1)}K
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900 dark:text-white">Recent Transactions</h2>
@@ -102,14 +156,14 @@ export default function Dashboard() {
               See All
             </Button>
           </div>
-          {loading ? (
+          {transactionsLoading ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
               <p className="text-sm">Loading transactions...</p>
             </div>
-          ) : error ? (
+          ) : transactionsError ? (
             <div className="text-center py-8 text-red-500">
-              <p className="text-sm">{error}</p>
+              <p className="text-sm">{transactionsError}</p>
               <Button
                 size="sm"
                 variant="outline"
@@ -125,12 +179,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Add Transaction Modal */}
       <AddTransactionModal
         open={addTransactionOpen}
         onOpenChange={setAddTransactionOpen}
         onSave={(tx: TransactionFormData) => {
           addTransaction(tx);
+        }}
+      />
+
+      <AddAccountModal
+        open={addAccountOpen}
+        onOpenChange={setAddAccountOpen}
+        onSave={async (accountData: Partial<Account>) => {
+          await addAccount(accountData);
         }}
       />
     </div>

@@ -14,6 +14,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { getAuthSafe, initializeFirebase } from '@/src/firebase/firebase';
+import { ensureUserProfile } from '@/src/lib/firestore-init';
 
 type AuthUser = {
   uid: string;
@@ -71,6 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!auth) throw new Error('Firebase Auth is not initialized');
     const res = await createUserWithEmailAndPassword(auth, email, password);
     setUser(mapFirebaseUser(res.user));
+
+    // Initialize user profile and default collections in Firestore
+    try {
+      await ensureUserProfile(res.user.uid, {
+        email: res.user.email || email,
+        displayName: res.user.displayName || undefined,
+      });
+    } catch (initError) {
+      console.error('Failed to initialize user profile after signup:', initError);
+      // Don't throw - user is authenticated even if profile init failed
+    }
+
     return res.user;
   };
 
@@ -79,6 +92,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!auth) throw new Error('Firebase Auth is not initialized');
     const res = await signInWithEmailAndPassword(auth, email, password);
     setUser(mapFirebaseUser(res.user));
+
+    // Ensure user profile exists (for existing users)
+    try {
+      await ensureUserProfile(res.user.uid, {
+        email: res.user.email || email,
+        displayName: res.user.displayName || undefined,
+      });
+    } catch (initError) {
+      console.error('Failed to ensure user profile on signin:', initError);
+      // Don't throw - user is authenticated even if profile init failed
+    }
+
     return res.user;
   };
 
@@ -90,6 +115,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await signInWithPopup(auth, provider);
       setUser(mapFirebaseUser(res.user));
+
+      // Initialize user profile for Google signin
+      try {
+        await ensureUserProfile(res.user.uid, {
+          email: res.user.email || '',
+          displayName: res.user.displayName || undefined,
+        });
+      } catch (initError) {
+        console.error('Failed to initialize user profile after Google signin:', initError);
+        // Don't throw - user is authenticated even if profile init failed
+      }
+
       return res.user;
     } catch (err: any) {
       // Handle popup closed, network errors, etc.

@@ -2,8 +2,91 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function hasUserProfile() {
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // User document rules
+    match /users/{userId} {
+      allow read, write: if request.auth != null && isOwner(userId);
+      
+      // User subcollections
+      match /accounts/{accountId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /categories/{categoryId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /investments/{investmentId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /goals/{goalId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /emi/{emiId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /settlements/{settlementId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /policies/{policyId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Top-level collection rules (fallback for compatibility)
+    match /accounts/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /transactions/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /categories/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /investments/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /goals/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /emi/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /reminders/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /settlements/{document=**} {
+      allow read, write: if hasUserProfile();
+    }
+
+    match /policies/{document=**} {
+      allow read, write: if hasUserProfile();
     }
   }
 }
