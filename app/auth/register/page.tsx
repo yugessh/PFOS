@@ -16,7 +16,7 @@ export default function RegisterPage() {
   // Redirect if already authenticated — do navigation inside effect to avoid render-time routing
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/dashboard/protected-example');
+      router.replace('/dashboard');
     }
   }, [user, loading, router]);
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
     
     try {
       await signUp(email, password);
-      router.push('/dashboard/protected-example');
+      router.push('/dashboard');
     } catch (error: any) {
       setError(error.message);
     }
@@ -61,6 +61,9 @@ export default function RegisterPage() {
             Create your PFOS account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            Start managing your finances today
+          </p>
+          <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
             Or{' '}
             <a href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
               sign in to your existing account
@@ -167,17 +170,15 @@ export default function RegisterPage() {
                 onClick={async () => {
                   try {
                     setError('');
-                    if (signInWithGoogle) {
-                      await signInWithGoogle();
-                      router.replace('/dashboard/protected-example');
-                    } else {
-                      setError('Google sign-in is not available');
-                    }
+                    if (!signInWithGoogle) throw new Error('Google sign-in is not available');
+                    await signInWithGoogle();
+                    router.replace('/dashboard');
                   } catch (err: any) {
                     setError(err?.message || String(err));
                   }
                 }}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

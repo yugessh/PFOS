@@ -86,9 +86,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const auth = getAuthSafe();
     if (!auth) throw new Error('Firebase Auth is not initialized');
     const provider = new GoogleAuthProvider();
-    const res = await signInWithPopup(auth, provider);
-    setUser(mapFirebaseUser(res.user));
-    return res.user;
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      const res = await signInWithPopup(auth, provider);
+      setUser(mapFirebaseUser(res.user));
+      return res.user;
+    } catch (err: any) {
+      // Handle popup closed, network errors, etc.
+      if (err?.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in popup was closed. Please try again.');
+      } else if (err?.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      } else if (err?.code === 'auth/operation-not-supported-in-this-environment') {
+        throw new Error('Google sign-in is not available in this browser.');
+      }
+      throw err;
+    }
   };
 
   const signOut = async () => {

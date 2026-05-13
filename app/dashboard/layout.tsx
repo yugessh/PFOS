@@ -21,6 +21,23 @@ export default function DashboardLayout({
     }
   }, [user, loading, router]);
 
+  // Show loading spinner while auth state is being determined
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your finances...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only render dashboard if user is authenticated
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
