@@ -1,35 +1,37 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getSafeFirebaseConfig } from '@/src/lib/firebase-config';
 
-// Firebase configuration from environment variables
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ''
-};
+// Safe initialization: only initialize Firebase when configuration is present
+const safeConfig = getSafeFirebaseConfig();
 
-// Initialize Firebase app
-const app = initializeApp(firebaseConfig);
+let app: any = null;
+let db: any = null;
+let auth: any = null;
 
-// Initialize Firestore
-export const db = getFirestore(app);
+if (safeConfig) {
+  app = initializeApp(safeConfig as any);
+  db = getFirestore(app);
+  auth = getAuth(app);
 
-// Initialize Auth (re-export for consistency)
-export const auth = getAuth(app);
-
-// Connect to Firestore emulator in development
-if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST) {
-  const [host, port] = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST.split(':');
-  connectFirestoreEmulator(db, host, parseInt(port));
-  console.log('Connected to Firestore emulator at:', host, port);
+  // Connect to Firestore emulator in development when configured
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST) {
+    const [host, port] = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST.split(':');
+    try {
+      connectFirestoreEmulator(db, host, parseInt(port));
+      // eslint-disable-next-line no-console
+      console.log('Connected to Firestore emulator at:', host, port);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to connect to Firestore emulator:', e?.message || e);
+    }
+  }
+} else {
+  // eslint-disable-next-line no-console
+  console.warn('Firestore not initialized: missing NEXT_PUBLIC_FIREBASE_* environment variables. See src/lib/firebase-config.ts for setup.');
 }
 
-// Export app instance for other services
 export { app };
-
-// Firestore settings are now configured during initialization
-// Settings like ignoreUndefinedProperties are handled automatically in newer SDK versions
+export { db };
+export { auth };

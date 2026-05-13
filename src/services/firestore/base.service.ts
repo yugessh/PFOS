@@ -1,5 +1,5 @@
 import {
-  collection,
+  collection as firestoreCollection,
   doc,
   addDoc,
   updateDoc,
@@ -21,7 +21,7 @@ import {
   DocumentSnapshot,
   DocumentData,
 } from 'firebase/firestore';
-import { db } from './config';
+import { getFirestoreClient } from './firebaseClient';
 import { QueryOptions, PaginationOptions, ServiceResponse, ListResponse, BaseDocument } from '../../types/firestore';
 
 /**
@@ -29,12 +29,20 @@ import { QueryOptions, PaginationOptions, ServiceResponse, ListResponse, BaseDoc
  * All other services should extend this base class
  */
 export abstract class BaseFirestoreService<T extends BaseDocument> {
-  protected collection: CollectionReference<DocumentData>;
+  protected collectionRef: CollectionReference<DocumentData> | null;
   protected collectionName: string;
 
   constructor(collectionName: string) {
     this.collectionName = collectionName;
-    this.collection = collection(db, collectionName);
+    const _db = getFirestoreClient();
+    if (!_db) {
+      // Firestore not initialized; services should handle null collection
+      // eslint-disable-next-line no-console
+      console.warn(`Firestore client not available. ${collectionName} operations will be no-ops.`);
+      this.collectionRef = null;
+    } else {
+      this.collectionRef = firestoreCollection(_db, collectionName);
+    }
   }
 
   /**
@@ -81,8 +89,11 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    */
   async create(data: Partial<T>): Promise<ServiceResponse<T>> {
     try {
+      if (!this.collectionRef) {
+        return { success: false, error: 'Firestore not initialized' };
+      }
       const preparedData = this.prepareData(data);
-      const docRef = await addDoc(this.collection, preparedData);
+      const docRef = await addDoc(this.collectionRef, preparedData);
       
       // Get created document
       const createdDoc = await getDoc(docRef);
@@ -109,7 +120,9 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
     data: Partial<T>
   ): Promise<ServiceResponse<T>> {
     try {
-      const docRef = doc(db, this.collectionName, id);
+      const _db = getFirestoreClient();
+      if (!_db) return { success: false, error: 'Firestore not initialized' };
+      const docRef = doc(_db, this.collectionName, id);
       const preparedData = this.prepareData(data);
       await updateDoc(docRef, preparedData);
       
@@ -138,7 +151,9 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
     data: Partial<T>
   ): Promise<ServiceResponse<T>> {
     try {
-      const docRef = doc(db, this.collectionName, id);
+      const _db = getFirestoreClient();
+      if (!_db) return { success: false, error: 'Firestore not initialized' };
+      const docRef = doc(_db, this.collectionName, id);
       const preparedData = this.prepareData(data);
       
       await updateDoc(docRef, preparedData);
@@ -165,7 +180,9 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    */
   async softDelete(id: string): Promise<ServiceResponse<void>> {
     try {
-      const docRef = doc(db, this.collectionName, id);
+      const _db = getFirestoreClient();
+      if (!_db) return { success: false, error: 'Firestore not initialized' };
+      const docRef = doc(_db, this.collectionName, id);
       await updateDoc(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -188,7 +205,9 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    */
   async hardDelete(id: string): Promise<ServiceResponse<void>> {
     try {
-      const docRef = doc(db, this.collectionName, id);
+      const _db = getFirestoreClient();
+      if (!_db) return { success: false, error: 'Firestore not initialized' };
+      const docRef = doc(_db, this.collectionName, id);
       await deleteDoc(docRef);
       
       return {
@@ -208,7 +227,9 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    */
   async getById(id: string): Promise<ServiceResponse<T>> {
     try {
-      const docRef = doc(db, this.collectionName, id);
+      const _db = getFirestoreClient();
+      if (!_db) return { success: false, error: 'Firestore not initialized' };
+      const docRef = doc(_db, this.collectionName, id);
       const document = await getDoc(docRef);
       
       if (!document.exists()) {
@@ -239,7 +260,8 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    */
   async list(options?: QueryOptions): Promise<ServiceResponse<ListResponse<T>>> {
     try {
-      let q: Query = this.collection;
+      if (!this.collectionRef) return { success: false, error: 'Firestore not initialized' };
+      let q: Query = this.collectionRef as unknown as Query;
       
       // Apply where clauses
       if (options?.where) {
@@ -341,7 +363,8 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    * Build a query with multiple options
    */
   protected buildQuery(options?: QueryOptions): Query {
-    let q: Query = this.collection;
+    if (!this.collectionRef) throw new Error('Firestore not initialized');
+    let q: Query = this.collectionRef as unknown as Query;
     
     // Apply where clauses
     if (options?.where) {

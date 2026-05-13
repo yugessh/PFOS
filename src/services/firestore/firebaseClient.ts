@@ -1,4 +1,4 @@
-import { getFirestoreSafe } from '@/firebase/firebase';
+import { getFirestoreSafe } from '@/src/firebase/firebase';
 
 /**
  * Legacy adapter used by services — returns Firestore instance or null.
