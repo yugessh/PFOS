@@ -46,6 +46,11 @@ export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalP
 
     setSaving(true);
     try {
+      // Debug: log form data before save
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('AddAccountModal.handleSave formData=', formData);
+      } catch (_) {}
       if (typeof onSave === 'function') {
         await onSave(formData);
       } else {

@@ -87,6 +87,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       try {
+        // Debug: log current user id when creating account
+        try {
+          // eslint-disable-next-line no-console
+          console.debug('AccountContext.addAccount user.uid=', user?.uid);
+        } catch (_) {}
         const response = await accountsService.createAccount(user.uid, {
           ...accountData,
           isActive: true,

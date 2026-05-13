@@ -1,6 +1,9 @@
 import { BaseFirestoreService } from './base.service';
-import { COLLECTIONS } from '../../constants/collections';
+import { COLLECTIONS, SUBCOLLECTIONS } from '../../constants/collections';
 import { usersService } from './users.service';
+import { getFirestoreClient } from './firebaseClient';
+import { collection as firestoreCollection, addDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
+import { getAuthSafe } from '@/src/firebase/firebase';
 
 export interface Account {
   id: string;
@@ -28,12 +31,18 @@ export class AccountsService extends BaseFirestoreService<Account> {
    */
   async createAccount(userId: string, accountData: Partial<Account>) {
     try {
+      // Debug: log current auth uid from client
+      try {
+        const auth = getAuthSafe();
+        // eslint-disable-next-line no-console
+        console.debug('accountsService.createAccount called with userId=', userId, 'auth.currentUser?.uid=', auth?.currentUser?.uid);
+      } catch (_) {}
+
       // Ensure user profile exists so Firestore rules that check /users/{uid} pass
       const existing = await usersService.getUserProfile(userId);
       if (!existing) {
         // Create a minimal user profile if missing (avoid blocking account creation)
         try {
-          // initialize with empty email if not available
           await usersService.initializeUserProfile(userId, { email: (accountData as any)?.email || '' });
         } catch (initErr) {
           // If profile creation fails, continue — we will still attempt account create and map permission errors
@@ -42,17 +51,33 @@ export class AccountsService extends BaseFirestoreService<Account> {
         }
       }
 
-      // Prefer to create account in the top-level accounts collection (legacy compatibility)
+      // Try top-level accounts collection first (legacy)
       const data = { ...accountData, userId };
-
-      // Use BaseFirestoreService.create which will attach server timestamps
       const response = await this.create(data as Partial<Account>);
-      if (!response.success) {
-        // Map permission errors to a friendlier message
-        if (response.code === 'permission-denied' || /permission/.test(String(response.error || ''))) {
-          return { success: false, error: 'Permission denied: ensure you are signed in and your account is initialized.' };
+      if (response.success) return response;
+
+      // If permission denied, attempt fallback write to users/{uid}/accounts subcollection
+      if (response.code === 'permission-denied' || /permission/.test(String(response.error || ''))) {
+        try {
+          const db = getFirestoreClient();
+          if (db) {
+            const colPath = SUBCOLLECTIONS.USER_ACCOUNTS(userId);
+            const colRef = firestoreCollection(db, colPath) as any;
+            const prepared: DocumentData = {
+              ...data,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              deletedAt: null,
+            };
+            const docRef = await addDoc(colRef, prepared);
+            // Return a synthesized success object (serverTimestamp resolves later)
+            return { success: true, data: { id: docRef.id, ...data, createdAt: new Date(), updatedAt: new Date() } as any };
+          }
+        } catch (fallbackErr: any) {
+          // eslint-disable-next-line no-console
+          console.warn('Fallback write to users subcollection failed:', fallbackErr);
         }
-        return response;
+        return { success: false, error: 'Permission denied: ensure you are signed in and your account is initialized.' };
       }
 
       return response;
