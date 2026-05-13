@@ -1,6 +1,6 @@
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
 import { getFirestoreClient } from './firebaseClient';
-import type { AccountModel } from '@/data/mock-accounts';
+import type { AccountModel } from '@/src/data/mock-accounts';
 
 const ACCOUNTS_COLLECTION = 'accounts';
 

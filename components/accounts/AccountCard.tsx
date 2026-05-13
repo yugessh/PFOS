@@ -1,6 +1,6 @@
 'use client';
 
-import type { AccountModel } from '@/data/mock-accounts';
+import type { AccountModel } from '@/src/data/mock-accounts';
 import { CreditCard, Wallet, DollarSign, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

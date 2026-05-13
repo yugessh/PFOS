@@ -1,10 +1,10 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { transactions as MOCK_TRANSACTIONS } from '@/data/mock-transactions';
+import { transactions as MOCK_TRANSACTIONS } from '@/src/data/mock-transactions';
 import type { Transaction } from '@/src/types/transaction';
 import type { TransactionFormData, TransactionType } from '@/src/components/transactions/types';
-import { accounts as BASE_ACCOUNTS } from '@/data/mock-dashboard';
+import { accounts as BASE_ACCOUNTS } from '@/src/data/mock-dashboard';
 
 interface TransactionContextValue {
   transactions: Transaction[];

@@ -6,7 +6,7 @@ import { RecentTransactionsTable } from '@/components/recent-transactions-table'
 import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
 import { accounts, transactions as MOCK_TRANSACTIONS, reminders, emis, monthlySpending } from '@/data';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions } from '@/src/hooks/useTransactions';
 import { Wallet, TrendingUp, CreditCard, Plus, AlertCircle, PiggyBank } from 'lucide-react';
 
 export default function Dashboard() {

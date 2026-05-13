@@ -7,7 +7,7 @@ import { FormSection } from '@/components/forms/FormSection';
 import { FormActions } from '@/components/forms/FormActions';
 import { Input } from '@/components/ui/input';
 import { AccountTypeSelector } from './AccountTypeSelector';
-import type { AccountModel } from '@/data/mock-accounts';
+import type { AccountModel } from '@/src/data/mock-accounts';
 
 interface Props {
   open: boolean;

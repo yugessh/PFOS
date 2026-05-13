@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
-import type { AccountModel } from '@/data/mock-accounts';
+import type { AccountModel } from '@/src/data/mock-accounts';
 import {
   listAccounts,
   createAccountFirestore,

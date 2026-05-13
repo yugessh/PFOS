@@ -4,8 +4,8 @@ import React, { ReactNode, useState } from 'react';
 import MobileBottomNavigation from './MobileBottomNavigation';
 import MobileHeader from './MobileHeader';
 import FloatingActionButton from './FloatingActionButton';
-import AddTransactionModal from '@/src/components/transactions/AddTransactionModal';
-import { useTransactions } from '@/hooks/useTransactions';
+import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
+import { useTransactions } from '@/src/hooks/useTransactions';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const [addOpen, setAddOpen] = useState(false);

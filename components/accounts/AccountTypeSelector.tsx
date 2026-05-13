@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
-import type { AccountType } from '@/data/mock-accounts';
+import type { AccountType } from '@/src/data/mock-accounts';
 
 export interface AccountTypeSelectorProps {
   value: AccountType;

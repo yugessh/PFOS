@@ -1,7 +1,7 @@
 'use client';
 
-import { getTotalBalance } from '@/data/mock-accounts';
-import type { AccountModel } from '@/data/mock-accounts';
+import { getTotalBalance } from '@/src/data/mock-accounts';
+import type { AccountModel } from '@/src/data/mock-accounts';
 import { CurrencyDollar, Wallet } from 'lucide-react';
 
 interface Props {
