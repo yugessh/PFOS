@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { transactions as MOCK_TRANSACTIONS } from '@/src/data/mock-transactions';
+// When unauthenticated we no longer seed demo transactions — show realistic empty state
 import type { Transaction } from '@/src/types/transaction';
 import type { TransactionFormData, TransactionType } from '@/src/components/transactions/types';
 import { accounts as BASE_ACCOUNTS } from '@/src/data/mock-dashboard';
@@ -37,7 +37,7 @@ function mapFormToTransaction(form: TransactionFormData): Transaction {
 
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthContext();
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS.slice());
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,11 +74,11 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   }
 
   useEffect(() => {
-    // Load transactions when auth changes; if no user, fall back to local mocks
+    // Load transactions when auth changes; if no user, show empty state
     if (auth?.user?.uid) {
       void fetchTransactionsForUser(auth.user.uid);
     } else {
-      setTransactions(MOCK_TRANSACTIONS.slice());
+      setTransactions([]);
     }
   }, [auth?.user?.uid]);
 

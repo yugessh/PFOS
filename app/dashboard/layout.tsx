@@ -1,14 +1,26 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
 import { TopNavbar } from '@/components/top-navbar';
 import { BottomNav } from '@/components/bottom-nav';
+import { useAuthContext } from '@/src/context/AuthContext';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user, loading } = useAuthContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/auth/login');
+    }
+  }, [user, loading, router]);
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
