@@ -9,6 +9,8 @@ import {
   onAuthStateChanged,
   setPersistence,
   browserLocalPersistence,
+  signInWithPopup,
+  GoogleAuthProvider,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { getAuthSafe, initializeFirebase } from '@/src/firebase/firebase';
@@ -24,6 +26,7 @@ type AuthContextValue = {
   error?: string | null;
   signUp: (email: string, password: string) => Promise<FirebaseUser>;
   signIn: (email: string, password: string) => Promise<FirebaseUser>;
+  signInWithGoogle: () => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
 };
 
@@ -79,6 +82,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return res.user;
   };
 
+  const signInWithGoogle = async () => {
+    const auth = getAuthSafe();
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    const provider = new GoogleAuthProvider();
+    const res = await signInWithPopup(auth, provider);
+    setUser(mapFirebaseUser(res.user));
+    return res.user;
+  };
+
   const signOut = async () => {
     const auth = getAuthSafe();
     if (!auth) {
@@ -92,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (_) {}
   };
 
-  const value = useMemo(() => ({ user, loading, error, signUp, signIn, signOut }), [user, loading, error]);
+  const value = useMemo(() => ({ user, loading, error, signUp, signIn, signInWithGoogle, signOut }), [user, loading, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
