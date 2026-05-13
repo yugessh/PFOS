@@ -1,68 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { StatCard } from '@/components/stat-card';
-import { NetWorthCard } from '@/components/net-worth-card';
-import { IncomeExpenseChart } from '@/components/income-expense-chart';
-import { InvestmentAllocationChart } from '@/components/investment-allocation-chart';
-import { ChartCard } from '@/components/charts';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ReminderCard } from '@/components/reminder-card';
 import { RecentTransactionsTable } from '@/components/recent-transactions-table';
-import { TransactionsTable } from '@/components/tables';
-import { QuickActionsPanel } from '@/components/quick-actions-panel';
-import { EMIProgressCard } from '@/components/emi-progress-card';
-import { GoalCard } from '@/components/goal-card';
-import { ExpensePieChart } from '@/components/expense-pie-chart';
-import { DashboardGrid, DashboardSection, DashboardWidget } from '@/components/dashboard-grid';
-import {
-  createDefaultFinanceFilters,
-  FilterBar,
-  FINANCE_FILTER_ALL,
-} from '@/components/filters';
 import { AddTransactionModal } from '@/components/modals';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
-import {
-  accounts,
-  transactions,
-  transactionTableRows,
-  savingsGoals,
-  investments,
-  reminders,
-  emis,
-  monthlySpending,
-  expenseBreakdown,
-} from '@/data';
-import {
-  Wallet,
-  TrendingUp,
-  CreditCard,
-  Landmark,
-  Target,
-  BarChart3,
-  Plus,
-  Receipt,
-} from 'lucide-react';
+import { accounts, transactions, reminders, emis, monthlySpending } from '@/data';
+import { Wallet, TrendingUp, CreditCard, Plus, AlertCircle, PiggyBank } from 'lucide-react';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
-  const [ledgerFilters, setLedgerFilters] = useState(createDefaultFinanceFilters);
-
-  const ledgerCategoryOptions = useMemo(() => {
-    const uniq = [...new Set(transactionTableRows.map((t) => t.category))].sort();
-    return [
-      { value: FINANCE_FILTER_ALL, label: 'All categories' },
-      ...uniq.map((c) => ({ value: c, label: c })),
-    ];
-  }, []);
-
-  const ledgerAccountOptions = useMemo(
-    () => [
-      { value: FINANCE_FILTER_ALL, label: 'All accounts' },
-      ...accounts.map((a) => ({ value: a.name, label: a.name })),
-    ],
-    []
-  );
 
   // Calculate summary metrics
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -72,279 +18,130 @@ export default function Dashboard() {
   const totalExpenses = transactions
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
-  const netWorth =
-    accounts.reduce((sum, acc) => sum + acc.balance, 0) +
-    investments.reduce((sum, inv) => sum + inv.currentValue, 0);
+  const currentMonthSpending = monthlySpending[monthlySpending.length - 1]?.spending || 0;
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
+
+  // Get upcoming reminders and EMI (next 7 days)
+  const today = new Date();
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  
+  const upcomingReminders = reminders.filter(r => {
+    const reminderDate = new Date(r.reminderDate);
+    return reminderDate >= today && reminderDate <= nextWeek;
+  }).slice(0, 3);
+
+  const upcomingEMI = emis.filter(e => {
+    const emiDate = new Date(e.nextDueDate);
+    return emiDate >= today && emiDate <= nextWeek;
+  }).slice(0, 2);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Your personal finance overview</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+      {/* Mobile Header */}
+      <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 text-white px-4 pt-6 pb-8 rounded-b-3xl shadow-lg">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <p className="text-blue-100 text-sm mb-1">Total Balance</p>
+            <h1 className="text-3xl font-bold">₹{(totalBalance / 100000).toFixed(2)}L</h1>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="bg-white text-blue-600 hover:bg-blue-50 gap-2 shadow-md"
+            onClick={() => setAddTransactionOpen(true)}
+          >
+            <Plus className="size-5" />
+            Add
+          </Button>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          className="shrink-0 gap-1.5 self-start sm:self-auto"
-          onClick={() => setAddTransactionOpen(true)}
-        >
-          <Plus className="size-4" aria-hidden />
-          Add transaction
-        </Button>
+
+        {/* Monthly Summary */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="size-4 text-green-300" />
+              <p className="text-blue-100 text-xs">Income</p>
+            </div>
+            <p className="text-lg font-semibold">₹{(totalIncome / 1000).toFixed(1)}K</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CreditCard className="size-4 text-red-300" />
+              <p className="text-blue-100 text-xs">Expenses</p>
+            </div>
+            <p className="text-lg font-semibold">₹{(totalExpenses / 1000).toFixed(1)}K</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 -mt-4 space-y-4">
+        {/* Savings Insight Widget */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-3">
+            <PiggyBank className="size-5 text-purple-600" />
+            <h2 className="font-semibold text-gray-900 dark:text-white">Savings Rate</h2>
+          </div>
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{savingsRate.toFixed(0)}%</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">of income saved</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                ₹{((totalIncome - totalExpenses) / 1000).toFixed(1)}K
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">saved this month</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Alerts */}
+        {(upcomingReminders.length > 0 || upcomingEMI.length > 0) && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="size-5 text-orange-500" />
+              <h2 className="font-semibold text-gray-900 dark:text-white">Upcoming</h2>
+            </div>
+            <div className="space-y-2">
+              {upcomingReminders.slice(0, 2).map((reminder) => (
+                <div key={reminder.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{reminder.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(reminder.reminderDate).toLocaleDateString()}</p>
+                  </div>
+                  <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 px-2 py-1 rounded-full">
+                    Reminder
+                  </span>
+                </div>
+              ))}
+              {upcomingEMI.slice(0, 1).map((emi) => (
+                <div key={emi.id} className="flex items-center justify-between py-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{emi.loanName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(emi.nextDueDate).toLocaleDateString()}</p>
+                  </div>
+                  <span className="text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded-full">
+                    ₹{emi.monthlyEmi.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Transactions */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Recent Transactions</h2>
+            <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400">
+              See All
+            </Button>
+          </div>
+          <RecentTransactionsTable transactions={transactions} limit={5} />
+        </div>
       </div>
 
       <AddTransactionModal open={addTransactionOpen} onOpenChange={setAddTransactionOpen} />
-
-      {/* Net Worth Card */}
-      <NetWorthCard accounts={accounts} investments={investments} />
-
-      {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total Balance"
-          value={`₹${(totalBalance / 100000).toFixed(2)}L`}
-          icon={<Wallet size={20} />}
-          trend="positive"
-          change="+8.0% vs last month"
-          description="Cash across all accounts"
-        />
-        <StatCard
-          title="Monthly Income"
-          value={`₹${(totalIncome / 1000).toFixed(1)}K`}
-          icon={<TrendingUp size={20} />}
-          trend="positive"
-          change="+5.2% vs last month"
-          description="Salary, interest, and credits"
-        />
-        <StatCard
-          title="Monthly Expenses"
-          value={`₹${(totalExpenses / 1000).toFixed(1)}K`}
-          icon={<CreditCard size={20} />}
-          trend="negative"
-          change="+4.2% vs last month"
-          description="Higher spend than prior period"
-        />
-        <StatCard
-          title="Net Worth"
-          value={`₹${(netWorth / 100000).toFixed(2)}L`}
-          icon={<Landmark size={20} />}
-          trend="neutral"
-          change="Flat vs last month"
-          description="Assets including investments"
-        />
-      </div>
-
-      {/* Charts Section — composed with DashboardGrid */}
-      <DashboardGrid>
-        <DashboardWidget colSpan={6}>
-          <IncomeExpenseChart data={monthlySpending} />
-        </DashboardWidget>
-        <DashboardWidget colSpan={6}>
-          <ExpensePieChart data={expenseBreakdown} />
-        </DashboardWidget>
-      </DashboardGrid>
-
-      <DashboardGrid>
-        <DashboardWidget colSpan={6}>
-          <InvestmentAllocationChart investments={investments} />
-        </DashboardWidget>
-        <DashboardWidget colSpan={6}>
-          <ChartCard title="Savings Progress" description="Monthly savings trend">
-            <div className="space-y-4">
-              {monthlySpending.map((month) => {
-                const savings = month.income - month.spending;
-                const savingsRate = (savings / month.income) * 100;
-                return (
-                  <div key={month.month}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-muted-foreground">{month.month}</span>
-                      <span className="text-sm font-bold text-primary">
-                        ₹{(savings / 1000).toFixed(1)}K ({savingsRate.toFixed(0)}%)
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${savingsRate}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ChartCard>
-        </DashboardWidget>
-      </DashboardGrid>
-
-      <DashboardGrid>
-        <DashboardWidget>
-          <ChartCard
-            title="Cash runway"
-            description="Illustrative placeholder — swap in any chart or analytics view"
-            action={
-              <Button type="button" variant="outline" size="sm" className="shrink-0">
-                <BarChart3 className="size-4" aria-hidden />
-                Open
-              </Button>
-            }
-            footer={
-              <p className="text-xs text-muted-foreground">
-                Prototype shell only · no live series wired
-              </p>
-            }
-          >
-            <div
-              className="flex h-[220px] w-full items-end justify-between gap-1.5 sm:gap-2"
-              role="img"
-              aria-label="Placeholder bar chart"
-            >
-              {[42, 68, 55, 80, 63, 90, 74, 58].map((pct, i) => (
-                <div
-                  key={i}
-                  className="min-h-[12%] flex-1 rounded-t-md bg-primary/20 transition-colors hover:bg-primary/30 dark:bg-primary/25 dark:hover:bg-primary/35"
-                  style={{ height: `${pct}%` }}
-                />
-              ))}
-            </div>
-          </ChartCard>
-        </DashboardWidget>
-      </DashboardGrid>
-
-      {/* Main Content Grid */}
-      <DashboardGrid>
-        <DashboardWidget colSpan={8}>
-          <div className="bg-card rounded-lg p-6 border border-border">
-            <h2 className="text-xl font-bold text-foreground mb-4">Recent Transactions</h2>
-            <RecentTransactionsTable transactions={transactions} limit={6} />
-          </div>
-        </DashboardWidget>
-        <DashboardWidget colSpan={4}>
-          <h2 className="text-lg font-bold text-foreground mb-4">Quick Actions</h2>
-          <QuickActionsPanel />
-        </DashboardWidget>
-      </DashboardGrid>
-
-      <DashboardSection
-        title="Transaction ledger"
-        description="Filter bar is UI-only — state is local; connect to queries when ready."
-      >
-        <div className="space-y-4">
-          <FilterBar
-            filters={ledgerFilters}
-            onChange={setLedgerFilters}
-            onReset={() => setLedgerFilters(createDefaultFinanceFilters())}
-            categoryOptions={ledgerCategoryOptions}
-            accountOptions={ledgerAccountOptions}
-          />
-          <TransactionsTable
-            transactions={transactionTableRows}
-            limit={8}
-            emptyMessage="No ledger entries yet."
-          />
-        </div>
-      </DashboardSection>
-
-      <DashboardSection
-        title="Activity shell (UI examples)"
-        description="Empty, loading, and error patterns for tables, dashboards, and full-page waits."
-      >
-        <DashboardGrid>
-          <DashboardWidget colSpan={4}>
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card/30 dark:border-border/60">
-              <EmptyState
-                title="No transactions yet"
-                description="When the ledger is empty, use a short explanation and one primary action."
-                icon={<Receipt className="size-6 opacity-80" strokeWidth={1.75} aria-hidden />}
-                action={
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setAddTransactionOpen(true)}
-                  >
-                    Add transaction
-                  </Button>
-                }
-              />
-            </div>
-          </DashboardWidget>
-          <DashboardWidget colSpan={4}>
-            <div className="space-y-2 rounded-xl border border-border/80 bg-card/30 p-3 dark:border-border/60">
-              <p className="px-1 text-xs font-medium text-muted-foreground">LoadingState · table</p>
-              <LoadingState type="table" rows={4} />
-            </div>
-          </DashboardWidget>
-          <DashboardWidget colSpan={4}>
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card/30 dark:border-border/60">
-              <ErrorState
-                title="Couldn’t refresh balances"
-                description="Placeholder copy — map this to real API errors and retry handlers later."
-                retryAction={
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      /* Demo: attach retry handler when API exists */
-                    }}
-                  >
-                    Retry
-                  </Button>
-                }
-              />
-            </div>
-          </DashboardWidget>
-        </DashboardGrid>
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="space-y-2 rounded-xl border border-border/80 bg-card/30 p-3 dark:border-border/60">
-            <p className="px-1 text-xs font-medium text-muted-foreground">LoadingState · analytics</p>
-            <LoadingState type="analytics" />
-          </div>
-          <div className="space-y-2 rounded-xl border border-border/80 bg-card/30 p-3 dark:border-border/60">
-            <p className="px-1 text-xs font-medium text-muted-foreground">LoadingState · dashboard</p>
-            <LoadingState type="dashboard" />
-          </div>
-        </div>
-        <div className="mt-4 overflow-hidden rounded-xl border border-border/80 bg-card/30 dark:border-border/60">
-          <p className="border-b border-border/60 px-4 py-2 text-xs font-medium text-muted-foreground dark:border-border/50">
-            LoadingState · page
-          </p>
-          <LoadingState type="page" />
-        </div>
-      </DashboardSection>
-
-      {/* Savings Goals Section */}
-      <div>
-        <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-          <Target size={24} />
-          Savings Goals
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {savingsGoals.map((goal) => (
-            <GoalCard key={goal.id} goal={goal} />
-          ))}
-        </div>
-      </div>
-
-      <DashboardSection title="Upcoming Reminders">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {reminders.map((reminder) => (
-            <ReminderCard key={reminder.id} reminder={reminder} />
-          ))}
-        </div>
-      </DashboardSection>
-
-      {/* EMI Progress Section */}
-      <div>
-        <h2 className="text-xl font-bold text-foreground mb-4">EMI Tracking</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {emis.map((emi) => (
-            <EMIProgressCard key={emi.id} emi={emi} />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

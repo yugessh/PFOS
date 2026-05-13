@@ -14,21 +14,29 @@ import {
 } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { AuthContextType, AuthState, User } from './types';
+import { getSafeFirebaseConfig, FirebaseConfigError } from '../lib/firebase-config';
 
-// Firebase configuration - should be moved to environment variables
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ''
-};
+// Safe Firebase initialization
+let app: any = null;
+let auth: any = null;
+let googleProvider: any = null;
+let isFirebaseInitialized = false;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+try {
+  const firebaseConfig = getSafeFirebaseConfig();
+  if (firebaseConfig) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+    isFirebaseInitialized = true;
+  }
+} catch (error) {
+  if (error instanceof FirebaseConfigError) {
+    console.error(error.message);
+  } else {
+    console.error('Firebase initialization failed:', error);
+  }
+}
 
 const mapFirebaseUser = (firebaseUser: FirebaseUser | null): User | null => {
   if (!firebaseUser) return null;
@@ -53,6 +61,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isFirebaseInitialized) {
+      setState({
+        user: null,
+        loading: false,
+        initialized: true
+      });
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       const user = mapFirebaseUser(firebaseUser);
       setState({
@@ -66,6 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    if (!isFirebaseInitialized) {
+      throw new Error('Firebase is not configured. Please set up your environment variables.');
+    }
+    
     try {
       setError(null);
       setState(prev => ({ ...prev, loading: true }));
@@ -83,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!isFirebaseInitialized) {
+      throw new Error('Firebase is not configured. Please set up your environment variables.');
+    }
+    
     try {
       setError(null);
       setState(prev => ({ ...prev, loading: true }));
@@ -100,6 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    if (!isFirebaseInitialized) {
+      throw new Error('Firebase is not configured. Please set up your environment variables.');
+    }
+    
     try {
       setError(null);
       setState(prev => ({ ...prev, loading: true }));
@@ -117,6 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!isFirebaseInitialized) {
+      throw new Error('Firebase is not configured. Please set up your environment variables.');
+    }
+    
     try {
       setError(null);
       await firebaseSignOut(auth);
@@ -129,6 +162,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    if (!isFirebaseInitialized) {
+      throw new Error('Firebase is not configured. Please set up your environment variables.');
+    }
+    
     try {
       setError(null);
       await sendPasswordResetEmail(auth, email);
