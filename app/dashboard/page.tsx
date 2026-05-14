@@ -14,13 +14,18 @@ import { useRecurringTransactions } from '@/src/hooks/useRecurringTransactions';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
 import { UpcomingPaymentsWidget } from '@/src/components/dashboard/UpcomingPaymentsWidget';
-import { Plus, TrendingUp, CreditCard, PiggyBank, AlertTriangle, Repeat } from 'lucide-react';
+import { DailySummaryWidget } from '@/src/components/dashboard/DailySummaryWidget';
+import { MonthlyInsightsWidget } from '@/src/components/dashboard/MonthlyInsightsWidget';
+import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
+import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';
+import { Plus, TrendingUp, CreditCard, PiggyBank, AlertTriangle, Repeat, Bell } from 'lucide-react';
 import { formatCurrency, formatCurrencyCompact } from '@/src/lib/currency';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
 
   const { accounts, loading: accountsLoading, addAccount } = useAccounts();
   const {
@@ -74,15 +79,26 @@ export default function Dashboard() {
             <p className="text-blue-100 text-xs mb-1">Home Summary</p>
             <h1 className="text-3xl font-bold">{formatCurrency(totalBalance)}</h1>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            className="bg-white text-blue-600 hover:bg-blue-50 gap-2 shadow-md"
-            onClick={() => setAddTransactionOpen(true)}
-          >
-            <Plus className="size-5" />
-            Add
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="bg-white/10 text-white hover:bg-white/20 border-white/20"
+              onClick={() => setNotificationCenterOpen(true)}
+            >
+              <NotificationBadge className="text-white" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="bg-white text-blue-600 hover:bg-blue-50 gap-2 shadow-md"
+              onClick={() => setAddTransactionOpen(true)}
+            >
+              <Plus className="size-5" />
+              Add
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -156,6 +172,11 @@ export default function Dashboard() {
 
         <UpcomingPaymentsWidget />
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DailySummaryWidget />
+          <MonthlyInsightsWidget />
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900 dark:text-white">Recent Transactions</h2>
@@ -203,6 +224,11 @@ export default function Dashboard() {
         onSave={async (accountData: Partial<Account>) => {
           await addAccount(accountData);
         }}
+      />
+
+      <NotificationCenter
+        isOpen={notificationCenterOpen}
+        onClose={() => setNotificationCenterOpen(false)}
       />
     </div>
   );

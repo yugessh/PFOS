@@ -1,7 +1,8 @@
 'use client';
 
-import { Bell, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useAuthContext } from '@/src/context/AuthContext';
+import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';
 
 export function TopNavbar() {
   const { user, signOut } = useAuthContext();
@@ -15,7 +16,7 @@ export function TopNavbar() {
 
       <div className="flex items-center gap-4">
         <div className="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
-          <Bell size={20} className="text-muted-foreground" />
+          <NotificationBadge />
         </div>
         <div className="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
           <Settings size={20} className="text-muted-foreground" />

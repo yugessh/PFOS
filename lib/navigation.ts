@@ -29,7 +29,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/stats', label: 'Stats', icon: BarChart3, description: 'Monthly spending analytics' },
   { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
   { href: '/dashboard/recurring', label: 'Recurring', icon: Repeat, description: 'Automate recurring finances' },
-  { href: '/dashboard/reminders', label: 'Reminders', icon: Bell, description: 'Bill and payment reminders' },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart financial alerts' },
   { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
   { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'Lightweight financial summary' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
