@@ -18,7 +18,7 @@ function LoginContent() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/transactions');
     }
   }, [user, loading, router]);
 
@@ -28,7 +28,7 @@ function LoginContent() {
     
     try {
       await signIn(email, password);
-      router.push('/dashboard');
+      router.push('/dashboard/transactions');
     } catch (error: any) {
       setError(error.message);
     }
@@ -114,7 +114,7 @@ function LoginContent() {
                     setError('');
                     if (!signInWithGoogle) throw new Error('Google sign-in not available');
                     await signInWithGoogle();
-                    router.push('/dashboard');
+                    router.push('/dashboard/transactions');
                   } catch (err: any) {
                     setError(err?.message || String(err));
                   }

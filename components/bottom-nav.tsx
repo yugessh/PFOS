@@ -5,18 +5,21 @@ import { useActiveRoute } from '@/hooks/use-active-route';
 import { mainNavItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
-// Only show main navigation items in bottom nav, shortened labels for mobile
-const mobileNavItems = mainNavItems.slice(0, 5).map((item) => ({
-  ...item,
-  shortLabel:
-    item.label === 'Transactions'
-      ? 'Trans'
-      : item.label === 'Investments'
-        ? 'Invest'
-        : item.label === 'Budgets'
-          ? 'Budget'
+const MOBILE_NAV_ORDER = ['Transactions', 'Stats', 'Budgets', 'Accounts', 'Dashboard'];
+
+const mobileNavItems = MOBILE_NAV_ORDER.map((label) =>
+  mainNavItems.find((item) => item.label === label)
+)
+  .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  .map((item) => ({
+    ...item,
+    shortLabel:
+      item.label === 'Transactions'
+        ? 'Feed'
+        : item.label === 'Dashboard'
+          ? 'Home'
           : item.label,
-}));
+  }));
 
 export function BottomNav() {
   const { isActive } = useActiveRoute();

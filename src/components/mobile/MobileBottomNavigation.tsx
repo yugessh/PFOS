@@ -2,19 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, List, CreditCard, BarChart2, Settings } from 'lucide-react';
+import { Home, List, CreditCard, BarChart2, PiggyBank } from 'lucide-react';
 import React from 'react';
 
 const tabs = [
+  { href: '/dashboard/transactions', label: 'Feed', icon: List },
+  { href: '/dashboard/stats', label: 'Stats', icon: BarChart2 },
+  { href: '/dashboard/budgets', label: 'Budget', icon: PiggyBank },
+  { href: '/dashboard/accounts', label: 'Accounts', icon: CreditCard },
   { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/transactions', label: 'Transactions', icon: List },
-  { href: '/accounts', label: 'Accounts', icon: CreditCard },
-  { href: '/analytics', label: 'Analytics', icon: BarChart2 },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function MobileBottomNavigation() {
-  const pathname = usePathname() || '/dashboard';
+  const pathname = usePathname() || '/dashboard/transactions';
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 sm:hidden">

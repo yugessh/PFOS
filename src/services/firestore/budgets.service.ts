@@ -12,6 +12,13 @@ import {
 import { getFirestoreClient } from './firebaseClient';
 import { SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { BudgetModel } from '@/src/lib/budgets';
+import { usersService } from './users.service';
+
+async function ensureUserProfile(userId: string) {
+  const existing = await usersService.getUserProfile(userId);
+  if (existing) return;
+  await usersService.initializeUserProfile(userId, { email: '' });
+}
 
 export type BudgetDoc = Omit<BudgetModel, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
   createdAt: any;
@@ -22,6 +29,7 @@ export type BudgetDoc = Omit<BudgetModel, 'createdAt' | 'updatedAt' | 'deletedAt
 export class BudgetsService {
   async getUserBudgets(userId: string, monthKey: string) {
     try {
+      await ensureUserProfile(userId);
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
@@ -47,7 +55,15 @@ export class BudgetsService {
 
       return { success: true, data: { data: documents } } as any;
     } catch (error: any) {
-      return { success: false, error: error?.message || String(error), code: error?.code };
+      const message = error?.message || String(error);
+      if (message.includes('permission') || error?.code === 'permission-denied') {
+        return {
+          success: false,
+          error: 'Permission denied while reading budgets. Please sign out and sign in again.',
+          code: error?.code,
+        };
+      }
+      return { success: false, error: message, code: error?.code };
     }
   }
 
@@ -56,6 +72,7 @@ export class BudgetsService {
     budget: Pick<BudgetModel, 'monthKey' | 'categoryId' | 'categoryName' | 'categoryIcon' | 'monthlyLimit' | 'currency'>
   ) {
     try {
+      await ensureUserProfile(userId);
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
@@ -112,12 +129,21 @@ export class BudgetsService {
 
       return { success: true, data: created };
     } catch (error: any) {
-      return { success: false, error: error?.message || String(error), code: error?.code };
+      const message = error?.message || String(error);
+      if (message.includes('permission') || error?.code === 'permission-denied') {
+        return {
+          success: false,
+          error: 'Permission denied while saving budget. Ensure you are signed in and retry.',
+          code: error?.code,
+        };
+      }
+      return { success: false, error: message, code: error?.code };
     }
   }
 
   async removeBudget(userId: string, budgetId: string) {
     try {
+      await ensureUserProfile(userId);
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
@@ -130,7 +156,15 @@ export class BudgetsService {
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error?.message || String(error), code: error?.code };
+      const message = error?.message || String(error);
+      if (message.includes('permission') || error?.code === 'permission-denied') {
+        return {
+          success: false,
+          error: 'Permission denied while deleting budget. Ensure you are signed in and retry.',
+          code: error?.code,
+        };
+      }
+      return { success: false, error: message, code: error?.code };
     }
   }
 }

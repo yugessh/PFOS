@@ -1,8 +1,8 @@
 import {
   Home,
+  List,
   Wallet,
   PiggyBank,
-  FileText,
   TrendingUp,
   Target,
   DollarSign,
@@ -23,10 +23,11 @@ export interface NavItem {
 }
 
 export const mainNavItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'View your financial overview' },
-  { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
-  { href: '/dashboard/transactions', label: 'Transactions', icon: FileText, description: 'View transactions' },
+  { href: '/dashboard/transactions', label: 'Transactions', icon: List, description: 'Daily transaction feed' },
+  { href: '/dashboard/stats', label: 'Stats', icon: BarChart3, description: 'Monthly spending analytics' },
   { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
+  { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
+  { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'Lightweight financial summary' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
@@ -35,7 +36,8 @@ export const mainNavItems: NavItem[] = [
 ];
 
 export const analyticsNavItems: NavItem[] = [
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, description: 'Financial analytics' },
+  { href: '/dashboard/stats', label: 'Stats', icon: BarChart3, description: 'Monthly analytics' },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Legacy analytics route' },
   { href: '/dashboard/reports', label: 'Reports', icon: PieChart, description: 'Generate reports' },
   { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
 ];

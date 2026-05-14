@@ -7,7 +7,7 @@ export function useActiveRoute() {
 
   const isActive = (href: string): boolean => {
     // Normalize both paths for comparison
-    const normalizedPathname = pathname.replace(/\/$/, '');
+    const normalizedPathname = pathname.replace(/\/$/, '') || '/';
     const normalizedHref = href.replace(/\/$/, '');
 
     // Exact match
@@ -15,8 +15,13 @@ export function useActiveRoute() {
       return true;
     }
 
-    // Handle /dashboard as active when on /dashboard
-    if (normalizedHref === '/dashboard' && normalizedPathname === '/dashboard') {
+    // Keep dashboard summary active only on exact route.
+    if (normalizedHref === '/dashboard') {
+      return normalizedPathname === '/dashboard';
+    }
+
+    // Nested route match for app sections.
+    if (normalizedPathname.startsWith(`${normalizedHref}/`)) {
       return true;
     }
 

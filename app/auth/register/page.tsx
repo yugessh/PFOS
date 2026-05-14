@@ -16,7 +16,7 @@ export default function RegisterPage() {
   // Redirect if already authenticated — do navigation inside effect to avoid render-time routing
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/transactions');
     }
   }, [user, loading, router]);
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
     
     try {
       await signUp(email, password);
-      router.push('/dashboard');
+      router.push('/dashboard/transactions');
     } catch (error: any) {
       setError(error.message);
     }
