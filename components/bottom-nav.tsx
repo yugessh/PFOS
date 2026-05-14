@@ -5,7 +5,7 @@ import { useActiveRoute } from '@/hooks/use-active-route';
 import { mainNavItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
-const MOBILE_NAV_ORDER = ['Transactions', 'Stats', 'Budgets', 'Accounts', 'Dashboard'];
+const MOBILE_NAV_ORDER = ['Transactions', 'Stats', 'Budgets', 'Reminders', 'Dashboard'];
 
 const mobileNavItems = MOBILE_NAV_ORDER.map((label) =>
   mainNavItems.find((item) => item.label === label)
