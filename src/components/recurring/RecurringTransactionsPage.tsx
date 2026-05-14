@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, BellRing, Clock3, Plus, Repeat2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatCurrencyCompact } from '@/src/lib/currency';
+import { useAccounts } from '@/src/hooks/useAccounts';
 import { useRecurringTransactions } from '@/src/hooks/useRecurringTransactions';
 import { RecurringTransactionModal } from './RecurringTransactionModal';
 
@@ -16,6 +17,7 @@ const FREQUENCY_LABEL: Record<string, string> = {
 
 export function RecurringTransactionsPage() {
   const [open, setOpen] = useState(false);
+  const { accounts } = useAccounts();
   const {
     recurringTransactions,
     recurringAlerts,
@@ -25,6 +27,8 @@ export function RecurringTransactionsPage() {
     saveRecurring,
     removeRecurring,
   } = useRecurringTransactions();
+
+  const accountMap = useMemo(() => new Map(accounts.map((item) => [item.id, item.name])), [accounts]);
 
   const totals = useMemo(() => {
     return recurringTransactions.reduce(
@@ -113,6 +117,9 @@ export function RecurringTransactionsPage() {
                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.title}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 capitalize">
                       {item.type} • {item.category} • {FREQUENCY_LABEL[item.frequency]}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">
+                      From {accountMap.get(item.accountId) || 'Account'}{item.type === 'transfer' ? ` → ${accountMap.get(item.toAccountId ?? '') || 'Destination'}` : ''}
                     </p>
                   </div>
                   <button

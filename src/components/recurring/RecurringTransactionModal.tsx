@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,16 @@ export function RecurringTransactionModal({
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
   const [interval, setInterval] = useState('1');
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    if (open && accounts.length > 0 && !accountId) {
+      setAccountId(accounts[0].id);
+      const fallbackTransfer = accounts.find((acc) => acc.id !== accounts[0].id);
+      if (type === 'transfer' && fallbackTransfer) {
+        setToAccountId(fallbackTransfer.id);
+      }
+    }
+  }, [open, accounts, accountId, type]);
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [reminderDaysBefore, setReminderDaysBefore] = useState('2');

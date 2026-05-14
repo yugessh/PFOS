@@ -1,15 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Plus, ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
 import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
-import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
+import { useAuthContext } from '@/src/context/AuthContext';
+import { transactionsService } from '@/src/services/firestore/transactions.service';
+import { TransactionsFilterBar } from '@/src/components/transactions/TransactionsFilterBar';
+import { TransactionsCalendar } from '@/src/components/transactions/TransactionsCalendar';
+import { groupTransactionsByDate, getDayRange, getMonthRange, getMonthLabel, getWeekRange, computeTotals } from '@/src/lib/finance';
 import { formatCurrency, formatCurrencyCompact } from '@/src/lib/currency';
+import { formatDate } from '@/lib/date';
 import type { TransactionFormData } from '@/src/components/transactions/types';
-import { groupTransactionsByDate } from '@/src/lib/finance';
-import { getMonthKey } from '@/src/lib/budgets';
+import type { Transaction } from '@/src/types/transaction';
 
 const CATEGORY_ICON_MAP: Record<string, string> = {
   food: '🍽️',
@@ -33,9 +38,33 @@ function categoryIcon(category: string) {
   return CATEGORY_ICON_MAP[key] || '📦';
 }
 
+function parseTransaction(raw: any): Transaction {
+  return {
+    id: raw.id,
+    description: raw.description || raw.notes || raw.category || 'Transaction',
+    amount: Number(raw.amount || 0),
+    type: raw.type === 'income' ? 'income' : raw.type === 'transfer' ? 'transfer' : 'expense',
+    category: raw.category || 'Other',
+    date: raw.date?.toDate?.() || new Date(raw.date || Date.now()),
+    account: raw.accountId || raw.account || '',
+    ...(raw.toAccount ? { toAccount: raw.toAccount } : {}),
+  };
+}
+
 export default function TransactionsPage() {
   const [addOpen, setAddOpen] = useState(false);
-  const { transactions, getTotals, loading, creating, error, addTransaction } = useTransactions();
+  const [displayMonth, setDisplayMonth] = useState(() => new Date());
+  const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline');
+  const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [selectedDate, setSelectedDate] = useState(() => formatDate(new Date()));
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [accountFilter, setAccountFilter] = useState('all');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [filterError, setFilterError] = useState<string | null>(null);
+
+  const auth = useAuthContext();
+  const { addTransaction } = useTransactions();
   const { accounts } = useAccounts();
 
   const accountNameById = useMemo(() => {
@@ -44,82 +73,205 @@ export default function TransactionsPage() {
     return map;
   }, [accounts]);
 
+  const selectedDateObject = useMemo(() => new Date(selectedDate), [selectedDate]);
+
+  const activeRange = useMemo(() => {
+    if (viewMode === 'calendar') {
+      return getMonthRange(displayMonth.getFullYear(), displayMonth.getMonth() + 1);
+    }
+    if (timeFilter === 'daily') {
+      return getDayRange(selectedDateObject);
+    }
+    if (timeFilter === 'weekly') {
+      return getWeekRange(selectedDateObject);
+    }
+    return getMonthRange(displayMonth.getFullYear(), displayMonth.getMonth() + 1);
+  }, [displayMonth, selectedDateObject, timeFilter, viewMode]);
+
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      setSelectedDate(formatDate(new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1)));
+    }
+  }, [displayMonth, viewMode]);
+
+  useEffect(() => {
+    if (timeFilter !== 'monthly') {
+      setSelectedDate(formatDate(new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1)));
+    }
+  }, [timeFilter, displayMonth]);
+
+  const loadTransactions = useCallback(async () => {
+    const userId = auth?.user?.uid;
+    if (!userId) {
+      setTransactions([]);
+      return;
+    }
+
+    setFilterLoading(true);
+    setFilterError(null);
+
+    try {
+      const response = await transactionsService.getUserTransactionsByRange(
+        userId,
+        activeRange.start,
+        activeRange.end,
+        {
+          accountId: accountFilter === 'all' ? undefined : accountFilter,
+          category: categoryFilter === 'all' ? undefined : categoryFilter,
+        },
+        { orderBy: { field: 'date', direction: 'desc' }, limit: 500 }
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to load transactions');
+      }
+
+      setTransactions(response.data.data.map(parseTransaction));
+    } catch (error: any) {
+      setFilterError(error?.message || String(error));
+      setTransactions([]);
+    } finally {
+      setFilterLoading(false);
+    }
+  }, [auth?.user?.uid, activeRange, accountFilter, categoryFilter]);
+
+  useEffect(() => {
+    void loadTransactions();
+  }, [loadTransactions]);
+
+  const onSaveTransaction = useCallback(
+    async (tx: TransactionFormData) => {
+      await addTransaction(tx);
+      await loadTransactions();
+    },
+    [addTransaction, loadTransactions]
+  );
+
+  const monthLabel = useMemo(() => getMonthLabel(displayMonth), [displayMonth]);
+
   const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
   const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);
-  const { income, expenses } = getTotals();
-  const monthlyKey = getMonthKey();
 
-  const dailySummaries = useMemo(() => {
-    return sortedDates.reduce<Record<string, { income: number; expenses: number }>>((acc, dateKey) => {
-      const total = grouped[dateKey].reduce(
-        (sum, tx) => {
-          if (tx.type === 'income') sum.income += tx.amount || 0;
-          if (tx.type === 'expense') sum.expenses += tx.amount || 0;
-          return sum;
-        },
-        { income: 0, expenses: 0 }
-      );
-      acc[dateKey] = total;
-      return acc;
-    }, {});
-  }, [grouped, sortedDates]);
+  const filteredTransactions = useMemo(() => {
+    if (viewMode === 'calendar') return transactions;
+    if (timeFilter === 'daily') {
+      return transactions.filter((tx) => formatDate(new Date(tx.date)) === selectedDate);
+    }
+    if (timeFilter === 'weekly') {
+      const { start, end } = getWeekRange(selectedDateObject);
+      return transactions.filter((tx) => {
+        const date = new Date(tx.date);
+        return date >= start && date <= end;
+      });
+    }
+    return transactions;
+  }, [transactions, viewMode, timeFilter, selectedDate, selectedDateObject]);
+
+  const { income, expenses, savings } = useMemo(() => computeTotals(filteredTransactions), [filteredTransactions]);
+
+  const categories = useMemo(
+    () => Array.from(new Set(transactions.map((tx) => tx.category))).sort(),
+    [transactions]
+  );
+
+  const selectedDayTransactions = useMemo(
+    () => grouped[selectedDate] || [],
+    [grouped, selectedDate]
+  );
+
+  const selectedDaySummary = useMemo(() => {
+    return selectedDayTransactions.reduce(
+      (sum, tx) => {
+        if (tx.type === 'income') sum.income += tx.amount;
+        if (tx.type === 'expense') sum.expenses += tx.amount;
+        return sum;
+      },
+      { income: 0, expenses: 0 }
+    );
+  }, [selectedDayTransactions]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24 animate-in fade-in duration-300">
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 text-white px-4 pt-6 pb-7 rounded-b-3xl shadow-lg">
-        <div className="flex items-start justify-between mb-3">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-28 animate-in fade-in duration-300">
+      <div className="bg-gradient-to-br from-teal-600 to-sky-700 dark:from-slate-900 dark:to-slate-800 text-white px-4 pt-6 pb-7 rounded-b-3xl shadow-lg">
+        <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <p className="text-blue-100 text-xs mb-1">Transaction Feed</p>
-            <h1 className="text-2xl font-bold">{monthlyKey}</h1>
+            <p className="text-sky-100 text-xs mb-1">Daily finance timeline</p>
+            <h1 className="text-3xl font-bold">{monthLabel}</h1>
           </div>
-          <p className="text-xs text-blue-100 rounded-full bg-white/10 px-2 py-1">{transactions.length} entries</p>
+          <div className="rounded-3xl bg-white/15 px-3 py-2 text-right">
+            <p className="text-[11px] text-sky-100">Visible total</p>
+            <p className="text-lg font-semibold">{formatCurrencyCompact(savings)}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <p className="text-blue-100 text-[11px]">Income</p>
+          <div className="rounded-3xl bg-white/10 p-3">
+            <p className="text-[11px] text-sky-100">Income</p>
             <p className="text-sm font-semibold">{formatCurrencyCompact(income)}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <p className="text-blue-100 text-[11px]">Expense</p>
+          <div className="rounded-3xl bg-white/10 p-3">
+            <p className="text-[11px] text-sky-100">Expense</p>
             <p className="text-sm font-semibold">{formatCurrencyCompact(expenses)}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <p className="text-blue-100 text-[11px]">Net</p>
+          <div className="rounded-3xl bg-white/10 p-3">
+            <p className="text-[11px] text-sky-100">Net</p>
             <p className="text-sm font-semibold">{formatCurrencyCompact(income - expenses)}</p>
           </div>
         </div>
       </div>
 
-      <div className="px-4 -mt-3 space-y-3">
-        {loading || creating ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 text-center text-gray-500 dark:text-gray-400">
-            <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-            <p className="text-sm">{creating ? 'Saving transaction...' : 'Loading transactions...'}</p>
-          </div>
-        ) : sortedDates.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-300">No transactions yet</p>
-            <Button className="mt-3" onClick={() => setAddOpen(true)}>Add your first transaction</Button>
-          </div>
-        ) : (
-          sortedDates.map((dateKey) => {
-            const summary = dailySummaries[dateKey] || { income: 0, expenses: 0 };
-            return (
-              <section key={dateKey} className="space-y-2">
-                <header className="sticky top-16 z-10 flex items-center justify-between rounded-xl bg-gray-100/95 px-3 py-2 backdrop-blur dark:bg-gray-800/95">
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                    {new Date(dateKey).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </p>
-                  <div className="flex items-center gap-3 text-[11px]">
-                    <span className="text-green-600 dark:text-green-400">+{formatCurrencyCompact(summary.income)}</span>
-                    <span className="text-red-600 dark:text-red-400">-{formatCurrencyCompact(summary.expenses)}</span>
-                  </div>
-                </header>
+      <div className="px-4 -mt-3 space-y-4">
+        <TransactionsFilterBar
+          monthLabel={monthLabel}
+          viewMode={viewMode}
+          timeFilter={timeFilter}
+          categoryFilter={categoryFilter}
+          accountFilter={accountFilter}
+          categories={categories}
+          accounts={accounts.map((account) => ({ id: account.id, name: account.name }))}
+          onPreviousMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+          onNextMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+          onViewModeChange={(mode) => setViewMode(mode)}
+          onTimeFilterChange={(value) => setTimeFilter(value)}
+          onCategoryChange={(value) => setCategoryFilter(value)}
+          onAccountChange={(value) => setAccountFilter(value)}
+        />
 
-                <div className="space-y-2">
-                  {grouped[dateKey].map((tx) => {
-                    const accountName = accountNameById.get(tx.account) || 'Unknown account';
+        {filterLoading ? (
+          <div className="rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm text-center text-sm text-gray-500 dark:text-gray-400">
+            Loading your timeline...
+          </div>
+        ) : null}
+
+        {viewMode === 'calendar' ? (
+          <>
+            <TransactionsCalendar
+              currentMonth={displayMonth}
+              transactions={transactions}
+              selectedDate={selectedDate}
+              onSelectDate={(dateKey) => setSelectedDate(dateKey)}
+              onPreviousMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+              onNextMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+            />
+
+            <section className="rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">Selected day</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+                </div>
+                <div className="text-right text-sm">
+                  <p className="text-green-600 dark:text-green-400">+{formatCurrencyCompact(selectedDaySummary.income)}</p>
+                  <p className="text-red-600 dark:text-red-400">-{formatCurrencyCompact(selectedDaySummary.expenses)}</p>
+                </div>
+              </div>
+
+              {selectedDayTransactions.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No transactions on this day.</p>
+              ) : (
+                <div className="space-y-3">
+                  {selectedDayTransactions.map((tx) => {
+                    const accountName = accountNameById.get(tx.account) || 'Unknown';
                     const amountClass =
                       tx.type === 'income'
                         ? 'text-green-600 dark:text-green-400'
@@ -129,79 +281,112 @@ export default function TransactionsPage() {
                     const prefix = tx.type === 'income' ? '+' : tx.type === 'transfer' ? '↔' : '-';
 
                     return (
-                      <article
-                        key={tx.id}
-                        className="rounded-2xl border border-gray-100 bg-white px-3 py-3 shadow-sm transition-transform duration-150 active:scale-[0.99] dark:border-gray-700 dark:bg-gray-800"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex items-center gap-2">
-                            <div className="size-9 shrink-0 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-base">
-                              {tx.type === 'income' ? '💰' : tx.type === 'transfer' ? '↔️' : categoryIcon(tx.category)}
-                            </div>
+                      <article key={tx.id} className="rounded-3xl border border-gray-100 bg-gray-50 px-4 py-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg">{tx.type === 'income' ? '💰' : tx.type === 'transfer' ? '↔️' : categoryIcon(tx.category)}</div>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                {tx.description || tx.category || 'Transaction'}
-                              </p>
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                                {tx.category || tx.type}
-                              </p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{tx.description || tx.category}</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{accountName} • {tx.category}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className={`text-sm font-bold ${amountClass} whitespace-nowrap`}>
-                              {prefix}{formatCurrency(tx.amount)}
-                            </p>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">{tx.type}</p>
+                            <p className={`text-sm font-semibold ${amountClass}`}>{prefix}{formatCurrency(tx.amount)}</p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">{new Date(tx.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
-                        </div>
-
-                        <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 dark:bg-gray-700">
-                            {accountName}
-                          </span>
-                          {tx.type === 'income' ? (
-                            <ArrowDownLeft className="size-3 text-green-500" />
-                          ) : tx.type === 'transfer' ? (
-                            <ArrowLeftRight className="size-3 text-amber-500" />
-                          ) : (
-                            <ArrowUpRight className="size-3 text-red-500" />
-                          )}
-                          {tx.description && tx.description !== tx.category ? (
-                            <span className="truncate">{tx.description}</span>
-                          ) : null}
                         </div>
                       </article>
                     );
                   })}
                 </div>
-              </section>
-            );
-          })
+              )}
+            </section>
+          </>
+        ) : (
+          <div className="space-y-4">
+            {sortedDates.length === 0 ? (
+              <div className="rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm text-center text-sm text-gray-500 dark:text-gray-400">
+                No transactions found for this range.
+              </div>
+            ) : (
+              sortedDates.map((dateKey) => {
+                const dayTransactions = grouped[dateKey] || [];
+                const daySummary = dayTransactions.reduce(
+                  (sum, tx) => {
+                    if (tx.type === 'income') sum.income += tx.amount;
+                    if (tx.type === 'expense') sum.expenses += tx.amount;
+                    return sum;
+                  },
+                  { income: 0, expenses: 0 }
+                );
+
+                return (
+                  <section key={dateKey} className="rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(dateKey).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Net {formatCurrencyCompact(daySummary.income - daySummary.expenses)}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                        <span className="text-green-600 dark:text-green-400">+{formatCurrencyCompact(daySummary.income)}</span>
+                        <span className="text-red-600 dark:text-red-400">-{formatCurrencyCompact(daySummary.expenses)}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {dayTransactions.map((tx) => {
+                        const accountName = accountNameById.get(tx.account) || 'Unknown account';
+                        const amountClass =
+                          tx.type === 'income'
+                            ? 'text-green-600 dark:text-green-400'
+                            : tx.type === 'transfer'
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-red-600 dark:text-red-400';
+                        const prefix = tx.type === 'income' ? '+' : tx.type === 'transfer' ? '↔' : '-';
+
+                        return (
+                          <article key={tx.id} className="flex items-center justify-between gap-3 rounded-3xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg">
+                                {tx.type === 'income' ? '💰' : tx.type === 'transfer' ? '↔️' : categoryIcon(tx.category)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{tx.description || tx.category}</p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{accountName} • {tx.category}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-sm font-semibold ${amountClass}`}>{prefix}{formatCurrency(tx.amount)}</p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400">{new Date(tx.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })
+            )}
+          </div>
         )}
 
-        {error ? (
-          <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200">
-            {error}
+        {filterError ? (
+          <div className="rounded-3xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-200">
+            {filterError}
           </div>
         ) : null}
       </div>
-
-      <AddTransactionModal
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onSave={async (tx: TransactionFormData) => {
-          await addTransaction(tx);
-        }}
-      />
 
       <button
         type="button"
         onClick={() => setAddOpen(true)}
         aria-label="Add transaction"
-        className="lg:hidden fixed bottom-20 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-24 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-sky-600 text-white shadow-xl transition-transform hover:scale-105 active:scale-95"
       >
         <Plus className="size-6" />
       </button>
+
+      <AddTransactionModal open={addOpen} onOpenChange={setAddOpen} onSave={onSaveTransaction} />
     </div>
   );
 }

@@ -164,6 +164,51 @@ export class TransactionsService extends BaseFirestoreService<Transaction> {
     });
   }
 
+  async getUserTransactionsByRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+    filters?: {
+      accountId?: string;
+      category?: string;
+      type?: TransactionType;
+    },
+    options?: any
+  ): Promise<ServiceResponse<ListResponse<Transaction>>> {
+    const whereClauses: WhereClause[] = [
+      {
+        field: 'userId',
+        operator: '==',
+        value: userId,
+      },
+      {
+        field: 'date',
+        operator: '>=',
+        value: startDate,
+      },
+      {
+        field: 'date',
+        operator: '<=',
+        value: endDate,
+      },
+    ];
+
+    if (filters?.accountId) {
+      whereClauses.push({ field: 'accountId', operator: '==', value: filters.accountId });
+    }
+    if (filters?.category) {
+      whereClauses.push({ field: 'category', operator: '==', value: filters.category });
+    }
+    if (filters?.type) {
+      whereClauses.push({ field: 'type', operator: '==', value: filters.type });
+    }
+
+    return this.list({
+      ...options,
+      where: whereClauses,
+    });
+  }
+
   /**
    * Get recurring transactions
    */
