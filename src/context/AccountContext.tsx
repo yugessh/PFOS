@@ -134,7 +134,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           prev.map((acc) => (acc.id === id ? { ...acc, ...patch } : acc))
         );
 
-        const response = await accountsService.update(id, patch);
+        const response = await accountsService.updateAccount(user.uid, id, patch);
         if (!response.success) {
           // Rollback on error
           await fetchAccountsForUser(user.uid);
@@ -159,7 +159,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         // Optimistic update
         setAccounts((prev) => prev.filter((acc) => acc.id !== id));
 
-        const response = await accountsService.softDelete(id);
+        const response = await accountsService.softDeleteAccount(user.uid, id);
         if (!response.success) {
           // Rollback on error
           await fetchAccountsForUser(user.uid);

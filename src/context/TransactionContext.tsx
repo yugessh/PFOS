@@ -4,42 +4,33 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 // When unauthenticated we no longer seed demo transactions — show realistic empty state
 import type { Transaction } from '@/src/types/transaction';
 import type { TransactionFormData, TransactionType } from '@/src/components/transactions/types';
-import { accounts as BASE_ACCOUNTS } from '@/src/data/mock-dashboard';
 import { computeAccountBalances as computeBalancesHelper, getMonthlyTotals } from '@/src/lib/finance';
 import { transactionsService } from '@/src/services/firestore/transactions.service';
 import { useAuthContext } from '@/src/context/AuthContext';
+import { useAccountContext } from '@/src/context/AccountContext';
+import { accountsService } from '@/src/services/firestore/accounts.service';
 
 interface TransactionContextValue {
   transactions: Transaction[];
   loading: boolean;
+  creating: boolean;
   error: string | null;
-  addTransaction: (tx: TransactionFormData) => Transaction;
+  addTransaction: (tx: TransactionFormData) => Promise<Transaction>;
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   removeTransaction: (id: string) => void;
   refresh: () => Promise<void>;
   getTotals: () => { income: number; expenses: number };
-  computeAccountBalances: (baseAccounts?: typeof BASE_ACCOUNTS) => typeof BASE_ACCOUNTS;
+  computeAccountBalances: (baseAccounts?: any[]) => any[];
 }
 
 const TransactionContext = createContext<TransactionContextValue | undefined>(undefined);
 
-function mapFormToTransaction(form: TransactionFormData): Transaction {
-  return {
-    id: `tx_${Date.now()}`,
-    description: form.notes || form.category || (form.type === 'income' ? 'Income' : 'Expense'),
-    amount: form.amount,
-    type: form.type as TransactionType,
-    category: form.category,
-    date: form.date,
-    account: form.account,
-    toAccount: form.toAccount,
-  } as Transaction;
-}
-
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthContext();
+  const { refresh: refreshAccounts } = useAccountContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [creating, setCreating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // Map Firestore transaction shape to local Transaction where possible
@@ -50,7 +41,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
       amount: fx.amount || 0,
       type: (fx.type === 'transfer' ? 'transfer' : (fx.type === 'income' ? 'income' : 'expense')) as TransactionType,
       category: fx.category || 'uncategorized',
-      date: fx.date ? new Date(fx.date) : new Date(),
+      date: fx.date?.toDate?.() ? fx.date.toDate() : (fx.date ? new Date(fx.date) : new Date()),
       account: fx.accountId || fx.account || '',
       ...(fx.toAccount ? { toAccount: fx.toAccount } : {}),
     };
@@ -88,54 +79,88 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     if (auth?.user?.uid) await fetchTransactionsForUser(auth.user.uid);
   }, [auth?.user?.uid]);
 
-  const addTransaction = useCallback((form: TransactionFormData) => {
+  const addTransaction = useCallback(async (form: TransactionFormData) => {
+    if (!auth?.user?.uid) throw new Error('Please sign in to create transactions');
+    if (!form.amount || form.amount <= 0) throw new Error('Enter a valid amount');
+    if (!form.account) throw new Error('Select an account');
+    if (form.type !== 'transfer' && !form.category) throw new Error('Select a category');
+    if (form.type === 'transfer') {
+      if (!form.toAccount) throw new Error('Select destination account for transfer');
+      if (form.toAccount === form.account) throw new Error('Transfer accounts must be different');
+    }
+
     const tempId = `temp_${Date.now()}`;
     const optimistic: Transaction = {
       id: tempId,
       description: form.notes || form.category || (form.type === 'income' ? 'Income' : 'Expense'),
       amount: form.amount,
       type: form.type as TransactionType,
-      category: form.category,
+      category: form.type === 'transfer' ? 'transfer' : form.category,
       date: form.date,
       account: form.account,
+      ...(form.toAccount ? { toAccount: form.toAccount } : {}),
     };
 
     // Optimistic UI update
     setTransactions((s) => [optimistic, ...s]);
+    setCreating(true);
+    setError(null);
 
-    // Persist in background
-    (async () => {
-      if (!auth?.user?.uid) return; // skip persistence for unauthenticated
-      try {
-        const payload = {
-          userId: auth.user.uid,
-          accountId: form.account,
-          toAccount: (form as any).toAccount,
-          amount: form.amount,
-          type: form.type,
-          category: form.category,
-          description: form.notes || form.category,
-          date: form.date,
-        } as any;
+    try {
+      const payload = {
+        userId: auth.user.uid,
+        accountId: form.account,
+        ...(form.toAccount && { toAccount: form.toAccount }),
+        amount: form.amount,
+        type: form.type,
+        category: form.type === 'transfer' ? 'transfer' : form.category,
+        description: form.notes || form.category || (form.type === 'transfer' ? 'Transfer' : 'Transaction'),
+        date: form.date,
+      } as any;
 
-        const res = await transactionsService.createTransaction(auth.user.uid, payload);
-        if (res.success && res.data) {
-          const created = mapFirestoreToLocal(res.data);
-          // Replace temp with created
-          setTransactions((s) => s.map((t) => (t.id === tempId ? created : t)));
-        } else {
-          // rollback optimistic update
-          setTransactions((s) => s.filter((t) => t.id !== tempId));
-          setError(res.error || 'Failed to create transaction');
+      const res = await transactionsService.createTransaction(auth.user.uid, payload);
+      if (res.success && res.data) {
+        const created = mapFirestoreToLocal(res.data);
+        // Replace temp with created
+        setTransactions((s) => s.map((t) => (t.id === tempId ? created : t)));
+
+        // Update account balances in Firestore so account views stay in sync across pages
+        if (form.type === 'income' || form.type === 'expense') {
+          const accountRes = await accountsService.getAccountById(auth.user.uid, form.account);
+          if (accountRes.success && accountRes.data) {
+            const current = Number(accountRes.data.balance || 0);
+            const next = form.type === 'income' ? current + form.amount : current - form.amount;
+            await accountsService.updateBalance(auth.user.uid, form.account, next);
+          }
+        } else if (form.type === 'transfer' && form.toAccount) {
+          const fromRes = await accountsService.getAccountById(auth.user.uid, form.account);
+          const toRes = await accountsService.getAccountById(auth.user.uid, form.toAccount);
+          if (fromRes.success && fromRes.data) {
+            const nextFrom = Number(fromRes.data.balance || 0) - form.amount;
+            await accountsService.updateBalance(auth.user.uid, form.account, nextFrom);
+          }
+          if (toRes.success && toRes.data) {
+            const nextTo = Number(toRes.data.balance || 0) + form.amount;
+            await accountsService.updateBalance(auth.user.uid, form.toAccount, nextTo);
+          }
         }
-      } catch (err: any) {
-        setTransactions((s) => s.filter((t) => t.id !== tempId));
-        setError(err?.message || String(err));
-      }
-    })();
 
-    return optimistic;
-  }, [auth?.user?.uid]);
+        await refreshAccounts();
+        return created;
+      }
+
+      // rollback optimistic update
+      setTransactions((s) => s.filter((t) => t.id !== tempId));
+      throw new Error(res.error || 'Failed to create transaction');
+    } catch (err: any) {
+      setTransactions((s) => s.filter((t) => t.id !== tempId));
+      const message = err?.message || String(err);
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setCreating(false);
+    }
+  }, [auth?.user?.uid, refreshAccounts]);
 
   const updateTransaction = useCallback((id: string, patch: Partial<Transaction>) => {
     // Optimistic update
@@ -180,11 +205,11 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     return { income, expenses };
   }, [transactions]);
 
-  const computeAccountBalances = useCallback((baseAccounts = BASE_ACCOUNTS) => {
+  const computeAccountBalances = useCallback((baseAccounts: any[] = []) => {
     return computeBalancesHelper(baseAccounts as any, transactions as any) as any;
   }, [transactions]);
 
-  const value = useMemo(() => ({ transactions, loading, error, addTransaction, updateTransaction, removeTransaction, refresh, getTotals, computeAccountBalances }), [transactions, loading, error, addTransaction, updateTransaction, removeTransaction, refresh, getTotals, computeAccountBalances]);
+  const value = useMemo(() => ({ transactions, loading, creating, error, addTransaction, updateTransaction, removeTransaction, refresh, getTotals, computeAccountBalances }), [transactions, loading, creating, error, addTransaction, updateTransaction, removeTransaction, refresh, getTotals, computeAccountBalances]);
 
   return <TransactionContext.Provider value={value}>{children}</TransactionContext.Provider>;
 }

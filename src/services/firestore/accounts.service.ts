@@ -2,7 +2,7 @@ import { BaseFirestoreService } from './base.service';
 import { COLLECTIONS, SUBCOLLECTIONS } from '../../constants/collections';
 import { usersService } from './users.service';
 import { getFirestoreClient } from './firebaseClient';
-import { collection as firestoreCollection, addDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
+import { collection as firestoreCollection, addDoc, serverTimestamp, DocumentData, getDocs, query, where, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuthSafe } from '@/src/firebase/firebase';
 
 export interface Account {
@@ -41,46 +41,32 @@ export class AccountsService extends BaseFirestoreService<Account> {
       // Ensure user profile exists so Firestore rules that check /users/{uid} pass
       const existing = await usersService.getUserProfile(userId);
       if (!existing) {
-        // Create a minimal user profile if missing (avoid blocking account creation)
         try {
           await usersService.initializeUserProfile(userId, { email: (accountData as any)?.email || '' });
         } catch (initErr) {
-          // If profile creation fails, continue — we will still attempt account create and map permission errors
           // eslint-disable-next-line no-console
           console.warn('Failed to initialize missing user profile before account create:', initErr);
         }
       }
 
-      // Try top-level accounts collection first (legacy)
-      const data = { ...accountData, userId };
-      const response = await this.create(data as Partial<Account>);
-      if (response.success) return response;
+      // Write account into users/{uid}/accounts subcollection (preferred)
+      const db = getFirestoreClient();
+      if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      // If permission denied, attempt fallback write to users/{uid}/accounts subcollection
-      if (response.code === 'permission-denied' || /permission/.test(String(response.error || ''))) {
-        try {
-          const db = getFirestoreClient();
-          if (db) {
-            const colPath = SUBCOLLECTIONS.USER_ACCOUNTS(userId);
-            const colRef = firestoreCollection(db, colPath) as any;
-            const prepared: DocumentData = {
-              ...data,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              deletedAt: null,
-            };
-            const docRef = await addDoc(colRef, prepared);
-            // Return a synthesized success object (serverTimestamp resolves later)
-            return { success: true, data: { id: docRef.id, ...data, createdAt: new Date(), updatedAt: new Date() } as any };
-          }
-        } catch (fallbackErr: any) {
-          // eslint-disable-next-line no-console
-          console.warn('Fallback write to users subcollection failed:', fallbackErr);
-        }
-        return { success: false, error: 'Permission denied: ensure you are signed in and your account is initialized.' };
-      }
+      const colPath = SUBCOLLECTIONS.USER_ACCOUNTS(userId);
+      const colRef = firestoreCollection(db, colPath) as any;
 
-      return response;
+      const prepared: DocumentData = {
+        ...accountData,
+        userId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        deletedAt: null,
+      };
+
+      const docRef = await addDoc(colRef, prepared);
+      // Return synthesized success — document will have server timestamps once read
+      return { success: true, data: { id: docRef.id, ...accountData, userId, createdAt: new Date(), updatedAt: new Date() } as any };
     } catch (error: any) {
       const msg = error?.message || String(error);
       if (msg.includes('permission') || error?.code === 'permission-denied') {
@@ -94,40 +80,128 @@ export class AccountsService extends BaseFirestoreService<Account> {
    * Get accounts for a specific user
    */
   async getUserAccounts(userId: string) {
-    return this.getByUserId(userId);
+    try {
+      const db = getFirestoreClient();
+      if (!db) return { success: false, error: 'Firestore not initialized' };
+
+      const colPath = SUBCOLLECTIONS.USER_ACCOUNTS(userId);
+      const colRef = firestoreCollection(db, colPath) as any;
+      // filter out soft-deleted documents where deletedAt == null
+      const q = query(colRef, where('deletedAt', '==', null));
+      const snap = await getDocs(q);
+      const documents = snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.() || new Date(), updatedAt: d.data().updatedAt?.toDate?.() || new Date(), deletedAt: d.data().deletedAt?.toDate?.() || null } as Account));
+
+      return { success: true, data: { data: documents } } as any;
+    } catch (error: any) {
+      return { success: false, error: error?.message || String(error), code: error?.code };
+    }
   }
 
   /**
    * Get active accounts for a user
    */
   async getActiveAccounts(userId: string) {
-    return this.list({
-      where: [
-        { field: 'userId', operator: '==', value: userId },
-        { field: 'isActive', operator: '==', value: true },
-      ],
-    });
+    const response = await this.getUserAccounts(userId);
+    if (!response.success) return response as any;
+    const all = (response as any).data?.data || [];
+    const active = all.filter((account: Account) => account.isActive !== false);
+    return { success: true, data: { data: active } } as any;
   }
 
   /**
    * Update account balance
    */
-  async updateBalance(accountId: string, newBalance: number) {
-    return this.update(accountId, { balance: newBalance } as any);
+  async updateBalance(userId: string, accountId: string, newBalance: number) {
+    try {
+      const db = getFirestoreClient();
+      if (!db) return { success: false, error: 'Firestore not initialized' };
+
+      const docRef = doc(db, `${SUBCOLLECTIONS.USER_ACCOUNTS(userId)}/${accountId}`);
+      await updateDoc(docRef, {
+        balance: newBalance,
+        updatedAt: serverTimestamp(),
+      });
+
+      const snapshot = await getDoc(docRef);
+      if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
+      const data = snapshot.data();
+      return {
+        success: true,
+        data: {
+          id: snapshot.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || new Date(),
+          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          deletedAt: data.deletedAt?.toDate?.() || null,
+        } as Account,
+      } as any;
+    } catch (error: any) {
+      return { success: false, error: error?.message || String(error), code: error?.code };
+    }
+  }
+
+  async updateAccount(userId: string, accountId: string, patch: Partial<Account>) {
+    try {
+      const db = getFirestoreClient();
+      if (!db) return { success: false, error: 'Firestore not initialized' };
+
+      const docRef = doc(db, `${SUBCOLLECTIONS.USER_ACCOUNTS(userId)}/${accountId}`);
+      await updateDoc(docRef, {
+        ...patch,
+        updatedAt: serverTimestamp(),
+      });
+
+      const snapshot = await getDoc(docRef);
+      if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
+      const data = snapshot.data();
+      return {
+        success: true,
+        data: {
+          id: snapshot.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || new Date(),
+          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          deletedAt: data.deletedAt?.toDate?.() || null,
+        } as Account,
+      } as any;
+    } catch (error: any) {
+      return { success: false, error: error?.message || String(error), code: error?.code };
+    }
+  }
+
+  async softDeleteAccount(userId: string, accountId: string) {
+    try {
+      const db = getFirestoreClient();
+      if (!db) return { success: false, error: 'Firestore not initialized' };
+
+      const docRef = doc(db, `${SUBCOLLECTIONS.USER_ACCOUNTS(userId)}/${accountId}`);
+      await updateDoc(docRef, {
+        deletedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return { success: true } as any;
+    } catch (error: any) {
+      return { success: false, error: error?.message || String(error), code: error?.code };
+    }
   }
 
   /**
    * Get account by ID (with userId check)
    */
   async getAccountById(userId: string, accountId: string) {
-    const response = await this.getById(accountId);
-    if (response.success && response.data?.userId !== userId) {
-      return {
-        success: false,
-        error: 'Unauthorized: Account does not belong to this user',
-      };
+    try {
+      const db = getFirestoreClient();
+      if (!db) return { success: false, error: 'Firestore not initialized' };
+
+      const docRef = doc(db, SUBCOLLECTIONS.USER_ACCOUNTS(userId) + `/${accountId}`);
+      const snapshot = await getDoc(docRef);
+      if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
+      const data = snapshot.data();
+      const account = { id: snapshot.id, ...data, createdAt: data.createdAt?.toDate?.() || new Date(), updatedAt: data.updatedAt?.toDate?.() || new Date(), deletedAt: data.deletedAt?.toDate?.() || null } as Account;
+      return { success: true, data: account };
+    } catch (error: any) {
+      return { success: false, error: error?.message || String(error), code: error?.code };
     }
-    return response;
   }
 }
 

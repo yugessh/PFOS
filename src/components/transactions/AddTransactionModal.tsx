@@ -17,7 +17,7 @@ interface AddTransactionModalProps {
   onOpenChange: (open: boolean) => void;
   // onSave is optional to avoid crashes when parent doesn't provide a handler.
   // When provided it will be called with TransactionFormData.
-  onSave?: (transaction: TransactionFormData) => void;
+  onSave?: (transaction: TransactionFormData) => Promise<void> | void;
 }
 
 export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransactionModalProps) {
@@ -32,12 +32,36 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
 
   const [toAccount, setToAccount] = useState<string>('');
   const { accounts } = useAccounts();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const categories = getCategoriesByType(formData.type);
 
-  const handleSave = () => {
-    if (!formData.amount || !formData.category || !formData.account) {
-      alert('Please fill in all required fields');
+  const selectorAccounts = (accounts || []).map((acc: any) => ({
+    id: acc.id,
+    name: acc.name,
+    type: acc.type,
+    balance: acc.balance || 0,
+    icon: acc.icon || '🏦',
+    color: acc.color || '#3B82F6',
+  }));
+
+  const handleSave = async () => {
+    setError(null);
+    if (!formData.amount || formData.amount <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+    if (!formData.account) {
+      setError('Please select an account');
+      return;
+    }
+    if (formData.type !== 'transfer' && !formData.category) {
+      setError('Please select a category');
+      return;
+    }
+    if (formData.type === 'transfer' && !toAccount) {
+      setError('Please select a destination account');
       return;
     }
 
@@ -46,18 +70,23 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
       toAccount: formData.type === 'transfer' ? toAccount : undefined,
     };
 
+    setSaving(true);
     if (typeof onSave === 'function') {
       try {
-        onSave(transactionData);
-      } catch (err) {
-        // avoid bubbling runtime errors from parent handlers
+        await onSave(transactionData);
+      } catch (err: any) {
+        const message = err?.message || String(err);
+        setError(message || 'Failed to save transaction');
         // eslint-disable-next-line no-console
         console.error('onSave handler threw an error', err);
+        setSaving(false);
+        return;
       }
     } else {
       // eslint-disable-next-line no-console
       console.warn('AddTransactionModal: onSave handler not provided, transaction not persisted', transactionData);
     }
+    setSaving(false);
     onOpenChange(false);
     
     // Reset form
@@ -116,13 +145,13 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
           {formData.type === 'transfer' ? (
             <>
               <AccountSelector
-                accounts={accounts as any}
+                accounts={selectorAccounts as any}
                 selectedAccount={formData.account}
                 onSelect={(accountId) => setFormData({ ...formData, account: accountId })}
                 label="From Account"
               />
               <AccountSelector
-                accounts={(accounts || []).filter((acc: any) => acc.id !== formData.account) as any}
+                accounts={selectorAccounts.filter((acc: any) => acc.id !== formData.account) as any}
                 selectedAccount={toAccount}
                 onSelect={(accountId) => setToAccount(accountId)}
                 label="To Account"
@@ -130,7 +159,7 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
             </>
           ) : (
             <AccountSelector
-              accounts={accounts as any}
+              accounts={selectorAccounts as any}
               selectedAccount={formData.account}
               onSelect={(accountId) => setFormData({ ...formData, account: accountId })}
             />
@@ -147,6 +176,12 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
             value={formData.notes}
             onChange={(notes) => setFormData({ ...formData, notes })}
           />
+
+          {error ? (
+            <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200">
+              {error}
+            </div>
+          ) : null}
         </div>
 
         {/* Footer */}
@@ -154,9 +189,10 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
           <button
             type="button"
             onClick={handleSave}
+            disabled={saving}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition-colors"
           >
-            Save Transaction
+            {saving ? 'Saving...' : 'Save Transaction'}
           </button>
         </div>
       </div>

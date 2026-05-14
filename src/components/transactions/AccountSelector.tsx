@@ -1,6 +1,7 @@
 'use client';
 
 import { Account } from './types';
+import { formatCurrency } from '@/src/lib/currency';
 
 interface AccountSelectorProps {
   accounts: Account[];
@@ -32,7 +33,7 @@ export function AccountSelector({ accounts, selectedAccount, onSelect, label = '
             </div>
             <div className="text-right">
               <p className={`font-bold ${account.balance >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'}`}>
-                ₹{account.balance.toLocaleString()}
+                {formatCurrency(account.balance)}
               </p>
             </div>
           </button>

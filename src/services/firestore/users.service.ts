@@ -45,7 +45,7 @@ export class UsersService extends BaseFirestoreService<UserProfile> {
     const profile: Partial<UserProfile> = {
       uid: userId,
       email: userData.email,
-      displayName: userData.displayName,
+      ...(userData.displayName && { displayName: userData.displayName }),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       onboardingCompleted: false,

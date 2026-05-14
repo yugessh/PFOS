@@ -81,6 +81,11 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
     
     prepared.updatedAt = now;
     
+    // Ensure deletedAt is explicit null for queries that filter on deletedAt == null
+    if (prepared.deletedAt === undefined) {
+      prepared.deletedAt = null;
+    }
+    
     return prepared;
   }
 

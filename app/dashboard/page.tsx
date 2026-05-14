@@ -11,6 +11,7 @@ import { useAccounts } from '@/src/hooks/useAccounts';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
 import { Plus, TrendingUp, CreditCard, PiggyBank } from 'lucide-react';
+import { formatCurrency, formatCurrencyCompact, calculatePercentage } from '@/src/lib/currency';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function Dashboard() {
@@ -24,12 +25,10 @@ export default function Dashboard() {
     getTotals,
     loading: transactionsLoading,
     error: transactionsError,
-    computeAccountBalances,
+    creating: transactionCreating,
   } = useTransactions();
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
-  const computedAccounts = computeAccountBalances(accounts as any) as Account[];
-  const totalBalance = computedAccounts.reduce((s, a) => s + (a.balance || 0), 0);
-  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
+  const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
 
   if (accounts.length === 0 && !accountsLoading) {
     return (
@@ -67,7 +66,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-start mb-6">
           <div>
             <p className="text-blue-100 text-sm mb-1">Total Balance</p>
-            <h1 className="text-3xl font-bold">₹{(totalBalance / 1000).toFixed(1)}K</h1>
+            <h1 className="text-3xl font-bold">{formatCurrency(totalBalance)}</h1>
           </div>
           <Button
             type="button"
@@ -86,14 +85,14 @@ export default function Dashboard() {
               <TrendingUp className="size-4 text-green-300" />
               <p className="text-blue-100 text-xs">Income</p>
             </div>
-            <p className="text-lg font-semibold">₹{(totalIncome / 1000).toFixed(1)}K</p>
+            <p className="text-lg font-semibold">{formatCurrencyCompact(totalIncome)}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <CreditCard className="size-4 text-red-300" />
               <p className="text-blue-100 text-xs">Expenses</p>
             </div>
-            <p className="text-lg font-semibold">₹{(totalExpenses / 1000).toFixed(1)}K</p>
+            <p className="text-lg font-semibold">{formatCurrencyCompact(totalExpenses)}</p>
           </div>
         </div>
       </div>
@@ -106,12 +105,12 @@ export default function Dashboard() {
           </div>
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{savingsRate.toFixed(0)}%</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{calculatePercentage(totalIncome - totalExpenses, totalIncome, 0)}%</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">of income saved</p>
             </div>
             <div className="text-right">
               <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                ₹{((totalIncome - totalExpenses) / 1000).toFixed(1)}K
+                {formatCurrency(totalIncome - totalExpenses)}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">saved this month</p>
             </div>
@@ -131,7 +130,7 @@ export default function Dashboard() {
             </Button>
           </div>
           <div className="space-y-2">
-            {computedAccounts.map((account) => (
+            {accounts.map((account) => (
               <div
                 key={account.id}
                 className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
@@ -143,7 +142,7 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  ₹{(account.balance / 1000).toFixed(1)}K
+                  {formatCurrency(account.balance)}
                 </p>
               </div>
             ))}
@@ -161,6 +160,11 @@ export default function Dashboard() {
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
               <p className="text-sm">Loading transactions...</p>
+            </div>
+          ) : transactionCreating ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-sm">Saving transaction...</p>
             </div>
           ) : transactionsError ? (
             <div className="text-center py-8 text-red-500">
@@ -183,8 +187,8 @@ export default function Dashboard() {
       <AddTransactionModal
         open={addTransactionOpen}
         onOpenChange={setAddTransactionOpen}
-        onSave={(tx: TransactionFormData) => {
-          addTransaction(tx);
+        onSave={async (tx: TransactionFormData) => {
+          await addTransaction(tx);
         }}
       />
 

@@ -3,6 +3,7 @@
 import { formatDate } from '@/lib/date';
 import type { Transaction } from '@/types';
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { formatCurrency } from '@/src/lib/currency';
 
 interface RecentTransactionsTableProps {
   transactions: Transaction[];
@@ -40,7 +41,7 @@ export function RecentTransactionsTable({ transactions, limit = 5 }: RecentTrans
                   ? 'text-green-600'
                   : 'text-red-600'
               }`}>
-                {transaction.type === 'income' ? '+' : '-'}₹{(transaction.amount / 1000).toFixed(1)}K
+                {transaction.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
               </p>
               <p className="text-xs text-muted-foreground">{formatDate(transaction.date)}</p>
             </div>
