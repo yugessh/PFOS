@@ -8,10 +8,12 @@ import { AddAccountModal } from '@/src/components/accounts/AddAccountModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
 import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
+import { useBudgets } from '@/src/hooks/useBudgets';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
-import { Plus, TrendingUp, CreditCard, PiggyBank } from 'lucide-react';
+import { Plus, TrendingUp, CreditCard, PiggyBank, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatCurrencyCompact, calculatePercentage } from '@/src/lib/currency';
+import { getAccountTypeLabel, getAccountTypeIcon } from '@/src/lib/account-types';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function Dashboard() {
@@ -27,6 +29,7 @@ export default function Dashboard() {
     error: transactionsError,
     creating: transactionCreating,
   } = useTransactions();
+  const { budgetSummary } = useBudgets(transactions);
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
   const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
 
@@ -99,6 +102,35 @@ export default function Dashboard() {
 
       <div className="px-4 -mt-4 space-y-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <PiggyBank className="size-5 text-blue-600" />
+              <h2 className="font-semibold text-gray-900 dark:text-white">Budget Snapshot</h2>
+            </div>
+            {budgetSummary.overBudgetCount > 0 ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                <AlertTriangle className="size-3" />
+                {budgetSummary.overBudgetCount} Over
+              </span>
+            ) : null}
+          </div>
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Remaining Monthly Budget</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {formatCurrency(budgetSummary.totalRemaining)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Spent / Budget</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                {formatCurrencyCompact(budgetSummary.totalSpent)} / {formatCurrencyCompact(budgetSummary.totalBudget)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2 mb-3">
             <PiggyBank className="size-5 text-purple-600" />
             <h2 className="font-semibold text-gray-900 dark:text-white">Savings Rate</h2>
@@ -138,7 +170,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{account.name}</p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {account.type.replace('_', ' ').charAt(0).toUpperCase() + account.type.replace('_', ' ').slice(1)}
+                    {getAccountTypeIcon(account.type)} {getAccountTypeLabel(account.type)}
                   </p>
                 </div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">

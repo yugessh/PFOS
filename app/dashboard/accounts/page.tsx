@@ -7,6 +7,7 @@ import { useAccounts } from '@/src/hooks/useAccounts';
 import { AddAccountModal } from '@/src/components/accounts/AddAccountModal';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
 import { formatCurrency } from '@/src/lib/currency';
+import { getAccountTypeLabel, getAccountTypeIcon } from '@/src/lib/account-types';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function AccountsPage() {
@@ -65,8 +66,8 @@ export default function AccountsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">{account.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                    {account.type.replace('_', ' ')} • {account.currency || 'INR'}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {getAccountTypeIcon(account.type)} {getAccountTypeLabel(account.type)} • {account.currency || 'INR'}
                   </p>
                 </div>
                 <p className="text-lg font-bold text-gray-900 dark:text-white">

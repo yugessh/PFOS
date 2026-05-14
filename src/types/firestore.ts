@@ -67,13 +67,15 @@ export interface Account extends BaseDocument {
 }
 
 export type AccountType = 
-  | 'checking'
+  | 'cash'
   | 'savings'
+  | 'checking'
   | 'credit_card'
-  | 'debit_card'
   | 'investment'
   | 'loan'
-  | 'cash'
+  | 'wallet'
+  | 'crypto_wallet'
+  | 'debit_card'
   | 'digital_wallet'
   | 'other';
 
@@ -115,6 +117,18 @@ export interface Category extends BaseDocument {
   isDefault: boolean;
   isActive: boolean;
   budget?: number; // Monthly budget for this category
+}
+
+// Budget collection
+export interface Budget extends BaseDocument {
+  userId: string;
+  monthKey: string; // YYYY-MM
+  categoryId: string;
+  categoryName: string;
+  categoryIcon?: string;
+  monthlyLimit: number;
+  currency: string;
+  isActive: boolean;
 }
 
 // Investment collection

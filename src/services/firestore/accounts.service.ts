@@ -9,7 +9,18 @@ export interface Account {
   id: string;
   userId: string;
   name: string;
-  type: 'checking' | 'savings' | 'credit_card' | 'investment' | 'loan';
+  type:
+    | 'cash'
+    | 'savings'
+    | 'checking'
+    | 'credit_card'
+    | 'investment'
+    | 'loan'
+    | 'wallet'
+    | 'crypto_wallet'
+    | 'digital_wallet'
+    | 'debit_card'
+    | 'other';
   balance: number;
   currency: string;
   isActive: boolean;

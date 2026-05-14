@@ -8,7 +8,14 @@ import { cn } from '@/lib/utils';
 // Only show main navigation items in bottom nav, shortened labels for mobile
 const mobileNavItems = mainNavItems.slice(0, 5).map((item) => ({
   ...item,
-  shortLabel: item.label === 'Transactions' ? 'Trans' : item.label === 'Investments' ? 'Invest' : item.label,
+  shortLabel:
+    item.label === 'Transactions'
+      ? 'Trans'
+      : item.label === 'Investments'
+        ? 'Invest'
+        : item.label === 'Budgets'
+          ? 'Budget'
+          : item.label,
 }));
 
 export function BottomNav() {

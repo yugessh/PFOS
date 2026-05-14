@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Account } from '@/src/services/firestore/accounts.service';
+import {
+  ACCOUNT_TYPE_OPTIONS,
+  getAccountTypeIcon,
+  getAccountTypeMeta,
+  toCanonicalAccountType,
+} from '@/src/lib/account-types';
 
 interface AddAccountModalProps {
   open: boolean;
@@ -11,20 +17,13 @@ interface AddAccountModalProps {
   onSave?: (account: Partial<Account>) => Promise<void> | void;
 }
 
-const ACCOUNT_TYPES = [
-  { value: 'checking', label: 'Checking Account', icon: '🏦' },
-  { value: 'savings', label: 'Savings Account', icon: '🏪' },
-  { value: 'credit_card', label: 'Credit Card', icon: '💳' },
-  { value: 'investment', label: 'Investment', icon: '📈' },
-  { value: 'loan', label: 'Loan', icon: '💰' },
-] as const;
-
 export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalProps) {
   const [formData, setFormData] = useState<Partial<Account>>({
     name: '',
     type: 'checking',
     balance: 0,
     currency: 'INR',
+    icon: getAccountTypeIcon('checking'),
     isActive: true,
   });
   const [saving, setSaving] = useState(false);
@@ -64,6 +63,7 @@ export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalP
         type: 'checking',
         balance: 0,
         currency: 'INR',
+        icon: getAccountTypeIcon('checking'),
         isActive: true,
       });
     } catch (err: any) {
@@ -119,26 +119,38 @@ export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalP
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Account Type
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {ACCOUNT_TYPES.map((type) => (
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {ACCOUNT_TYPE_OPTIONS.map((typeOption) => {
+                const selectedType = toCanonicalAccountType(formData.type);
+                const isSelected = selectedType === typeOption.value;
+
+                return (
                 <button
-                  key={type.value}
+                  key={typeOption.value}
                   type="button"
-                  onClick={() =>
-                    setFormData((prev) => ({ ...prev, type: type.value as any }))
-                  }
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      type: typeOption.value,
+                      icon: typeOption.icon,
+                    }));
+                  }}
                   className={`p-3 rounded-lg border-2 text-center transition-all ${
-                    formData.type === type.value
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
+                    isSelected
+                      ? 'border-blue-500 bg-blue-50 shadow-sm dark:border-blue-400 dark:bg-blue-900/30'
+                      : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800'
                   }`}
                 >
-                  <div className="text-xl mb-1">{type.icon}</div>
-                  <div className="text-xs font-medium text-gray-900 dark:text-white">
-                    {type.label}
+                  <div className="text-2xl mb-1">{typeOption.icon}</div>
+                  <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                    {typeOption.label}
+                  </div>
+                  <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
+                    {typeOption.description}
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -178,6 +190,13 @@ export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalP
               <option value="EUR">€ Euro</option>
               <option value="GBP">£ British Pound</option>
             </select>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/60">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Selected Type</p>
+            <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+              {getAccountTypeMeta(formData.type).icon} {getAccountTypeMeta(formData.type).label}
+            </p>
           </div>
 
           {/* Error Message */}

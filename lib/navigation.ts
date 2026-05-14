@@ -1,6 +1,7 @@
 import {
   Home,
   Wallet,
+  PiggyBank,
   FileText,
   TrendingUp,
   Target,
@@ -25,6 +26,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'View your financial overview' },
   { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
   { href: '/dashboard/transactions', label: 'Transactions', icon: FileText, description: 'View transactions' },
+  { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
