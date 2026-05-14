@@ -10,9 +10,10 @@ import { TransactionFormData } from '@/src/components/transactions/types';
 import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
 import { useBudgets } from '@/src/hooks/useBudgets';
+import { useRecurringTransactions } from '@/src/hooks/useRecurringTransactions';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
-import { Plus, TrendingUp, CreditCard, PiggyBank, AlertTriangle } from 'lucide-react';
+import { Plus, TrendingUp, CreditCard, PiggyBank, AlertTriangle, Repeat } from 'lucide-react';
 import { formatCurrency, formatCurrencyCompact } from '@/src/lib/currency';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
@@ -30,6 +31,7 @@ export default function Dashboard() {
     creating: transactionCreating,
   } = useTransactions();
   const { budgetSummary } = useBudgets(transactions);
+  const { recurringAlerts } = useRecurringTransactions();
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
   const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
 
@@ -149,6 +151,33 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Repeat className="size-5 text-indigo-600" />
+              <h2 className="font-semibold text-gray-900 dark:text-white">Recurring Alerts</h2>
+            </div>
+            <Link href="/dashboard/recurring" className="text-xs text-blue-600 dark:text-blue-400">Manage</Link>
+          </div>
+          {recurringAlerts.length === 0 ? (
+            <p className="text-xs text-gray-500 dark:text-gray-400">No recurring payments due in the next 7 days.</p>
+          ) : (
+            <div className="space-y-2">
+              {recurringAlerts.slice(0, 3).map((alert) => (
+                <div key={`${alert.recurringId}-${alert.dueDate.toISOString()}`} className="rounded-lg bg-gray-50 dark:bg-gray-700/60 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{alert.title}</p>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{formatCurrency(alert.amount)}</p>
+                  </div>
+                  <p className={`text-[11px] mt-1 ${alert.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                    {alert.isOverdue ? `${Math.abs(alert.daysUntilDue)} days overdue` : alert.daysUntilDue === 0 ? 'Due today' : `Due in ${alert.daysUntilDue} days`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">

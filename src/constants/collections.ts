@@ -7,6 +7,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   ACCOUNTS: 'accounts',
   TRANSACTIONS: 'transactions',
+  RECURRING_TRANSACTIONS: 'recurringTransactions',
   CATEGORIES: 'categories',
   BUDGETS: 'budgets',
   INVESTMENTS: 'investments',
@@ -26,6 +27,7 @@ export const SUBCOLLECTIONS = {
   // User subcollections
   USER_ACCOUNTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.ACCOUNTS}`,
   USER_TRANSACTIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.TRANSACTIONS}`,
+  USER_RECURRING_TRANSACTIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.RECURRING_TRANSACTIONS}`,
   USER_CATEGORIES: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.CATEGORIES}`,
   USER_BUDGETS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.BUDGETS}`,
   USER_INVESTMENTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.INVESTMENTS}`,

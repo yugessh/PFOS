@@ -106,6 +106,29 @@ export interface RecurringRule {
   count?: number;
 }
 
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+// Recurring transactions collection
+export interface RecurringTransaction extends BaseDocument {
+  userId: string;
+  title: string;
+  type: TransactionType;
+  amount: number;
+  category: string;
+  accountId: string;
+  toAccountId?: string;
+  frequency: RecurringFrequency;
+  interval: number;
+  startDate: Date;
+  nextRunDate: Date;
+  lastRunDate?: Date;
+  endDate?: Date;
+  notes?: string;
+  currency: string;
+  reminderDaysBefore: number;
+  isActive: boolean;
+}
+
 // Category collection
 export interface Category extends BaseDocument {
   userId: string;

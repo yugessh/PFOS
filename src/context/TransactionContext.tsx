@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 // When unauthenticated we no longer seed demo transactions — show realistic empty state
 import type { Transaction } from '@/src/types/transaction';
 import type { TransactionFormData, TransactionType } from '@/src/components/transactions/types';
@@ -9,6 +9,7 @@ import { transactionsService } from '@/src/services/firestore/transactions.servi
 import { useAuthContext } from '@/src/context/AuthContext';
 import { useAccountContext } from '@/src/context/AccountContext';
 import { accountsService } from '@/src/services/firestore/accounts.service';
+import { runRecurringAutomationForUser } from '@/src/services/recurring/automation';
 
 interface TransactionContextValue {
   transactions: Transaction[];
@@ -32,6 +33,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState<boolean>(false);
   const [creating, setCreating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const recurringAutomationRunForUid = useRef<string | null>(null);
 
   // Map Firestore transaction shape to local Transaction where possible
   function mapFirestoreToLocal(fx: any): Transaction {
@@ -78,6 +80,53 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   const refresh = useCallback(async () => {
     if (auth?.user?.uid) await fetchTransactionsForUser(auth.user.uid);
   }, [auth?.user?.uid]);
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid) {
+      recurringAutomationRunForUid.current = null;
+      return;
+    }
+
+    if (recurringAutomationRunForUid.current === uid) return;
+    recurringAutomationRunForUid.current = uid;
+
+    (async () => {
+      try {
+        const result = await runRecurringAutomationForUser(uid);
+        if (result.generatedCount > 0) {
+          await refresh();
+          await refreshAccounts();
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('Recurring automation failed:', err);
+      }
+    })();
+  }, [auth?.user?.uid, refresh, refreshAccounts]);
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid) return;
+
+    const handleRecurringUpdated = async () => {
+      try {
+        const result = await runRecurringAutomationForUser(uid);
+        if (result.generatedCount > 0) {
+          await refresh();
+          await refreshAccounts();
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('Recurring update automation failed:', err);
+      }
+    };
+
+    window.addEventListener('pfos:recurring-updated', handleRecurringUpdated);
+    return () => {
+      window.removeEventListener('pfos:recurring-updated', handleRecurringUpdated);
+    };
+  }, [auth?.user?.uid, refresh, refreshAccounts]);
 
   const addTransaction = useCallback(async (form: TransactionFormData) => {
     if (!auth?.user?.uid) throw new Error('Please sign in to create transactions');
