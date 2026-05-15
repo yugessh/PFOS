@@ -18,7 +18,7 @@ interface AddAccountModalProps {
 }
 
 export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalProps) {
-  const [formData, setFormData] = useState<Partial<Account>>({
+  const [formData, setFormData] = useState<Partial<Account> & { icon?: string }>({
     name: '',
     type: 'checking',
     balance: 0,

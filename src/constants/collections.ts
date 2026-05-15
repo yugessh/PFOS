@@ -41,7 +41,6 @@ export const SUBCOLLECTIONS = {
   USER_NOTIFICATIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.NOTIFICATIONS}`,
   USER_SMART_ALERTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/smartAlerts`,
   USER_NOTIFICATION_SETTINGS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/notificationSettings`,
-  USER_NOTIFICATIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.NOTIFICATIONS}`,
   
   // Account subcollections
   ACCOUNT_TRANSACTIONS: (userId: string, accountId: string) => 

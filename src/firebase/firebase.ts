@@ -25,16 +25,18 @@ export function initializeFirebase() {
     app = initializeApp(cfg as any);
     try {
       db = getFirestore(app);
-    } catch (e) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       // eslint-disable-next-line no-console
-      console.warn('getFirestore failed during initialization:', e?.message || e);
+      console.warn('getFirestore failed during initialization:', message);
       db = undefined;
     }
     try {
       auth = getAuth(app);
-    } catch (e) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       // eslint-disable-next-line no-console
-      console.warn('getAuth failed during initialization:', e?.message || e);
+      console.warn('getAuth failed during initialization:', message);
       auth = undefined;
     }
   }

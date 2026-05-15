@@ -97,9 +97,10 @@ export class BudgetsService {
         const existing = existingSnap.docs[0];
         await updateDoc(doc(db, `${colPath}/${existing.id}`), payload);
 
+        const existingData = existing.data() as DocumentData;
         const updated = {
           id: existing.id,
-          ...existing.data(),
+          ...existingData,
           ...budget,
           userId,
           isActive: true,

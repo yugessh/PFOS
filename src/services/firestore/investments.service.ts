@@ -24,7 +24,7 @@ export class InvestmentsService extends BaseFirestoreService<InvestmentModel> {
   }
 
   async deleteInvestment(investmentId: string) {
-    return this.delete(investmentId);
+    return this.softDelete(investmentId);
   }
 
   async getInvestmentsByType(userId: string, type: InvestmentModel['type']) {
@@ -39,13 +39,23 @@ export class InvestmentsService extends BaseFirestoreService<InvestmentModel> {
   async getTotalInvested(userId: string) {
     const investments = await this.getUserInvestments(userId);
     if (!investments.success) return 0;
-    return investments.data?.reduce((sum, inv) => sum + (inv.amountInvested || 0), 0) || 0;
+    const investmentItems = Array.isArray(investments.data)
+      ? investments.data
+      : Array.isArray(investments.data?.data)
+      ? investments.data.data
+      : [];
+    return investmentItems.reduce((sum, inv) => sum + (inv.amountInvested || 0), 0) || 0;
   }
 
   async getTotalCurrentValue(userId: string) {
     const investments = await this.getUserInvestments(userId);
     if (!investments.success) return 0;
-    return investments.data?.reduce((sum, inv) => sum + (inv.currentValue || 0), 0) || 0;
+    const investmentItems = Array.isArray(investments.data)
+      ? investments.data
+      : Array.isArray(investments.data?.data)
+      ? investments.data.data
+      : [];
+    return investmentItems.reduce((sum, inv) => sum + (inv.currentValue || 0), 0) || 0;
   }
 }
 

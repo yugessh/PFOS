@@ -1,11 +1,10 @@
 'use client';
 
-import { getTotalBalance } from '@/src/data/mock-accounts';
-import type { AccountModel } from '@/src/data/mock-accounts';
-import { CurrencyDollar, Wallet } from 'lucide-react';
+import type { Account } from '@/src/services/firestore/accounts.service';
+import { Wallet } from 'lucide-react';
 
 interface Props {
-  accounts: AccountModel[];
+  accounts: Account[];
   className?: string;
 }
 
@@ -16,7 +15,7 @@ function formatMoney(value: number) {
 }
 
 export function AccountBalanceCard({ accounts, className }: Props) {
-  const total = getTotalBalance(accounts);
+  const total = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
 
   return (
     <div className={`rounded-lg border border-border/60 bg-gradient-to-br from-white/60 to-muted/10 p-4 shadow-sm ${className ?? ''}`}>

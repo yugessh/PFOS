@@ -26,8 +26,14 @@ export function useGoals() {
 
     try {
       const response = await goalsService.getUserGoals(userId);
-      if (response.success && response.data) {
-        setGoals(response.data);
+      const safeGoals = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+
+      if (response.success) {
+        setGoals(safeGoals);
       } else {
         setGoals([]);
       }

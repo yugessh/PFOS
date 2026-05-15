@@ -124,7 +124,7 @@ export function NotificationsPage() {
               </div>
 
               {/* Notifications in group */}
-              {(groups[group] || []).map(notification => (
+              {(groupedNotifications[group] || []).map(notification => (
                 <div
                   key={notification.id}
                   className={`

@@ -137,7 +137,8 @@ export function UpcomingPaymentsWidget({ compact = false }: UpcomingPaymentsWidg
         <div className="space-y-3">
           {allAlerts.map((alert) => {
             const Icon = alert.icon;
-            const accountName = alert.accountId ? accountMap.get(alert.accountId) : null;
+            const accountId = 'accountId' in alert ? String(alert.accountId) : undefined;
+            const accountName = accountId ? accountMap.get(accountId) : null;
 
             return (
               <div key={`${alert.type}-${alert.title}-${alert.dueDate.toISOString()}`} className="rounded-lg bg-gray-50 dark:bg-gray-700/60 p-3">

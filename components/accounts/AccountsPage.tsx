@@ -5,17 +5,17 @@ import { AccountBalanceCard } from './AccountBalanceCard';
 import { AccountCard } from './AccountCard';
 import { AddAccountModal } from './AddAccountModal';
 import { Plus } from 'lucide-react';
-import { useAccounts } from '@/hooks/useAccounts';
+import { useAccounts } from '@/src/hooks/useAccounts';
 
 export function AccountsPage() {
-  const { accounts, loading, error, create } = useAccounts();
+  const { accounts, loading, error, addAccount } = useAccounts();
   const [open, setOpen] = useState(false);
 
   const total = useMemo(() => accounts.length, [accounts]);
 
   async function handleSave(a: any) {
     try {
-      await create(a);
+      await addAccount(a);
     } catch (err) {
       // error already handled in hook; could show a toast here
       console.error('Failed to create account', err);
@@ -38,7 +38,7 @@ export function AccountsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {accounts.map((a) => (
+              {accounts.map((a: any) => (
                 <AccountCard key={a.id} account={a} />
               ))}
             </div>

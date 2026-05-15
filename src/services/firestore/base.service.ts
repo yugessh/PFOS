@@ -354,14 +354,17 @@ export abstract class BaseFirestoreService<T extends BaseDocument> {
    * Get document reference
    */
   getDocumentReference(id: string): DocumentReference<DocumentData> {
-    return doc(db, this.collectionName, id);
+    const _db = getFirestoreClient();
+    if (!_db) throw new Error('Firestore not initialized');
+    return doc(_db, this.collectionName, id);
   }
 
   /**
    * Get collection reference
    */
   getCollectionReference(): CollectionReference<DocumentData> {
-    return this.collection;
+    if (!this.collectionRef) throw new Error('Firestore not initialized');
+    return this.collectionRef;
   }
 
   /**

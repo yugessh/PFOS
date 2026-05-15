@@ -8,7 +8,7 @@ export interface BaseDocument {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 }
 
 // User collection

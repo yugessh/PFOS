@@ -27,7 +27,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
       {!isDashboardRoute ? <MobileBottomNavigation /> : null}
 
       {!isDashboardRoute ? (
-        <AddTransactionModal open={addOpen} onOpenChange={setAddOpen} onSave={(tx) => addTransaction(tx)} />
+        <AddTransactionModal
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          onSave={async (tx) => {
+            await addTransaction(tx);
+          }}
+        />
       ) : null}
     </div>
   );

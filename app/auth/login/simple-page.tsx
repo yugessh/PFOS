@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthContext } from '../../../../src/context/AuthContext';
+import { useAuthContext } from '../../../src/context/AuthContext';
 
 export default function SimpleLoginPage() {
   const [email, setEmail] = useState('');

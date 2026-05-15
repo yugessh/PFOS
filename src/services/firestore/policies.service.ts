@@ -24,21 +24,30 @@ export class PoliciesService extends BaseFirestoreService<PolicyModel> {
   }
 
   async deletePolicy(policyId: string) {
-    return this.delete(policyId);
+    return this.softDelete(policyId);
   }
 
   async getTotalPremium(userId: string) {
     const policies = await this.getUserPolicies(userId);
     if (!policies.success) return 0;
-    return policies.data?.reduce((sum, policy) => sum + (policy.premium || 0), 0) || 0;
+    const policyItems = Array.isArray(policies.data)
+      ? policies.data
+      : Array.isArray(policies.data?.data)
+      ? policies.data.data
+      : [];
+    return policyItems.reduce((sum, policy) => sum + (policy.premium || 0), 0) || 0;
   }
 
   async getActivePolicies(userId: string) {
     const policies = await this.getUserPolicies(userId);
     if (!policies.success) return [];
-    
+    const policyItems = Array.isArray(policies.data)
+      ? policies.data
+      : Array.isArray(policies.data?.data)
+      ? policies.data.data
+      : [];
     const now = new Date();
-    return policies.data?.filter(p => p.renewalDate > now) || [];
+    return policyItems.filter(p => p.renewalDate > now);
   }
 }
 

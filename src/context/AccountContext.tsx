@@ -37,8 +37,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           await usersService.initializeUserProfile(userId, { email: '' });
           // retry
           const retry = await accountsService.getUserAccounts(userId);
-          if (retry.success && retry.data?.data) {
-            const activeAccounts = (retry.data.data as Account[]).filter((acc) => !acc.deletedAt);
+          const retryFetchedAccounts = Array.isArray(retry.data)
+            ? retry.data
+            : Array.isArray(retry.data?.data)
+            ? retry.data.data
+            : [];
+          if (retry.success) {
+            const activeAccounts = (retryFetchedAccounts as Account[]).filter((acc) => !acc.deletedAt);
             setAccounts(activeAccounts);
             return;
           }
@@ -48,9 +53,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           console.warn('Failed to initialize user before fetching accounts:', initErr);
         }
       }
-      if (response.success && response.data?.data) {
-        // Filter out soft-deleted accounts
-        const activeAccounts = (response.data.data as Account[]).filter(
+      if (response.success) {
+        const fetchedAccounts = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+        const activeAccounts = (fetchedAccounts as Account[]).filter(
           (acc) => !acc.deletedAt
         );
         setAccounts(activeAccounts);

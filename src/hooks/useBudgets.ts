@@ -67,7 +67,12 @@ export function useBudgets(transactions: Transaction[]) {
       if (!response.success) {
         throw new Error(response.error || 'Failed to fetch budgets');
       }
-      setBudgets((response.data?.data || []) as BudgetModel[]);
+      const safeBudgets = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+      setBudgets(safeBudgets as BudgetModel[]);
     } catch (err: any) {
       setError(err?.message || String(err));
       setBudgets([]);

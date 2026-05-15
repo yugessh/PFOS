@@ -24,7 +24,7 @@ export class GoalsService extends BaseFirestoreService<GoalModel> {
   }
 
   async deleteGoal(goalId: string) {
-    return this.delete(goalId);
+    return this.softDelete(goalId);
   }
 
   async updateSavedAmount(goalId: string, newAmount: number) {
@@ -34,19 +34,34 @@ export class GoalsService extends BaseFirestoreService<GoalModel> {
   async getTotalGoals(userId: string) {
     const goals = await this.getUserGoals(userId);
     if (!goals.success) return 0;
-    return goals.data?.length || 0;
+    const goalItems = Array.isArray(goals.data)
+      ? goals.data
+      : Array.isArray(goals.data?.data)
+      ? goals.data.data
+      : [];
+    return goalItems.length || 0;
   }
 
   async getTotalTargetAmount(userId: string) {
     const goals = await this.getUserGoals(userId);
     if (!goals.success) return 0;
-    return goals.data?.reduce((sum, goal) => sum + (goal.targetAmount || 0), 0) || 0;
+    const goalItems = Array.isArray(goals.data)
+      ? goals.data
+      : Array.isArray(goals.data?.data)
+      ? goals.data.data
+      : [];
+    return goalItems.reduce((sum, goal) => sum + (goal.targetAmount || 0), 0) || 0;
   }
 
   async getTotalSavedAmount(userId: string) {
     const goals = await this.getUserGoals(userId);
     if (!goals.success) return 0;
-    return goals.data?.reduce((sum, goal) => sum + (goal.savedAmount || 0), 0) || 0;
+    const goalItems = Array.isArray(goals.data)
+      ? goals.data
+      : Array.isArray(goals.data?.data)
+      ? goals.data.data
+      : [];
+    return goalItems.reduce((sum, goal) => sum + (goal.savedAmount || 0), 0) || 0;
   }
 }
 

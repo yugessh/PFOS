@@ -25,8 +25,14 @@ export function usePolicies() {
 
     try {
       const response = await policiesService.getUserPolicies(userId);
-      if (response.success && response.data) {
-        setPolicies(response.data);
+      const safePolicies = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+
+      if (response.success) {
+        setPolicies(safePolicies);
       } else {
         setPolicies([]);
       }

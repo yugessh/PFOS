@@ -24,7 +24,7 @@ export class SettlementsService extends BaseFirestoreService<SettlementModel> {
   }
 
   async deleteSettlement(settlementId: string) {
-    return this.delete(settlementId);
+    return this.softDelete(settlementId);
   }
 
   async markAsPaid(settlementId: string, paidDate: Date = new Date()) {
@@ -34,8 +34,12 @@ export class SettlementsService extends BaseFirestoreService<SettlementModel> {
   async getPendingSettlements(userId: string) {
     const settlements = await this.getUserSettlements(userId);
     if (!settlements.success) return [];
-    
-    return settlements.data?.filter(s => !s.isPaid) || [];
+    const settlementItems = Array.isArray(settlements.data)
+      ? settlements.data
+      : Array.isArray(settlements.data?.data)
+      ? settlements.data.data
+      : [];
+    return settlementItems.filter(s => !s.isPaid);
   }
 
   async getTotalPending(userId: string) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDate, formatDateShort } from '@/lib/date';
+import { formatDate } from '@/lib/date';
 import { formatCurrency } from '@/src/lib/currency';
 import type { Transaction } from '@/types';
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
@@ -134,7 +134,7 @@ export function CompactTransactionFeed({
                           {transaction.description}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {transaction.accountName || 'Unknown'}
+                          {transaction.account || 'Unknown'}
                         </p>
                       </div>
                     </div>

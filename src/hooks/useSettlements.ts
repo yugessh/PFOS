@@ -30,8 +30,14 @@ export function useSettlements() {
         console.log('settlements type:', typeof response.data, response.data);
       }
 
-      if (response.success && response.data && Array.isArray(response.data)) {
-        setSettlements(response.data);
+      const safeSettlements = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+
+      if (response.success) {
+        setSettlements(safeSettlements);
       } else {
         setSettlements([]);
       }

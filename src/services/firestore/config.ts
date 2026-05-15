@@ -22,9 +22,10 @@ if (safeConfig) {
       connectFirestoreEmulator(db, host, parseInt(port));
       // eslint-disable-next-line no-console
       console.log('Connected to Firestore emulator at:', host, port);
-    } catch (e) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       // eslint-disable-next-line no-console
-      console.warn('Failed to connect to Firestore emulator:', e?.message || e);
+      console.warn('Failed to connect to Firestore emulator:', message);
     }
   }
 } else {

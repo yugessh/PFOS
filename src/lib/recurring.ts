@@ -17,7 +17,7 @@ export interface RecurringTransactionModel {
   lastRunDate?: Date | null;
   endDate?: Date | null;
   notes?: string;
-  currency: 'INR' | 'USD' | 'EUR' | 'GBP';
+  currency: string;
   reminderDaysBefore: number;
   isActive: boolean;
   createdAt: Date;

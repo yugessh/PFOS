@@ -24,7 +24,7 @@ export function useNotifications() {
     try {
       setLoading(true);
       const userNotifications = await notificationsService.getUserNotifications(userId);
-      setNotifications(userNotifications);
+      setNotifications(Array.isArray(userNotifications) ? userNotifications : []);
       setError(null);
     } catch (err) {
       console.error('Error loading notifications:', err);

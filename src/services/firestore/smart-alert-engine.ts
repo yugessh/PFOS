@@ -60,12 +60,12 @@ export class SmartAlertEngine {
       ]);
 
       // Extract data with fallbacks to empty arrays
-      const transactions: Transaction[] = transactionsResponse.success ? (transactionsResponse.data?.data as Transaction[]) || [] : [];
-      const accounts: Account[] = accountsResponse.success ? (accountsResponse.data?.data as Account[]) || [] : [];
-      const budgets: BudgetModel[] = budgetsResponse.success ? (budgetsResponse.data?.data as BudgetModel[]) || [] : [];
-      const emis: EMIModel[] = emisResponse.success ? (emisResponse.data?.data as EMIModel[]) || [] : [];
-      const reminders: ReminderModel[] = remindersResponse.success ? (remindersResponse.data?.data as ReminderModel[]) || [] : [];
-      const recurring: RecurringTransaction[] = recurringResponse.success ? (recurringResponse.data?.data as RecurringTransaction[]) || [] : [];
+      const transactions: Transaction[] = transactionsResponse.success ? ((transactionsResponse as any).data?.data as Transaction[]) || [] : [];
+      const accounts: Account[] = accountsResponse.success ? ((accountsResponse as any).data?.data as Account[]) || [] : [];
+      const budgets: BudgetModel[] = budgetsResponse.success ? ((budgetsResponse as any).data?.data as BudgetModel[]) || [] : [];
+      const emis: EMIModel[] = emisResponse.success ? ((emisResponse as any).data?.data as EMIModel[]) || [] : [];
+      const reminders: ReminderModel[] = remindersResponse.success ? ((remindersResponse as any).data?.data as ReminderModel[]) || [] : [];
+      const recurring: RecurringTransaction[] = recurringResponse.success ? ((recurringResponse as any).data?.data as RecurringTransaction[]) || [] : [];
 
       // Generate different types of alerts
       await Promise.all([

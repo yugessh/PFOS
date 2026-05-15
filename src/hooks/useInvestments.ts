@@ -25,8 +25,14 @@ export function useInvestments() {
 
     try {
       const response = await investmentsService.getUserInvestments(userId);
-      if (response.success && response.data) {
-        setInvestments(response.data);
+      const safeInvestments = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+
+      if (response.success) {
+        setInvestments(safeInvestments);
       } else {
         setInvestments([]);
       }

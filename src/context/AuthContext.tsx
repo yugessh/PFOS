@@ -10,6 +10,7 @@ import {
   setPersistence,
   browserLocalPersistence,
   signInWithPopup,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -19,16 +20,22 @@ import { ensureUserProfile } from '@/src/lib/firestore-init';
 type AuthUser = {
   uid: string;
   email?: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+  emailVerified?: boolean;
 };
 
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
+  initialized: boolean;
   error?: string | null;
   signUp: (email: string, password: string) => Promise<FirebaseUser>;
   signIn: (email: string, password: string) => Promise<FirebaseUser>;
   signInWithGoogle: () => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  clearError: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -42,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,9 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(mapFirebaseUser(u));
       setLoading(false);
+      setInitialized(true);
     }, (e) => {
-      setError(e?.message || String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
       setLoading(false);
+      setInitialized(true);
     });
 
     return () => unsub();
@@ -141,6 +152,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    const auth = getAuthSafe();
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
+
   const signOut = async () => {
     const auth = getAuthSafe();
     if (!auth) {
@@ -154,7 +175,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (_) {}
   };
 
-  const value = useMemo(() => ({ user, loading, error, signUp, signIn, signInWithGoogle, signOut }), [user, loading, error]);
+  const value = useMemo(
+    () => ({ user, loading, initialized, error, signUp, signIn, signInWithGoogle, signOut, resetPassword, clearError }),
+    [user, loading, initialized, error]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
