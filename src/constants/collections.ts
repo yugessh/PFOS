@@ -17,6 +17,7 @@ export const COLLECTIONS = {
   SETTLEMENTS: 'settlements',
   POLICIES: 'policies',
   NOTIFICATIONS: 'notifications',
+  TRADING_JOURNAL: 'tradingJournal',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
@@ -39,6 +40,7 @@ export const SUBCOLLECTIONS = {
   USER_SETTLEMENTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.SETTLEMENTS}`,
   USER_POLICIES: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.POLICIES}`,
   USER_NOTIFICATIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.NOTIFICATIONS}`,
+  USER_TRADING_JOURNAL: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.TRADING_JOURNAL}`,
   USER_SMART_ALERTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/smartAlerts`,
   USER_NOTIFICATION_SETTINGS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/notificationSettings`,
   
