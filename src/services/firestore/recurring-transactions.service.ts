@@ -132,7 +132,7 @@ export class RecurringTransactionsService {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_RECURRING_TRANSACTIONS(userId)}/${recurringId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.RECURRING_TRANSACTIONS, recurringId);
       await updateDoc(docRef, {
         deletedAt: serverTimestamp(),
         isActive: false,
@@ -169,7 +169,7 @@ export class RecurringTransactionsService {
     const db = getFirestoreClient();
     if (!db) return { success: false, error: 'Firestore not initialized' };
 
-    const docRef = doc(db, `${SUBCOLLECTIONS.USER_RECURRING_TRANSACTIONS(userId)}/${recurringId}`);
+    const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.RECURRING_TRANSACTIONS, recurringId);
     await updateDoc(docRef, {
       nextRunDate: payload.nextRunDate,
       lastRunDate: payload.lastRunDate,

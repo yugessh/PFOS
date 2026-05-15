@@ -4,7 +4,7 @@
  */
 
 import { usersService, UserProfile } from '../services/firestore/users.service';
-import { doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, collection, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { getFirestoreClient } from '../services/firestore/firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '../constants/collections';
 
@@ -55,14 +55,10 @@ async function initializeDefaultCategories(userId: string): Promise<void> {
   ];
 
   const batch = writeBatch(db);
-  const categoriesRef = doc(db, SUBCOLLECTIONS.USER_CATEGORIES(userId));
 
   defaultCategories.forEach((category, index) => {
-    const categoryRef = doc(
-      db,
-      SUBCOLLECTIONS.USER_CATEGORIES(userId).split('/').slice(0, -1).join('/'),
-      `category_${index + 1}`
-    );
+    // Create valid document reference: users/{userId}/categories/{categoryId}
+    const categoryRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.CATEGORIES, `category_${index + 1}`);
     batch.set(categoryRef, {
       ...category,
       userId,

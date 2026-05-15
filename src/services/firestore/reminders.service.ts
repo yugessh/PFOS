@@ -130,7 +130,7 @@ export class RemindersService {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_REMINDERS(userId)}/${reminderId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.REMINDERS, reminderId);
       await updateDoc(docRef, {
         deletedAt: serverTimestamp(),
         isActive: false,
@@ -148,7 +148,7 @@ export class RemindersService {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_REMINDERS(userId)}/${reminderId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.REMINDERS, reminderId);
       await updateDoc(docRef, {
         isPaid: true,
         paidDate: new Date(),

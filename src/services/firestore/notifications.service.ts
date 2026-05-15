@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { getFirestoreClient } from './firebaseClient';
-import { SUBCOLLECTIONS } from '@/src/constants/collections';
+import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { NotificationModel, NotificationType, NotificationPriority } from '@/src/lib/notifications';
 
 export class NotificationsService {
@@ -58,7 +58,7 @@ export class NotificationsService {
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_NOTIFICATIONS(userId)}/${notificationId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.NOTIFICATIONS, notificationId);
       await updateDoc(docRef, {
         isRead: true,
         readAt: Timestamp.now(),
@@ -75,7 +75,7 @@ export class NotificationsService {
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_NOTIFICATIONS(userId)}/${notificationId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.NOTIFICATIONS, notificationId);
       await updateDoc(docRef, {
         isArchived: true,
         archivedAt: Timestamp.now(),

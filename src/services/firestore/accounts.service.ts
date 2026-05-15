@@ -127,7 +127,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_ACCOUNTS(userId)}/${accountId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
       await updateDoc(docRef, {
         balance: newBalance,
         updatedAt: serverTimestamp(),
@@ -156,7 +156,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_ACCOUNTS(userId)}/${accountId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
       await updateDoc(docRef, {
         ...patch,
         updatedAt: serverTimestamp(),
@@ -185,7 +185,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_ACCOUNTS(userId)}/${accountId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
       await updateDoc(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -204,7 +204,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, SUBCOLLECTIONS.USER_ACCOUNTS(userId) + `/${accountId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
       const snapshot = await getDoc(docRef);
       if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
       const data = snapshot.data();

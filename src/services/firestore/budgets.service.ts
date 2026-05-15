@@ -10,7 +10,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { getFirestoreClient } from './firebaseClient';
-import { SUBCOLLECTIONS } from '@/src/constants/collections';
+import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { BudgetModel } from '@/src/lib/budgets';
 import { usersService } from './users.service';
 
@@ -147,7 +147,7 @@ export class BudgetsService {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_BUDGETS(userId)}/${budgetId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.BUDGETS, budgetId);
       await updateDoc(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

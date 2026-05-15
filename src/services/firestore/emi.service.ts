@@ -130,7 +130,7 @@ export class EMIService {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
-      const docRef = doc(db, `${SUBCOLLECTIONS.USER_EMIS(userId)}/${emiId}`);
+      const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.EMI, emiId);
       await updateDoc(docRef, {
         deletedAt: serverTimestamp(),
         isActive: false,
@@ -149,7 +149,7 @@ export class EMIService {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       // Update EMI paid installments count
-      const emiDocRef = doc(db, `${SUBCOLLECTIONS.USER_EMIS(userId)}/${emiId}`);
+      const emiDocRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.EMI, emiId);
       const emiSnap = await getDocs(query(firestoreCollection(db, SUBCOLLECTIONS.USER_EMIS(userId)), where('__name__', '==', emiId)));
       if (!emiSnap.empty) {
         const emiData = emiSnap.docs[0].data() as EMIModel;
