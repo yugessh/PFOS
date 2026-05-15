@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getSafeFirebaseConfig } from '@/src/lib/firebase-config';
 
@@ -14,6 +14,19 @@ if (safeConfig) {
   app = initializeApp(safeConfig as any);
   db = getFirestore(app);
   auth = getAuth(app);
+
+  // Enable offline persistence (IndexedDB) for Firestore in browsers.
+  // Firestore will cache reads and queue writes while offline.
+  // prefer multi-tab persistence if available
+  enableIndexedDbPersistence(db)
+    .then(() => {
+      // eslint-disable-next-line no-console
+      console.log('Firestore offline persistence enabled');
+    })
+    .catch((err: any) => {
+      // eslint-disable-next-line no-console
+      console.warn('Could not enable Firestore persistence:', err?.message || err);
+    });
 
   // Connect to Firestore emulator in development when configured
   if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST) {

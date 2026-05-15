@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Search, Settings } from 'lucide-react';
+import ConnectionStatusBar from '@/src/components/connection-status/ConnectionStatusBar';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';
@@ -52,6 +53,10 @@ export function TopNavbar() {
             <p className="text-sm font-semibold text-foreground">Jamie Doe</p>
             <p className="text-xs text-secondary">Personal profile</p>
           </div>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-3">
+          <ConnectionStatusBar />
         </div>
 
         <div className="xl:hidden p-2 rounded-[20px] border border-border bg-card">
