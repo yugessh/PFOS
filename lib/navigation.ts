@@ -47,17 +47,19 @@ export const bottomNavItems: NavItem[] = [
 ];
 
 export const sidebarNavItems: NavItem[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'Financial overview' },
+  { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Account overview' },
+  { href: '/dashboard/transactions', label: 'Transactions', icon: List, description: 'Daily transaction feed' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
+  { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
-  { href: '/dashboard/settlements', label: 'Settlements', icon: Handshake, description: 'View settlements' },
-  { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Advanced analytics' },
 ];
 
 export const analyticsNavItems: NavItem[] = [
   { href: '/dashboard/reports', label: 'Reports', icon: PieChart, description: 'Generate reports' },
-  { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
 ];
 
 export const settingsNavItems: NavItem[] = [

@@ -1,16 +1,19 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Providers from '../src/components/Providers'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'Personal Finance Dashboard',
-  description: 'Manage your finances with ease',
-  generator: 'v0.app',
+  title: 'PFOS | Neo Finance OS',
+  description: 'Premium personal finance operating system',
+  generator: 'PFOS Neo Finance OS',
   icons: {
     icon: [
       {
@@ -36,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
+    <html lang="en" className={`${inter.variable} bg-background`}>
       <body className="font-sans antialiased bg-background text-foreground">
         <Providers>
           {children}
