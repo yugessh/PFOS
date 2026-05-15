@@ -26,7 +26,11 @@ export function useSettlements() {
 
     try {
       const response = await settlementsService.getUserSettlements(userId);
-      if (response.success && response.data) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('settlements type:', typeof response.data, response.data);
+      }
+
+      if (response.success && response.data && Array.isArray(response.data)) {
         setSettlements(response.data);
       } else {
         setSettlements([]);

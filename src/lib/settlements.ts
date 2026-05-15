@@ -19,16 +19,22 @@ export interface SettlementSummary {
   paidCount: number;
 }
 
-export function calculateSettlementSummary(settlements: SettlementModel[]): SettlementSummary {
+export function calculateSettlementSummary(settlements: unknown): SettlementSummary {
+  const safeSettlements = Array.isArray(settlements) ? settlements : [];
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('settlements type:', typeof settlements, settlements);
+  }
+
   return {
-    totalPending: settlements
-      .filter(s => !s.isPaid)
+    totalPending: safeSettlements
+      .filter((s) => !s.isPaid)
       .reduce((sum, s) => sum + s.amount, 0),
-    totalPaid: settlements
-      .filter(s => s.isPaid)
+    totalPaid: safeSettlements
+      .filter((s) => s.isPaid)
       .reduce((sum, s) => sum + s.amount, 0),
-    numberOfPeople: new Set(settlements.map(s => s.personName)).size,
-    pendingCount: settlements.filter(s => !s.isPaid).length,
-    paidCount: settlements.filter(s => s.isPaid).length,
+    numberOfPeople: new Set(safeSettlements.map((s) => s.personName)).size,
+    pendingCount: safeSettlements.filter((s) => !s.isPaid).length,
+    paidCount: safeSettlements.filter((s) => s.isPaid).length,
   };
 }

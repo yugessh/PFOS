@@ -15,7 +15,6 @@ import { formatDate } from '@/lib/date';
 import { CompactSummaryHeader } from '@/src/components/mobile/CompactSummaryHeader';
 import { CompactTransactionFeed } from '@/src/components/mobile/CompactTransactionFeed';
 import { FilterBottomSheet } from '@/src/components/mobile/FilterBottomSheet';
-import { CompactFAB } from '@/src/components/mobile/CompactFAB';
 import type { TransactionFormData } from '@/src/components/transactions/types';
 import type { Transaction } from '@/src/types/transaction';
 
@@ -177,280 +176,6 @@ export default function TransactionsPage() {
     [accounts]
   );
 
-  return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      {/* Mobile Header */}
-      <div className="lg:hidden">
-        <CompactSummaryHeader
-          month={displayMonth}
-          balance={totalBalance}
-          income={income}
-          expenses={expenses}
-          onPreviousMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-          onNextMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-        />
-
-        {/* Filters Bar */}
-        <div className="sticky top-0 z-30 bg-background border-b border-border flex items-center justify-between px-4 py-2 h-12">
-          <span className="text-xs font-medium text-muted-foreground">
-            {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
-          </span>
-          <button
-            onClick={() => setFilterOpen(true)}
-            className="p-1.5 hover:bg-muted rounded-md transition-colors"
-            aria-label="Open filters"
-          >
-            <Filter size={16} />
-          </button>
-        </div>
-
-        {/* Transaction Feed */}
-        {filterLoading ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Loading transactions...
-          </div>
-        ) : filterError ? (
-          <div className="text-center py-8 text-sm text-destructive">
-            {filterError}
-          </div>
-        ) : (
-          <CompactTransactionFeed
-            transactions={transactions}
-            grouped={grouped}
-            sortedDates={sortedDates}
-          />
-        )}
-      </div>
-
-      {/* Desktop View */}
-      <div className="hidden lg:block">
-        <div className="bg-gradient-to-br from-teal-600 to-sky-700 dark:from-slate-900 dark:to-slate-800 text-white px-4 pt-6 pb-7 rounded-b-3xl shadow-lg">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <p className="text-sky-100 text-xs mb-1">Daily finance timeline</p>
-              <h1 className="text-3xl font-bold">{monthLabel}</h1>
-            </div>
-            <div className="rounded-3xl bg-white/15 px-3 py-2 text-right">
-              <p className="text-[11px] text-sky-100">Visible total</p>
-              <p className="text-lg font-semibold">{formatCurrencyCompact(savings)}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-3xl bg-white/10 p-3">
-              <p className="text-[11px] text-sky-100">Income</p>
-              <p className="text-sm font-semibold">{formatCurrencyCompact(income)}</p>
-            </div>
-            <div className="rounded-3xl bg-white/10 p-3">
-              <p className="text-[11px] text-sky-100">Expense</p>
-              <p className="text-sm font-semibold">{formatCurrencyCompact(expenses)}</p>
-            </div>
-            <div className="rounded-3xl bg-white/10 p-3">
-              <p className="text-[11px] text-sky-100">Net</p>
-              <p className="text-sm font-semibold">{formatCurrencyCompact(income - expenses)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 -mt-3 space-y-4">
-          <TransactionsFilterBar
-            monthLabel={monthLabel}
-            viewMode={viewMode}
-            timeFilter={timeFilter}
-            categoryFilter={categoryFilter}
-            accountFilter={accountFilter}
-            categories={categories}
-            accounts={accounts.map((account) => ({ id: account.id, name: account.name }))}
-            onPreviousMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-            onNextMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-            onViewModeChange={(mode) => setViewMode(mode)}
-            onTimeFilterChange={(value) => setTimeFilter(value)}
-            onCategoryChange={(value) => setCategoryFilter(value)}
-            onAccountChange={(value) => setAccountFilter(value)}
-          />
-
-          {filterLoading ? (
-            <div className="rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm text-center text-sm text-gray-500 dark:text-gray-400">
-              Loading your timeline...
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Filter Bottom Sheet */}
-      <FilterBottomSheet
-        open={filterOpen}
-        onOpenChange={setFilterOpen}
-        onReset={() => {
-          setCategoryFilter('all');
-          setAccountFilter('all');
-        }}
-        onApply={() => {
-          // Filters are applied automatically via useEffect
-        }}
-      >
-        <div className="space-y-4">
-          {/* Category Filter */}
-          <div>
-            <label className="text-sm font-medium block mb-2">Category</label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Account Filter */}
-          <div>
-            <label className="text-sm font-medium block mb-2">Account</label>
-            <select
-              value={accountFilter}
-              onChange={(e) => setAccountFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
-            >
-              <option value="all">All Accounts</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </FilterBottomSheet>
-
-      {/* Modals */}
-      <AddTransactionModal
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onSave={onSaveTransaction}
-      />
-
-      {/* FAB */}
-      <CompactFAB
-        onAddExpense={() => setAddOpen(true)}
-        onAddIncome={() => setAddOpen(true)}
-        onTransfer={() => setAddOpen(true)}
-        onManageAccounts={() => {}}
-      />
-    </div>
-  );
-}
-
-  const accountNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    accounts.forEach((account) => map.set(account.id, account.name));
-    return map;
-  }, [accounts]);
-
-  const selectedDateObject = useMemo(() => new Date(selectedDate), [selectedDate]);
-
-  const activeRange = useMemo(() => {
-    if (viewMode === 'calendar') {
-      return getMonthRange(displayMonth.getFullYear(), displayMonth.getMonth() + 1);
-    }
-    if (timeFilter === 'daily') {
-      return getDayRange(selectedDateObject);
-    }
-    if (timeFilter === 'weekly') {
-      return getWeekRange(selectedDateObject);
-    }
-    return getMonthRange(displayMonth.getFullYear(), displayMonth.getMonth() + 1);
-  }, [displayMonth, selectedDateObject, timeFilter, viewMode]);
-
-  useEffect(() => {
-    if (viewMode === 'calendar') {
-      setSelectedDate(formatDate(new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1)));
-    }
-  }, [displayMonth, viewMode]);
-
-  useEffect(() => {
-    if (timeFilter !== 'monthly') {
-      setSelectedDate(formatDate(new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1)));
-    }
-  }, [timeFilter, displayMonth]);
-
-  const loadTransactions = useCallback(async () => {
-    const userId = auth?.user?.uid;
-    if (!userId) {
-      setTransactions([]);
-      return;
-    }
-
-    setFilterLoading(true);
-    setFilterError(null);
-
-    try {
-      const response = await transactionsService.getUserTransactionsByRange(
-        userId,
-        activeRange.start,
-        activeRange.end,
-        {
-          accountId: accountFilter === 'all' ? undefined : accountFilter,
-          category: categoryFilter === 'all' ? undefined : categoryFilter,
-        },
-        { orderBy: { field: 'date', direction: 'desc' }, limit: 500 }
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to load transactions');
-      }
-
-      setTransactions(response.data.data.map(parseTransaction));
-    } catch (error: any) {
-      setFilterError(error?.message || String(error));
-      setTransactions([]);
-    } finally {
-      setFilterLoading(false);
-    }
-  }, [auth?.user?.uid, activeRange, accountFilter, categoryFilter]);
-
-  useEffect(() => {
-    void loadTransactions();
-  }, [loadTransactions]);
-
-  const onSaveTransaction = useCallback(
-    async (tx: TransactionFormData) => {
-      await addTransaction(tx);
-      await loadTransactions();
-    },
-    [addTransaction, loadTransactions]
-  );
-
-  const monthLabel = useMemo(() => getMonthLabel(displayMonth), [displayMonth]);
-
-  const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
-  const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);
-
-  const filteredTransactions = useMemo(() => {
-    if (viewMode === 'calendar') return transactions;
-    if (timeFilter === 'daily') {
-      return transactions.filter((tx) => formatDate(new Date(tx.date)) === selectedDate);
-    }
-    if (timeFilter === 'weekly') {
-      const { start, end } = getWeekRange(selectedDateObject);
-      return transactions.filter((tx) => {
-        const date = new Date(tx.date);
-        return date >= start && date <= end;
-      });
-    }
-    return transactions;
-  }, [transactions, viewMode, timeFilter, selectedDate, selectedDateObject]);
-
-  const { income, expenses, savings } = useMemo(() => computeTotals(filteredTransactions), [filteredTransactions]);
-
-  const categories = useMemo(
-    () => Array.from(new Set(transactions.map((tx) => tx.category))).sort(),
-    [transactions]
-  );
-
   const selectedDayTransactions = useMemo(
     () => grouped[selectedDate] || [],
     [grouped, selectedDate]
@@ -469,6 +194,46 @@ export default function TransactionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-28 animate-in fade-in duration-300">
+      <div className="lg:hidden">
+        <CompactSummaryHeader
+          month={displayMonth}
+          balance={totalBalance}
+          income={income}
+          expenses={expenses}
+          onPreviousMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+          onNextMonth={() => setDisplayMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+        />
+
+        <div className="sticky top-0 z-30 bg-background border-b border-border flex items-center justify-between px-4 py-2 h-12">
+          <span className="text-xs font-medium text-muted-foreground">
+            {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={() => setFilterOpen(true)}
+            className="p-1.5 hover:bg-muted rounded-md transition-colors"
+            aria-label="Open filters"
+          >
+            <Filter size={16} />
+          </button>
+        </div>
+
+        {filterLoading ? (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            Loading transactions...
+          </div>
+        ) : filterError ? (
+          <div className="text-center py-8 text-sm text-destructive">
+            {filterError}
+          </div>
+        ) : (
+          <CompactTransactionFeed
+            transactions={transactions}
+            grouped={grouped}
+            sortedDates={sortedDates}
+          />
+        )}
+      </div>
+
       <div className="bg-gradient-to-br from-teal-600 to-sky-700 dark:from-slate-900 dark:to-slate-800 text-white px-4 pt-6 pb-7 rounded-b-3xl shadow-lg">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
@@ -653,6 +418,52 @@ export default function TransactionsPage() {
           </div>
         ) : null}
       </div>
+
+      <FilterBottomSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        onReset={() => {
+          setCategoryFilter('all');
+          setAccountFilter('all');
+        }}
+        onApply={() => {
+          // Filters are applied automatically via useEffect
+        }}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-2">Category</label>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium block mb-2">Account</label>
+            <select
+              value={accountFilter}
+              onChange={(e) => setAccountFilter(e.target.value)}
+              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+            >
+              <option value="all">All Accounts</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </FilterBottomSheet>
 
       <button
         type="button"

@@ -24,6 +24,7 @@ export default function SettlementsPage() {
     note: '',
   });
 
+  const safeSettlements = Array.isArray(settlements) ? settlements : [];
   const summary = getSummary();
 
   const handleOpen = (settlement?: SettlementModel) => {
@@ -111,7 +112,7 @@ export default function SettlementsPage() {
       </div>
 
       {/* Settlements List */}
-      {settlements.length === 0 ? (
+      {safeSettlements.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4">
           <Users className="size-12 text-gray-300 dark:text-gray-700 mb-4" />
           <p className="text-gray-600 dark:text-gray-400 font-medium">No settlements yet</p>
@@ -124,12 +125,12 @@ export default function SettlementsPage() {
       ) : (
         <div className="space-y-2 px-4 py-4">
           {/* Pending Settlements */}
-          {settlements.filter(s => !s.isPaid).length > 0 && (
+          {safeSettlements.filter(s => !s.isPaid).length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 uppercase tracking-wide">
                 Pending
               </p>
-              {settlements
+              {safeSettlements
                 .filter(s => !s.isPaid)
                 .map(settlement => (
                   <div
@@ -186,12 +187,12 @@ export default function SettlementsPage() {
           )}
 
           {/* Settled Settlements */}
-          {settlements.filter(s => s.isPaid).length > 0 && (
+          {safeSettlements.filter(s => s.isPaid).length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 uppercase tracking-wide mt-4">
                 Settled
               </p>
-              {settlements
+              {safeSettlements
                 .filter(s => s.isPaid)
                 .map(settlement => (
                   <div
