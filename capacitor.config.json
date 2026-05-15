@@ -1,0 +1,18 @@
+{
+  "appId": "com.pfos.app",
+  "appName": "PFOS",
+  "webDir": "out",
+
+  "linuxAndroidStudioPath": "C:\\Program Files\\Android\\Android Studio\\bin\\studio64.exe",
+
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 300,
+      "backgroundColor": "#080A0F"
+    }
+  },
+
+  "server": {
+    "androidScheme": "https"
+  }
+}

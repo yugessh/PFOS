@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Providers from '../src/components/Providers'
 import './globals.css'
+import CapacitorBootstrap from '@/components/capacitor/CapacitorBootstrap'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -42,6 +43,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} bg-background`}>
       <body className="font-sans antialiased bg-background text-foreground">
         <Providers>
+          <CapacitorBootstrap />
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </Providers>

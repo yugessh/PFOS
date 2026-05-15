@@ -1,7 +1,7 @@
 'use client';
 
 import { Bell, Search, Settings } from 'lucide-react';
-import ConnectionStatusBar from '@/src/components/connection-status/ConnectionStatusBar';
+import ConnectionStatusBar from '@/components/connection-status/ConnectionStatusBar';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';

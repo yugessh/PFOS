@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PFOS</string>
+    <string name="title_activity_main">PFOS</string>
+    <string name="package_name">com.pfos.app</string>
+    <string name="custom_url_scheme">com.pfos.app</string>
+</resources>
