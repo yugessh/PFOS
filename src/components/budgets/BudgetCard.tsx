@@ -1,11 +1,8 @@
 'use client';
 
 import { AlertTriangle, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/src/lib/currency';
 import type { BudgetWithProgress } from '@/src/lib/budgets';
-import { BudgetProgressBar } from './BudgetProgressBar';
 
 interface BudgetCardProps {
   budget: BudgetWithProgress;
@@ -13,58 +10,68 @@ interface BudgetCardProps {
 }
 
 export function BudgetCard({ budget, onDelete }: BudgetCardProps) {
-  const warningTone = budget.isOverBudget
-    ? 'text-red-600 dark:text-red-400'
+  const warningText = budget.isOverBudget
+    ? 'text-red-700 dark:text-red-300'
     : budget.isNearLimit
-      ? 'text-amber-600 dark:text-amber-400'
-      : 'text-emerald-600 dark:text-emerald-400';
+      ? 'text-amber-700 dark:text-amber-300'
+      : 'text-emerald-700 dark:text-emerald-300';
+
+  const barColor = budget.isOverBudget
+    ? 'bg-red-500'
+    : budget.isNearLimit
+      ? 'bg-amber-500'
+      : 'bg-emerald-500';
 
   return (
-    <article className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{budget.categoryIcon || '📦'} {budget.categoryName}</p>
-          <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-            {formatCurrency(budget.monthlyLimit, budget.currency)}
-          </p>
+    <article className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-lg flex-shrink-0">{budget.categoryIcon || '📦'}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground font-medium truncate">{budget.categoryName}</p>
+              <p className="text-sm font-semibold text-foreground">{formatCurrency(budget.monthlyLimit)}</p>
+            </div>
+          </div>
         </div>
+        <button
+          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+          onClick={() => onDelete(budget.id)}
+        >
+          <Trash2 className="size-4 text-gray-500" />
+        </button>
+      </div>
 
-        <div className="flex items-center gap-2">
-          {budget.isOverBudget ? (
-            <Badge variant="destructive" className="gap-1">
-              <AlertTriangle className="size-3" />
-              Over
-            </Badge>
-          ) : budget.isNearLimit ? (
-            <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
-              Near Limit
-            </Badge>
-          ) : (
-            <Badge variant="secondary">On Track</Badge>
-          )}
-          <Button variant="ghost" size="icon" className="size-8" onClick={() => onDelete(budget.id)}>
-            <Trash2 className="size-4 text-gray-500" />
-          </Button>
+      {/* Progress Bar */}
+      <div className="mb-2">
+        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full ${barColor} transition-all`}
+            style={{ width: `${Math.min(budget.progressPercent, 100)}%` }}
+          />
         </div>
       </div>
 
-      <div className="mt-4 space-y-3">
-        <BudgetProgressBar
-          spent={budget.spent}
-          limit={budget.monthlyLimit}
-          progressPercent={budget.progressPercent}
-          isOverBudget={budget.isOverBudget}
-          isNearLimit={budget.isNearLimit}
-        />
-
-        <div className="flex items-center justify-between text-sm">
-          <p className="text-gray-600 dark:text-gray-300">
-            Spent: <span className="font-semibold">{formatCurrency(budget.spent, budget.currency)}</span>
+      {/* Stats Row */}
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <div>
+          <p className="text-muted-foreground">Spent</p>
+          <p className="font-semibold text-foreground">{formatCurrency(budget.spent)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-muted-foreground">{budget.progressPercent.toFixed(0)}%</p>
+          <p className={`font-semibold ${warningText}`}>
+            {budget.isOverBudget && '⚠ Over'}
+            {budget.isNearLimit && !budget.isOverBudget && '⚠ Alert'}
+            {!budget.isOverBudget && !budget.isNearLimit && '✓ Good'}
           </p>
-          <p className={warningTone}>
+        </div>
+        <div className="text-right">
+          <p className="text-muted-foreground">Remain</p>
+          <p className={`font-semibold ${warningText}`}>
             {budget.remaining >= 0
-              ? `Remaining: ${formatCurrency(budget.remaining, budget.currency)}`
-              : `Over by ${formatCurrency(Math.abs(budget.remaining), budget.currency)}`}
+              ? formatCurrency(budget.remaining)
+              : `-${formatCurrency(Math.abs(budget.remaining))}`}
           </p>
         </div>
       </div>

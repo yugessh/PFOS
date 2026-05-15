@@ -1,7 +1,7 @@
 'use client';
 
-import { BudgetsPage } from '@/src/components/budgets/BudgetsPage';
+import { BudgetsPageNew } from '@/src/components/budgets/BudgetsPageNew';
 
 export default function DashboardBudgetsPage() {
-  return <BudgetsPage />;
+  return <BudgetsPageNew />;
 }
