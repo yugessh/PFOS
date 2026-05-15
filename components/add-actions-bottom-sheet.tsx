@@ -8,7 +8,7 @@ import {
   SheetClose,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowUpRight, ArrowDownLeft, SwapHorizontal2 } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownLeft, ArrowLeftRight } from 'lucide-react';
 
 interface AddActionsBottomSheetProps {
   open: boolean;
@@ -67,7 +67,7 @@ export function AddActionsBottomSheet({
             }}
             className="w-full h-12 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center gap-3 justify-start text-base font-medium"
           >
-            <SwapHorizontal2 className="size-5" />
+            <ArrowLeftRight className="size-5" />
             Transfer
           </Button>
 

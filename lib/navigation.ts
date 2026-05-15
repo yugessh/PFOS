@@ -39,9 +39,23 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/settlements', label: 'Settlements', icon: Handshake, description: 'View settlements' },
 ];
 
+export const bottomNavItems: NavItem[] = [
+  { href: '/dashboard', label: 'Home', icon: Home, description: 'Lightweight financial summary' },
+  { href: '/dashboard/transactions', label: 'Transactions', icon: List, description: 'Daily transaction feed' },
+  { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart financial alerts' },
+];
+
+export const sidebarNavItems: NavItem[] = [
+  { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
+  { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
+  { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
+  { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
+  { href: '/dashboard/settlements', label: 'Settlements', icon: Handshake, description: 'View settlements' },
+  { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
+];
+
 export const analyticsNavItems: NavItem[] = [
-  { href: '/dashboard/stats', label: 'Stats', icon: BarChart3, description: 'Monthly analytics' },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Legacy analytics route' },
   { href: '/dashboard/reports', label: 'Reports', icon: PieChart, description: 'Generate reports' },
   { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
 ];

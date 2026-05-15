@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, Settings, Bell } from 'lucide-react';
 import { useActiveRoute } from '@/hooks/use-active-route';
-import { mainNavItems, analyticsNavItems, settingsNavItems } from '@/lib/navigation';
+import { sidebarNavItems, analyticsNavItems, settingsNavItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -59,9 +59,9 @@ export function Sidebar({ className }: SidebarProps) {
         <nav className="p-4 space-y-8 flex-1 mt-16 lg:mt-0 overflow-y-auto">
           {/* Main Navigation */}
           <div>
-            <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Main</p>
+            <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Menu</p>
             <div className="space-y-1">
-              {mainNavItems.map((item) => {
+              {sidebarNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
                 return (
