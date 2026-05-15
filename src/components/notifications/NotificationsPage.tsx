@@ -58,24 +58,25 @@ export function NotificationsPage() {
   const { notifications, loading, saving, markAsRead, markAsArchived } = useNotifications();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const groupedNotifications = useMemo(() => {
-    const groups: Record<string, typeof notifications> = {};
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
 
-    notifications.forEach(notification => {
+  const groupedNotifications = useMemo(() => {
+    const groups: Record<string, typeof safeNotifications> = {};
+
+    safeNotifications.forEach((notification) => {
       const group = getDateGroup(notification.createdAt as any);
       if (!groups[group]) groups[group] = [];
       groups[group].push(notification);
     });
 
-    // Sort each group by date descending
-    Object.keys(groups).forEach(group => {
-      groups[group].sort((a, b) => 
-        new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime()
+    Object.keys(groups).forEach((group) => {
+      groups[group].sort(
+        (a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime()
       );
     });
 
     return groups;
-  }, [notifications]);
+  }, [safeNotifications]);
 
   if (loading) {
     return (
@@ -89,7 +90,7 @@ export function NotificationsPage() {
   }
 
   const groupOrder = ['Today', 'Yesterday', 'Earlier'];
-  const orderedGroups = groupOrder.filter(g => groups[g]);
+  const orderedGroups = groupOrder.filter((g) => groupedNotifications[g]?.length);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 pb-24">
