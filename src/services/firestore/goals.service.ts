@@ -1,52 +1,54 @@
 import { BaseFirestoreService } from './base.service';
 import { COLLECTIONS } from '../../constants/collections';
+import type { GoalModel } from '../../lib/goals';
 
-export interface Account {
-  id: string;
-  userId: string;
-  name: string;
-  type: 'checking' | 'savings' | 'credit_card' | 'investment' | 'loan';
-  balance: number;
-  currency: string;
-  isActive: boolean;
-  createdAt: any;
-  updatedAt: any;
-  deletedAt?: any;
-}
-
-/**
- * Accounts service for managing user bank accounts
- */
-export class AccountsService extends BaseFirestoreService<Account> {
+export class GoalsService extends BaseFirestoreService<GoalModel> {
   constructor() {
-    super(COLLECTIONS.ACCOUNTS);
+    super(COLLECTIONS.GOALS);
   }
 
-  /**
-   * Get accounts for a specific user
-   */
-  async getUserAccounts(userId: string) {
+  async getUserGoals(userId: string) {
     return this.getByUserId(userId);
   }
 
-  /**
-   * Get active accounts for a user
-   */
-  async getActiveAccounts(userId: string) {
-    return this.list({
-      where: [
-        { field: 'userId', operator: '==', value: userId },
-        { field: 'isActive', operator: '==', value: true },
-      ],
-    });
+  async createGoal(userId: string, goal: Omit<GoalModel, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'>) {
+    const payload = {
+      ...goal,
+      userId,
+    };
+    return this.create(payload as any);
   }
 
-  /**
-   * Update account balance
-   */
-  async updateBalance(accountId: string, newBalance: number) {
-    return this.update(accountId, { balance: newBalance } as any);
+  async updateGoal(goalId: string, goal: Partial<GoalModel>) {
+    return this.update(goalId, goal as any);
+  }
+
+  async deleteGoal(goalId: string) {
+    return this.delete(goalId);
+  }
+
+  async updateSavedAmount(goalId: string, newAmount: number) {
+    return this.update(goalId, { savedAmount: newAmount } as any);
+  }
+
+  async getTotalGoals(userId: string) {
+    const goals = await this.getUserGoals(userId);
+    if (!goals.success) return 0;
+    return goals.data?.length || 0;
+  }
+
+  async getTotalTargetAmount(userId: string) {
+    const goals = await this.getUserGoals(userId);
+    if (!goals.success) return 0;
+    return goals.data?.reduce((sum, goal) => sum + (goal.targetAmount || 0), 0) || 0;
+  }
+
+  async getTotalSavedAmount(userId: string) {
+    const goals = await this.getUserGoals(userId);
+    if (!goals.success) return 0;
+    return goals.data?.reduce((sum, goal) => sum + (goal.savedAmount || 0), 0) || 0;
   }
 }
 
-export const accountsService = new AccountsService();
+export const goalsService = new GoalsService();
+

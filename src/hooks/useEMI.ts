@@ -43,7 +43,10 @@ export function useEMI() {
   }, [loadEMIs]);
 
   const saveEMI = useCallback(
-    async (payload: Omit<EMIModel, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'>) => {
+    async (
+      payload: Omit<EMIModel, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'>,
+      emiId?: string
+    ) => {
       const userId = auth?.user?.uid;
       if (!userId) throw new Error('User not authenticated');
 
@@ -51,7 +54,7 @@ export function useEMI() {
       setError(null);
 
       try {
-        const response = await emiService.upsertEMI(userId, payload);
+        const response = await emiService.upsertEMI(userId, payload, emiId);
         if (!response.success) {
           throw new Error(response.error || 'Failed to save EMI');
         }

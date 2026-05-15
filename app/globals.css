@@ -149,6 +149,73 @@
     }
     
     .p-4 {
+      @apply p-3;
+    }
+    
+    .p-6 {
+      @apply p-4;
+    }
+    
+    .px-4 {
+      @apply px-3;
+    }
+    
+    .py-4 {
+      @apply py-2;
+    }
+    
+    .py-6 {
+      @apply py-3;
+    }
+    
+    .pt-6 {
+      @apply pt-3;
+    }
+    
+    .pb-8 {
+      @apply pb-4;
+    }
+    
+    .rounded-2xl {
+      @apply rounded-xl;
+    }
+    
+    .rounded-3xl {
+      @apply rounded-2xl;
+    }
+  }
+}
+
+/* Compact Header Styling */
+.compact-header {
+  @apply sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800;
+}
+
+/* Transaction Feed Styling */
+.transaction-row {
+  @apply px-4 py-2 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors rounded-lg;
+}
+
+.transaction-amount {
+  @apply text-sm font-bold ml-2 text-right flex-shrink-0;
+}
+
+/* Bottom Nav Styling */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800;
+}
+
+/* FAB Styling */
+.fab-button {
+  @apply fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow;
+}
+
+/* Mobile Container */
+.mobile-container {
+  @apply min-h-screen bg-white dark:bg-gray-950 pb-24;
+}
+
+    .p-4 {
       @apply p-2;
     }
     

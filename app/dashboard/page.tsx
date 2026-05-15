@@ -1,31 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { RecentTransactionsTable } from '@/components/recent-transactions-table';
+import { useState, useMemo } from 'react';
 import { AddTransactionModal } from '@/src/components/transactions/AddTransactionModal';
 import { AddAccountModal } from '@/src/components/accounts/AddAccountModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
 import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
-import { useBudgets } from '@/src/hooks/useBudgets';
-import { useRecurringTransactions } from '@/src/hooks/useRecurringTransactions';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
-import { UpcomingPaymentsWidget } from '@/src/components/dashboard/UpcomingPaymentsWidget';
-import { DailySummaryWidget } from '@/src/components/dashboard/DailySummaryWidget';
-import { MonthlyInsightsWidget } from '@/src/components/dashboard/MonthlyInsightsWidget';
+import { CompactHeader } from '@/components/compact-header';
+import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
+import { FloatingActionButton } from '@/components/floating-action-button';
+import { AddActionsBottomSheet } from '@/components/add-actions-bottom-sheet';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
-import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';
-import { Plus, TrendingUp, CreditCard, PiggyBank, AlertTriangle, Repeat, Bell } from 'lucide-react';
-import { formatCurrency, formatCurrencyCompact } from '@/src/lib/currency';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function Dashboard() {
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [addActionsOpen, setAddActionsOpen] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const { accounts, loading: accountsLoading, addAccount } = useAccounts();
   const {
@@ -33,13 +28,31 @@ export default function Dashboard() {
     addTransaction,
     getTotals,
     loading: transactionsLoading,
-    error: transactionsError,
-    creating: transactionCreating,
   } = useTransactions();
-  const { budgetSummary } = useBudgets(transactions);
-  const { recurringAlerts } = useRecurringTransactions();
+
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
   const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
+
+  // Filter transactions for current month
+  const currentMonthTransactions = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    return transactions.filter((tx) => {
+      const txDate = new Date(tx.date);
+      return txDate.getFullYear() === year && txDate.getMonth() === month;
+    });
+  }, [transactions, currentDate]);
+  // Handle month navigation
+  const handlePreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  };
+
+  const monthName = currentDate.toLocaleDateString('en-US', { month: 'short' });
 
   if (accounts.length === 0 && !accountsLoading) {
     return (
@@ -59,7 +72,14 @@ export default function Dashboard() {
   if (transactions.length === 0 && !transactionsLoading) {
     return (
       <div>
-        <EmptyFinanceState onAddTransaction={() => setAddTransactionOpen(true)} />
+        <EmptyFinanceState onAddTransaction={() => setAddActionsOpen(true)} />
+        <AddActionsBottomSheet
+          open={addActionsOpen}
+          onOpenChange={setAddActionsOpen}
+          onAddExpense={() => setAddTransactionOpen(true)}
+          onAddIncome={() => setAddTransactionOpen(true)}
+          onAddAccount={() => setAddAccountOpen(true)}
+        />
         <AddTransactionModal
           open={addTransactionOpen}
           onOpenChange={setAddTransactionOpen}
@@ -67,148 +87,63 @@ export default function Dashboard() {
             addTransaction(tx);
           }}
         />
+        <AddAccountModal
+          open={addAccountOpen}
+          onOpenChange={setAddAccountOpen}
+          onSave={async (accountData: Partial<Account>) => {
+            await addAccount(accountData);
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24 animate-in fade-in duration-300">
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 text-white px-4 pt-6 pb-8 rounded-b-3xl shadow-lg">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <p className="text-blue-100 text-xs mb-1">Home Summary</p>
-            <h1 className="text-3xl font-bold">{formatCurrency(totalBalance)}</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="bg-white/10 text-white hover:bg-white/20 border-white/20"
-              onClick={() => setNotificationCenterOpen(true)}
-            >
-              <NotificationBadge className="text-white" />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-white text-blue-600 hover:bg-blue-50 gap-2 shadow-md"
-              onClick={() => setAddTransactionOpen(true)}
-            >
-              <Plus className="size-5" />
-              Add
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-white dark:bg-gray-950 pb-24 animate-in fade-in duration-300">
+      {/* Compact Header */}
+      <CompactHeader
+        month={monthName}
+        year={currentDate.getFullYear()}
+        balance={totalBalance}
+        income={totalIncome}
+        expenses={totalExpenses}
+        onPreviousMonth={handlePreviousMonth}
+        onNextMonth={handleNextMonth}
+      />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="size-4 text-green-300" />
-              <p className="text-blue-100 text-xs">Month Income</p>
-            </div>
-            <p className="text-lg font-semibold">{formatCurrencyCompact(totalIncome)}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <CreditCard className="size-4 text-red-300" />
-              <p className="text-blue-100 text-xs">Month Expense</p>
-            </div>
-            <p className="text-lg font-semibold">{formatCurrencyCompact(totalExpenses)}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 -mt-4 space-y-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Quick Overview</h2>
-            <Link href="/dashboard/transactions" className="text-xs text-blue-600 dark:text-blue-400">Open Feed</Link>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-700/60 px-2 py-3">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">Transactions</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">{transactions.length}</p>
-            </div>
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-700/60 px-2 py-3">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">Accounts</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">{accounts.length}</p>
-            </div>
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-700/60 px-2 py-3">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">Net</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrencyCompact(totalIncome - totalExpenses)}</p>
+      {/* Transaction Feed */}
+      <div className="space-y-4 py-4">
+        {transactionsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <PiggyBank className="size-5 text-blue-600" />
-              <h2 className="font-semibold text-gray-900 dark:text-white">Budget Alerts</h2>
-            </div>
-            {budgetSummary.overBudgetCount > 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                <AlertTriangle className="size-3" />
-                {budgetSummary.overBudgetCount} Over
-              </span>
-            ) : null}
-          </div>
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Remaining Monthly Budget</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {formatCurrency(budgetSummary.totalRemaining)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Spent / Budget</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {formatCurrencyCompact(budgetSummary.totalSpent)} / {formatCurrencyCompact(budgetSummary.totalBudget)}
+        ) : currentMonthTransactions.length > 0 ? (
+          <CompactTransactionFeed transactions={currentMonthTransactions} />
+        ) : (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center px-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No transactions for {monthName}
               </p>
             </div>
           </div>
-        </div>
-
-        <UpcomingPaymentsWidget />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <DailySummaryWidget />
-          <MonthlyInsightsWidget />
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Recent Transactions</h2>
-            <Link href="/dashboard/transactions" className="text-xs text-blue-600 dark:text-blue-400">Open Feed</Link>
-          </div>
-          {transactionsLoading ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-              <p className="text-sm">Loading transactions...</p>
-            </div>
-          ) : transactionCreating ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-              <p className="text-sm">Saving transaction...</p>
-            </div>
-          ) : transactionsError ? (
-            <div className="text-center py-8 text-red-500">
-              <p className="text-sm">{transactionsError}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="mt-2"
-              >
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <RecentTransactionsTable transactions={transactions} limit={5} />
-          )}
-        </div>
+        )}
       </div>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton onClick={() => setAddActionsOpen(true)} />
+
+      {/* Modals and Sheets */}
+      <AddActionsBottomSheet
+        open={addActionsOpen}
+        onOpenChange={setAddActionsOpen}
+        onAddExpense={() => setAddTransactionOpen(true)}
+        onAddIncome={() => setAddTransactionOpen(true)}
+        onAddAccount={() => setAddAccountOpen(true)}
+      />
 
       <AddTransactionModal
         open={addTransactionOpen}
