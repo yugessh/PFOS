@@ -47,9 +47,15 @@ export function useNotifications() {
   }, [auth?.user?.uid]);
 
   const markAsRead = useCallback(async (notificationId: string) => {
+    const userId = auth?.user?.uid;
+    if (!userId) {
+      setError('Not authenticated');
+      return;
+    }
+
     try {
       setSaving(true);
-      await notificationsService.markAsRead(notificationId);
+      await notificationsService.markAsRead(notificationId, userId);
       setNotifications(prev =>
         prev.map(n =>
           n.id === notificationId
@@ -57,26 +63,34 @@ export function useNotifications() {
             : n
         )
       );
+      setError(null);
     } catch (err) {
       console.error('Error marking notification as read:', err);
       setError('Failed to mark notification as read');
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [auth?.user?.uid]);
 
   const markAsArchived = useCallback(async (notificationId: string) => {
+    const userId = auth?.user?.uid;
+    if (!userId) {
+      setError('Not authenticated');
+      return;
+    }
+
     try {
       setSaving(true);
-      await notificationsService.markAsArchived(notificationId);
+      await notificationsService.markAsArchived(notificationId, userId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      setError(null);
     } catch (err) {
       console.error('Error archiving notification:', err);
       setError('Failed to archive notification');
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [auth?.user?.uid]);
 
   const markAllAsRead = useCallback(async () => {
     const userId = auth?.user?.uid;

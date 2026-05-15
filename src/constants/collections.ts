@@ -16,6 +16,7 @@ export const COLLECTIONS = {
   REMINDERS: 'reminders',
   SETTLEMENTS: 'settlements',
   POLICIES: 'policies',
+  NOTIFICATIONS: 'notifications',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
@@ -37,6 +38,10 @@ export const SUBCOLLECTIONS = {
   USER_REMINDERS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.REMINDERS}`,
   USER_SETTLEMENTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.SETTLEMENTS}`,
   USER_POLICIES: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.POLICIES}`,
+  USER_NOTIFICATIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.NOTIFICATIONS}`,
+  USER_SMART_ALERTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/smartAlerts`,
+  USER_NOTIFICATION_SETTINGS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/notificationSettings`,
+  USER_NOTIFICATIONS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.NOTIFICATIONS}`,
   
   // Account subcollections
   ACCOUNT_TRANSACTIONS: (userId: string, accountId: string) => 

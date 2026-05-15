@@ -1,21 +1,17 @@
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { getFirestoreClient } from './firebaseClient';
-import { BaseFirestoreService } from './base.service';
+import { SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { NotificationModel, NotificationType, NotificationPriority } from '@/src/lib/notifications';
 
-export class NotificationsService extends BaseFirestoreService<NotificationModel> {
-  constructor() {
-    super('notifications');
-  }
-
+export class NotificationsService {
   async getUserNotifications(userId: string, includeArchived = false): Promise<NotificationModel[]> {
     try {
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
+      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
       const q = query(
-        collection(db, this.collectionName),
-        where('userId', '==', userId),
+        colRef,
         where('isArchived', '==', includeArchived),
         orderBy('createdAt', 'desc'),
         limit(100)
@@ -26,6 +22,7 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
+        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
         readAt: doc.data().readAt?.toDate() || null,
         archivedAt: doc.data().archivedAt?.toDate() || null,
         expiresAt: doc.data().expiresAt?.toDate() || null,
@@ -41,9 +38,9 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
       const db = getFirestoreClient();
       if (!db) return 0;
 
+      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
       const q = query(
-        collection(db, this.collectionName),
-        where('userId', '==', userId),
+        colRef,
         where('isRead', '==', false),
         where('isArchived', '==', false)
       );
@@ -56,15 +53,16 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
     }
   }
 
-  async markAsRead(notificationId: string): Promise<void> {
+  async markAsRead(notificationId: string, userId: string): Promise<void> {
     try {
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
-      const docRef = doc(db, this.collectionName, notificationId);
+      const docRef = doc(db, `${SUBCOLLECTIONS.USER_NOTIFICATIONS(userId)}/${notificationId}`);
       await updateDoc(docRef, {
         isRead: true,
         readAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -72,15 +70,16 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
     }
   }
 
-  async markAsArchived(notificationId: string): Promise<void> {
+  async markAsArchived(notificationId: string, userId: string): Promise<void> {
     try {
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
-      const docRef = doc(db, this.collectionName, notificationId);
+      const docRef = doc(db, `${SUBCOLLECTIONS.USER_NOTIFICATIONS(userId)}/${notificationId}`);
       await updateDoc(docRef, {
         isArchived: true,
         archivedAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
     } catch (error) {
       console.error('Error archiving notification:', error);
@@ -93,9 +92,9 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
+      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
       const q = query(
-        collection(db, this.collectionName),
-        where('userId', '==', userId),
+        colRef,
         where('isRead', '==', false),
         where('isArchived', '==', false)
       );
@@ -107,6 +106,7 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
         batch.push(updateDoc(docSnap.ref, {
           isRead: true,
           readAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
         }));
       }
 
@@ -131,6 +131,7 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
       const db = getFirestoreClient();
       if (!db) throw new Error('Firestore client not available');
 
+      const now = new Date();
       const notification: Omit<NotificationModel, 'id'> = {
         userId,
         type,
@@ -141,15 +142,18 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
         isArchived: false,
         metadata,
         actionUrl,
-        createdAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
         readAt: null,
         archivedAt: null,
         expiresAt: expiresAt || null,
       };
 
-      const docRef = await addDoc(collection(db, this.collectionName), {
+      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
+      const docRef = await addDoc(colRef, {
         ...notification,
         createdAt: Timestamp.fromDate(notification.createdAt),
+        updatedAt: Timestamp.fromDate(notification.updatedAt),
         expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : null,
       });
 
@@ -160,14 +164,15 @@ export class NotificationsService extends BaseFirestoreService<NotificationModel
     }
   }
 
-  async cleanupExpiredNotifications(): Promise<void> {
+  async cleanupExpiredNotifications(userId: string): Promise<void> {
     try {
       const db = getFirestoreClient();
       if (!db) return;
 
+      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
       const now = Timestamp.now();
       const q = query(
-        collection(db, this.collectionName),
+        colRef,
         where('expiresAt', '<=', now)
       );
 

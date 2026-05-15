@@ -21,6 +21,7 @@ export interface NotificationModel {
   metadata?: Record<string, any>;
   actionUrl?: string;
   createdAt: Date;
+  updatedAt: Date;
   readAt?: Date | null;
   archivedAt?: Date | null;
   expiresAt?: Date | null;

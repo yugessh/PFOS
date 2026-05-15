@@ -58,6 +58,18 @@ service cloud.firestore {
       match /policies/{policyId} {
         allow read, write: if isOwner(userId);
       }
+
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /smartAlerts/{smartAlertId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /notificationSettings/{settingsId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Top-level collection rules (fallback for compatibility)
