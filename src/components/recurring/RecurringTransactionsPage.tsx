@@ -42,6 +42,21 @@ export function RecurringTransactionsPage() {
     );
   }, [recurringTransactions]);
 
+  const activeTemplates = useMemo(
+    () => recurringTransactions.filter((item) => item.isActive).length,
+    [recurringTransactions]
+  );
+
+  const nextDueDate = useMemo(
+    () => recurringAlerts[0]?.dueDate ?? null,
+    [recurringAlerts]
+  );
+
+  const overdueCount = useMemo(
+    () => recurringAlerts.filter((alert) => alert.isOverdue).length,
+    [recurringAlerts]
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24 animate-in fade-in duration-300">
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 dark:from-indigo-800 dark:to-indigo-900 text-white px-4 pt-6 pb-7 rounded-b-3xl shadow-lg">
@@ -55,18 +70,22 @@ export function RecurringTransactionsPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
             <p className="text-[11px] text-indigo-100">Templates</p>
             <p className="text-sm font-semibold">{recurringTransactions.length}</p>
           </div>
           <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-            <p className="text-[11px] text-indigo-100">Income</p>
-            <p className="text-sm font-semibold">{formatCurrencyCompact(totals.income)}</p>
+            <p className="text-[11px] text-indigo-100">Active</p>
+            <p className="text-sm font-semibold">{activeTemplates}</p>
           </div>
           <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-            <p className="text-[11px] text-indigo-100">Expense</p>
-            <p className="text-sm font-semibold">{formatCurrencyCompact(totals.expenses)}</p>
+            <p className="text-[11px] text-indigo-100">Next payment</p>
+            <p className="text-sm font-semibold">{nextDueDate ? nextDueDate.toLocaleDateString() : 'None'}</p>
+          </div>
+          <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
+            <p className="text-[11px] text-indigo-100">Overdue</p>
+            <p className="text-sm font-semibold">{overdueCount}</p>
           </div>
         </div>
       </div>
@@ -78,7 +97,7 @@ export function RecurringTransactionsPage() {
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Upcoming Alerts</h2>
           </div>
           {recurringAlerts.length === 0 ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">No payments due in the next 7 days.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">No upcoming recurring payments right now.</p>
           ) : (
             <div className="space-y-2">
               {recurringAlerts.slice(0, 4).map((alert) => (

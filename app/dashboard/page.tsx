@@ -6,6 +6,7 @@ import { AddAccountModal } from '@/src/components/accounts/AddAccountModal';
 import { TransactionFormData } from '@/src/components/transactions/types';
 import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
+import { UpcomingPaymentsWidget } from '@/src/components/dashboard/UpcomingPaymentsWidget';
 import { EmptyFinanceState } from '@/src/components/EmptyFinanceState';
 import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState';
 import { CompactHeader } from '@/components/compact-header';
@@ -153,6 +154,8 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            <UpcomingPaymentsWidget compact />
 
             <div className="rounded-[32px] border border-border bg-card p-6 shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
               <p className="text-sm uppercase tracking-[0.32em] text-secondary">Quick actions</p>

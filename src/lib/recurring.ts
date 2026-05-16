@@ -33,6 +33,9 @@ export interface RecurringAlert {
   isOverdue: boolean;
   amount: number;
   type: RecurringTransactionType;
+  reminderDaysBefore: number;
+  accountId?: string;
+  toAccountId?: string;
 }
 
 export function addFrequency(date: Date, frequency: RecurringFrequency, interval = 1): Date {
@@ -85,8 +88,11 @@ export function getRecurringAlerts(items: RecurringTransactionModel[], now = new
         isOverdue: daysUntilDue < 0,
         amount: item.amount,
         type: item.type,
+        reminderDaysBefore: Math.max(0, item.reminderDaysBefore || 0),
+        accountId: item.accountId,
+        toAccountId: item.toAccountId,
       };
     })
-    .filter((alert) => alert.daysUntilDue <= 7)
+    .filter((alert) => alert.daysUntilDue <= Math.max(7, alert.reminderDaysBefore))
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 }

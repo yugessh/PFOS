@@ -20,25 +20,37 @@ export function UpcomingPaymentsWidget({ compact = false }: UpcomingPaymentsWidg
 
   const accountMap = useMemo(() => new Map(accounts.map((item) => [item.id, item.name])), [accounts]);
 
+  const badgeStyles = {
+    emi: {
+      wrapper: 'bg-emerald-100 dark:bg-emerald-900/30',
+      icon: 'text-emerald-600 dark:text-emerald-400',
+    },
+    reminder: {
+      wrapper: 'bg-amber-100 dark:bg-amber-900/30',
+      icon: 'text-amber-600 dark:text-amber-400',
+    },
+    recurring: {
+      wrapper: 'bg-blue-100 dark:bg-blue-900/30',
+      icon: 'text-blue-600 dark:text-blue-400',
+    },
+  } as const;
+
   const allAlerts = useMemo(() => {
     const alerts = [
       ...emiAlerts.map((alert) => ({
         ...alert,
         type: 'emi' as const,
         icon: CreditCard,
-        color: 'emerald',
       })),
       ...reminderAlerts.map((alert) => ({
         ...alert,
         type: 'reminder' as const,
         icon: Bell,
-        color: 'amber',
       })),
       ...recurringAlerts.map((alert) => ({
         ...alert,
         type: 'recurring' as const,
         icon: Calendar,
-        color: 'blue',
       })),
     ];
 
@@ -66,7 +78,7 @@ export function UpcomingPaymentsWidget({ compact = false }: UpcomingPaymentsWidg
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">Upcoming</p>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">Payments</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">Smart alerts</p>
             </div>
           </div>
           {overdueCount > 0 && (
@@ -86,8 +98,8 @@ export function UpcomingPaymentsWidget({ compact = false }: UpcomingPaymentsWidg
               return (
                 <div key={`${alert.type}-${alert.title}-${alert.dueDate.toISOString()}`} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className={`size-6 rounded-full bg-${alert.color}-100 dark:bg-${alert.color}-900/30 flex items-center justify-center`}>
-                      <Icon className={`size-3 text-${alert.color}-600 dark:text-${alert.color}-400`} />
+                    <div className={`${badgeStyles[alert.type].wrapper} size-6 rounded-full flex items-center justify-center`}>
+                      <Icon className={`${badgeStyles[alert.type].icon} size-3`} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{alert.title}</p>
@@ -131,7 +143,7 @@ export function UpcomingPaymentsWidget({ compact = false }: UpcomingPaymentsWidg
       {allAlerts.length === 0 ? (
         <div className="text-center py-4">
           <p className="text-sm font-medium text-gray-900 dark:text-white">All caught up!</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">No upcoming payments in the next 7 days.</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">No upcoming payments in your reminder window.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -144,8 +156,8 @@ export function UpcomingPaymentsWidget({ compact = false }: UpcomingPaymentsWidg
               <div key={`${alert.type}-${alert.title}-${alert.dueDate.toISOString()}`} className="rounded-lg bg-gray-50 dark:bg-gray-700/60 p-3">
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className={`size-7 rounded-full bg-${alert.color}-100 dark:bg-${alert.color}-900/30 flex items-center justify-center`}>
-                      <Icon className={`size-3.5 text-${alert.color}-600 dark:text-${alert.color}-400`} />
+                    <div className={`${badgeStyles[alert.type].wrapper} size-7 rounded-full flex items-center justify-center`}>
+                      <Icon className={`${badgeStyles[alert.type].icon} size-3.5`} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{alert.title}</p>
