@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { Bell, Search, Settings } from 'lucide-react';
+import { Bell, Search, Settings, LogOut } from 'lucide-react';
 import ConnectionStatusBar from '@/components/connection-status/ConnectionStatusBar';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/src/context/AuthContext';
@@ -36,10 +36,10 @@ export function TopNavbar() {
     : user?.email?.charAt(0).toUpperCase() || 'PF';
 
   return (
-    <div className="hidden lg:flex h-16 bg-background border-b border-border items-center justify-between px-6 sticky top-0 z-30">
+    <header className="hidden lg:flex items-center justify-between gap-4 rounded-[32px] border border-border bg-card p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] sticky top-4 z-20 mx-6">
       <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.28em] text-secondary">Neo Finance OS</p>
-        <h2 className="text-xl font-semibold text-foreground">{pageTitle}</h2>
+        <p className="text-xs uppercase tracking-[0.35em] text-secondary">Neo Finance OS</p>
+        <h2 className="text-2xl font-semibold text-foreground">{pageTitle}</h2>
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-3">
@@ -47,30 +47,29 @@ export function TopNavbar() {
           <input
             type="search"
             placeholder="Search transactions, budgets..."
-            className="input-surface pr-12 min-w-[320px]"
+            className="input-surface min-w-[320px] pr-12"
           />
           <Search size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary" />
         </div>
 
-        <button className="button-ghost p-3 rounded-[20px]" aria-label="Notifications">
-          <Bell size={18} />
+        <button className="button-ghost p-3 rounded-[22px]" aria-label="Notifications">
+          <Bell size={18} className="text-secondary" />
         </button>
-        <button className="button-ghost p-3 rounded-[20px]" aria-label="Settings">
-          <Settings size={18} />
+        <button className="button-ghost p-3 rounded-[22px]" aria-label="Settings">
+          <Settings size={18} className="text-secondary" />
         </button>
 
         <button
           type="button"
-          className="hidden xl:flex items-center gap-3 rounded-[22px] border border-border bg-card px-3 py-2"
+          className="hidden xl:flex items-center gap-3 rounded-[26px] border border-border bg-bg-secondary px-4 py-3"
           onClick={handleLogout}
         >
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/25 to-accent/25 grid place-items-center text-primary font-semibold">
-            {initials}
-          </div>
+          <div className="h-11 w-11 rounded-full bg-[rgba(126,231,199,0.14)] grid place-items-center text-accent-mint font-semibold">{initials}</div>
           <div className="text-left">
             <p className="text-sm font-semibold text-foreground">{user?.displayName || 'User'}</p>
             <p className="text-xs text-secondary">Sign out</p>
           </div>
+          <LogOut size={16} className="text-secondary" />
         </button>
 
         <div className="hidden lg:flex items-center gap-3">
@@ -81,6 +80,6 @@ export function TopNavbar() {
           <NotificationBadge />
         </div>
       </div>
-    </div>
+    </header>
   );
 }

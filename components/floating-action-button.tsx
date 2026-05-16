@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,9 @@ export function FloatingActionButton({
   return (
     <Button
       onClick={onClick}
-      className="fixed bottom-20 right-4 lg:hidden h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow p-0 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white z-30"
+      className={"fixed bottom-28 right-4 lg:hidden h-16 w-16 rounded-full bg-accent-mint text-[#071a0d] shadow-[0_18px_40px_rgba(126,231,199,0.22)] hover:shadow-[0_22px_48px_rgba(126,231,199,0.32)] transition-all p-0 flex items-center justify-center z-40 " + (className ?? '')}
     >
-      <Plus className="size-7" />
+      <Plus size={26} />
     </Button>
   );
 }

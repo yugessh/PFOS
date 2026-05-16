@@ -57,9 +57,11 @@ body {
   .bg-card-elevated { background-color: var(--card-elevated) !important; }
   .bg-background, .bg-main { background-color: var(--bg-main) !important; }
 
+  .text-foreground { color: var(--text-primary) !important; }
+
   /* Borders & text */
   .border-border, .border-gray-200, .border-gray-300, .border-gray-400, .border { border-color: var(--border) !important; }
-  .text-foreground, .text-white, .text-black { color: var(--text-primary) !important; }
+  .text-white, .text-black { color: var(--text-primary) !important; }
   .text-secondary, .text-gray-400, .text-gray-500, .text-gray-300 { color: var(--text-secondary) !important; }
   .text-muted-foreground, .text-gray-600, .text-gray-500 { color: var(--muted) !important; }
 
@@ -69,8 +71,29 @@ body {
   .bg-green-600, .text-green-600 { color: var(--green) !important; }
   .text-red-600, .bg-red-50 { color: var(--red) !important; }
 
-  /* Shadows and rounding */
-  .shadow, .shadow-md, .shadow-lg { box-shadow: var(--card-shadow) !important; }
+  /* Neutral text overrides */
+  .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400, .text-black,
+  .text-gray-300, .text-gray-200, .text-gray-100 {
+    color: var(--text-primary) !important;
+  }
+  .text-white { color: var(--text-primary) !important; }
+  .text-gray-600, .text-gray-500, .text-gray-400, .text-gray-300 {
+    color: var(--text-secondary) !important;
+  }
+
+  .bg-blue-50 { background: rgba(96,165,250,0.09) !important; }
+  .bg-green-50 { background: rgba(126,231,199,0.12) !important; }
+  .bg-red-50 { background: rgba(255,93,93,0.14) !important; }
+  .bg-yellow-50 { background: rgba(255,204,102,0.16) !important; }
+  .bg-orange-50 { background: rgba(251,146,60,0.14) !important; }
+  .bg-blue-900\/20, .bg-green-900\/20, .bg-red-900\/20, .bg-orange-900\/20 { background: rgba(255,255,255,0.04) !important; }
+
+  .border-gray-100, .border-gray-200, .border-gray-300, .border-gray-400,
+  .border-gray-500, .border-gray-600, .border-gray-700 {
+    border-color: var(--border) !important;
+  }
+
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow { box-shadow: var(--card-shadow) !important; }
   .rounded-2xl, .rounded-lg { border-radius: var(--radius-card) !important; }
 
   /* Card surface (global) */

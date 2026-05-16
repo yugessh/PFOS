@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Providers from '../src/components/Providers'
@@ -40,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} bg-background`}>
-      <body className="font-sans antialiased bg-background text-foreground">
+    <html lang="en" className={`${inter.variable} bg-main`}>
+      <body className="font-sans antialiased bg-main text-white min-h-screen">
         <Providers>
           <CapacitorBootstrap />
           {children}
