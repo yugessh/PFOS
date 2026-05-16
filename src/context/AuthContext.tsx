@@ -11,6 +11,7 @@ import {
   browserLocalPersistence,
   signInWithPopup,
   sendPasswordResetEmail,
+  updateProfile,
   GoogleAuthProvider,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -31,7 +32,7 @@ type AuthContextValue = {
   loading: boolean;
   initialized: boolean;
   error?: string | null;
-  signUp: (email: string, password: string) => Promise<FirebaseUser>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<FirebaseUser>;
   signIn: (email: string, password: string) => Promise<FirebaseUser>;
   signInWithGoogle: () => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
@@ -79,17 +80,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsub();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, displayName?: string) => {
     const auth = getAuthSafe();
     if (!auth) throw new Error('Firebase Auth is not initialized');
     const res = await createUserWithEmailAndPassword(auth, email, password);
+
+    if (displayName) {
+      await updateProfile(res.user, { displayName });
+    }
+
     setUser(mapFirebaseUser(res.user));
 
     // Initialize user profile and default collections in Firestore
     try {
       await ensureUserProfile(res.user.uid, {
         email: res.user.email || email,
-        displayName: res.user.displayName || undefined,
+        displayName: displayName || res.user.displayName || undefined,
       });
     } catch (initError) {
       console.error('Failed to initialize user profile after signup:', initError);

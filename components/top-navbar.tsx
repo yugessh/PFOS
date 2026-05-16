@@ -21,6 +21,20 @@ export function TopNavbar() {
   const pathname = usePathname();
   const pageTitle = formatTitle(pathname);
 
+  const handleLogout = async () => {
+    if (window.confirm('Logout?')) {
+      await signOut();
+    }
+  };
+
+  const initials = user?.displayName
+    ? user.displayName
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+    : user?.email?.charAt(0).toUpperCase() || 'PF';
+
   return (
     <div className="hidden lg:flex h-16 bg-background border-b border-border items-center justify-between px-6 sticky top-0 z-30">
       <div className="space-y-1">
@@ -45,15 +59,19 @@ export function TopNavbar() {
           <Settings size={18} />
         </button>
 
-        <div className="hidden xl:flex items-center gap-3 rounded-[22px] border border-border bg-card p-2 pl-3">
+        <button
+          type="button"
+          className="hidden xl:flex items-center gap-3 rounded-[22px] border border-border bg-card px-3 py-2"
+          onClick={handleLogout}
+        >
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/25 to-accent/25 grid place-items-center text-primary font-semibold">
-            JD
+            {initials}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Jamie Doe</p>
-            <p className="text-xs text-secondary">Personal profile</p>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-foreground">{user?.displayName || 'User'}</p>
+            <p className="text-xs text-secondary">Sign out</p>
           </div>
-        </div>
+        </button>
 
         <div className="hidden lg:flex items-center gap-3">
           <ConnectionStatusBar />

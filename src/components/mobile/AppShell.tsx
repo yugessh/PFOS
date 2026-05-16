@@ -13,20 +13,21 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const { addTransaction } = useTransactions();
   const pathname = usePathname() || '/';
   const isDashboardRoute = pathname.startsWith('/dashboard');
+  const isAuthRoute = pathname.startsWith('/auth');
 
   return (
     <div className="min-h-screen bg-background pb-20 transition-colors duration-200">
-      {!isDashboardRoute ? <MobileHeader /> : null}
+      {!isDashboardRoute && !isAuthRoute ? <MobileHeader /> : null}
 
-      <main className={isDashboardRoute ? 'pt-0 pb-0' : 'pt-2 pb-24'}>
+      <main className={isDashboardRoute || isAuthRoute ? 'pt-0 pb-0' : 'pt-2 pb-24'}>
         <div className="max-w-md mx-auto px-4">{children}</div>
       </main>
 
-      {!isDashboardRoute ? <FloatingActionButton onClick={() => setAddOpen(true)} /> : null}
+      {!isDashboardRoute && !isAuthRoute ? <FloatingActionButton onClick={() => setAddOpen(true)} /> : null}
 
-      {!isDashboardRoute ? <MobileBottomNavigation /> : null}
+      {!isDashboardRoute && !isAuthRoute ? <MobileBottomNavigation /> : null}
 
-      {!isDashboardRoute ? (
+      {!isDashboardRoute && !isAuthRoute ? (
         <AddTransactionModal
           open={addOpen}
           onOpenChange={setAddOpen}
