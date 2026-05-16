@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,9 +37,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen overflow-hidden bg-background text-foreground">
       <Sidebar />
-      <div className="flex-1 lg:ml-0 pt-16 lg:pt-0 pb-20 lg:pb-0">
+      <div className="flex-1 overflow-auto lg:ml-[260px] pt-16 lg:pt-0 pb-20 lg:pb-0">
         <TopNavbar />
         <main className="mx-auto w-full max-w-[1600px] px-4 py-4 lg:px-6">{children}</main>
       </div>
