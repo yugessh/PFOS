@@ -12,7 +12,7 @@ import { EmptyAccountsState } from '@/src/components/accounts/EmptyAccountsState
 import { CompactHeader } from '@/components/compact-header';
 import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
 import { FloatingActionButton } from '@/components/floating-action-button';
-import { AddActionsBottomSheet } from '@/components/add-actions-bottom-sheet';
+import { UniversalActionsSheet } from '@/components/universal-actions-sheet';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-main px-4 py-8 lg:px-8">
         <EmptyFinanceState onAddTransaction={() => setAddActionsOpen(true)} />
-        <AddActionsBottomSheet
+        <UniversalActionsSheet
           open={addActionsOpen}
           onOpenChange={setAddActionsOpen}
           onAddExpense={() => setAddTransactionOpen(true)}
@@ -174,7 +174,7 @@ export default function Dashboard() {
 
       <FloatingActionButton onClick={() => setAddActionsOpen(true)} />
 
-      <AddActionsBottomSheet
+      <UniversalActionsSheet
         open={addActionsOpen}
         onOpenChange={setAddActionsOpen}
         onAddExpense={() => setAddTransactionOpen(true)}

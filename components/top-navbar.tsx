@@ -1,10 +1,12 @@
 ﻿'use client';
 
 import { Bell, Search, Settings, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import ConnectionStatusBar from '@/components/connection-status/ConnectionStatusBar';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';
+import { GlobalSearchDialog } from '@/components/global-search-dialog';
 
 function formatTitle(pathname: string | null) {
   if (!pathname) return 'Dashboard';
@@ -17,6 +19,7 @@ function formatTitle(pathname: string | null) {
 }
 
 export function TopNavbar() {
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, signOut } = useAuthContext();
   const pathname = usePathname();
   const pageTitle = formatTitle(pathname);
@@ -35,6 +38,19 @@ export function TopNavbar() {
         .slice(0, 2)
     : user?.email?.charAt(0).toUpperCase() || 'PF';
 
+  // Global keyboard shortcut for search (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <header className="hidden lg:flex items-center justify-between gap-4 rounded-[32px] border border-border bg-card p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] sticky top-4 z-20 mx-6">
       <div className="space-y-1">
@@ -43,14 +59,23 @@ export function TopNavbar() {
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-3">
-        <div className="relative hidden xl:block">
-          <input
-            type="search"
-            placeholder="Search transactions, budgets..."
-            className="input-surface min-w-[320px] pr-12"
-          />
-          <Search size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary" />
-        </div>
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="relative hidden xl:flex items-center gap-2 min-w-[320px] px-4 py-2 rounded-[22px] border border-border bg-card-elevated hover:border-accent-mint/50 transition-colors"
+          aria-label="Search (Cmd+K)"
+        >
+          <Search size={18} className="text-secondary" />
+          <span className="flex-1 text-left text-sm text-secondary">
+            Search transactions, accounts...
+          </span>
+          <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-card border border-border">
+            ⌘K
+          </span>
+        </button>
+
+        <button className="button-ghost p-3 rounded-[22px] xl:hidden" aria-label="Search" onClick={() => setSearchOpen(true)}>
+          <Search size={18} className="text-secondary" />
+        </button>
 
         <button className="button-ghost p-3 rounded-[22px]" aria-label="Notifications">
           <Bell size={18} className="text-secondary" />
@@ -80,6 +105,8 @@ export function TopNavbar() {
           <NotificationBadge />
         </div>
       </div>
+
+      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }
