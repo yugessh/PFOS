@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isCapacitorAndroid, setIsCapacitorAndroid] = useState(false);
   
   const { signUp, loading, user, signInWithGoogle } = useAuthContext();
   const router = useRouter();
@@ -22,6 +23,26 @@ export default function RegisterPage() {
       router.replace('/dashboard/transactions');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    let active = true;
+
+    const detectCapacitor = async () => {
+      try {
+        const native = await import('@/src/native');
+        if (active && (await native.isCapacitorAndroid())) {
+          setIsCapacitorAndroid(true);
+        }
+      } catch {
+        // Not running inside Capacitor Android
+      }
+    };
+
+    detectCapacitor();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,24 +186,30 @@ export default function RegisterPage() {
               {loading ? 'Creating account...' : 'Create account'}
             </Button>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              size="lg"
-              type="button"
-              onClick={async () => {
-                try {
-                  setError('');
-                  if (!signInWithGoogle) throw new Error('Google sign-in is not available');
-                  await signInWithGoogle();
-                  router.replace('/dashboard');
-                } catch (err: any) {
-                  setError(err?.message || String(err));
-                }
-              }}
-            >
-              Continue with Google
-            </Button>
+            {isCapacitorAndroid ? (
+              <div className="rounded-[20px] border border-[#F5A524]/30 bg-[#FFF4D8] p-4 text-sm text-[#7A5200]">
+                Google sign-up is unavailable in the Android app WebView. Please register with email and password.
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                size="lg"
+                type="button"
+                onClick={async () => {
+                  try {
+                    setError('');
+                    if (!signInWithGoogle) throw new Error('Google sign-in is not available');
+                    await signInWithGoogle();
+                    router.replace('/dashboard');
+                  } catch (err: any) {
+                    setError(err?.message || String(err));
+                  }
+                }}
+              >
+                Continue with Google
+              </Button>
+            )}
           </form>
 
           <div className="mt-8 rounded-[24px] border border-border bg-card-elevated/80 p-4 text-center text-sm text-secondary">

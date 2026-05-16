@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [isCapacitorAndroid, setIsCapacitorAndroid] = useState(false);
   
   const { signIn, signInWithGoogle, loading, error, clearError } = useAuth();
   const router = useRouter();
@@ -44,6 +45,27 @@ export default function LoginPage() {
       // Error is handled by the useAuth hook
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const detectCapacitorAndroid = async () => {
+      try {
+        const native = await import('@/src/native');
+        if (mounted && (await native.isCapacitorAndroid())) {
+          setIsCapacitorAndroid(true);
+        }
+      } catch {
+        // Not running in Capacitor or unable to detect platform
+      }
+    };
+
+    detectCapacitorAndroid();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -118,10 +140,16 @@ export default function LoginPage() {
         
         <AuthDivider />
         
-        <GoogleSignInButton
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-        />
+        {isCapacitorAndroid ? (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-900/40 p-3 text-sm text-yellow-800 dark:text-yellow-200">
+            Google sign-in is unavailable inside the Android app webview. Please sign in with email and password.
+          </div>
+        ) : (
+          <GoogleSignInButton
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+          />
+        )}
         
         <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
           Don't have an account?{' '}

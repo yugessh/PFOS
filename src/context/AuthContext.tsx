@@ -15,6 +15,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { getAuthSafe, initializeFirebase } from '@/src/firebase/firebase';
+import { isNativePlatform } from '@/src/native';
 import { ensureUserProfile } from '@/src/lib/firestore-init';
 
 type AuthUser = {
@@ -121,6 +122,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     const auth = getAuthSafe();
     if (!auth) throw new Error('Firebase Auth is not initialized');
+    if (await isNativePlatform()) {
+      throw new Error('Google sign-in is unavailable inside the Capacitor Android app. Use email/password login instead.');
+    }
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {

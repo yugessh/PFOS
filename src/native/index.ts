@@ -45,7 +45,42 @@ export function getBridge() {
   return bridge;
 }
 
-// Stubs for future features (push, biometric, local notifications, file export, camera)
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+
+async function loadCapacitor(): Promise<any | null> {
+  if (!isBrowser) return null;
+  const globalCap = (window as any).Capacitor;
+  if (globalCap) return globalCap;
+
+  try {
+    const cap = await import('@capacitor/core');
+    return cap?.Capacitor ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function isNativePlatform(): Promise<boolean> {
+  const Capacitor = await loadCapacitor();
+  return !!Capacitor?.isNativePlatform?.();
+}
+
+export async function getCapacitorPlatform(): Promise<string | null> {
+  const Capacitor = await loadCapacitor();
+  return Capacitor?.getPlatform?.() ?? null;
+}
+
+export async function isCapacitorAndroid(): Promise<boolean> {
+  const Capacitor = await loadCapacitor();
+  return !!Capacitor?.isNativePlatform?.() && Capacitor?.getPlatform?.() === 'android';
+}
+
+export function isCapacitorAndroidSync(): boolean {
+  if (!isBrowser) return false;
+  const Capacitor = (window as any).Capacitor;
+  return !!Capacitor?.isNativePlatform?.() && Capacitor?.getPlatform?.() === 'android';
+}
+
 export async function requestPushPermission() {
   // implement later with Capacitor Push Notifications plugin
   return false;
@@ -61,4 +96,4 @@ export async function takePhoto() {
   return null;
 }
 
-export default { initNativeBridge, getBridge };
+export default { initNativeBridge, getBridge, isNativePlatform, getCapacitorPlatform, isCapacitorAndroid, isCapacitorAndroidSync };

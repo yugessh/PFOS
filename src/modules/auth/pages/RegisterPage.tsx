@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
@@ -15,6 +15,7 @@ export default function RegisterPage() {
     password?: string;
     confirmPassword?: string;
   }>({});
+  const [isCapacitorAndroid, setIsCapacitorAndroid] = useState(false);
   
   const { signUp, signInWithGoogle, loading, error, clearError } = useAuth();
   const router = useRouter();
@@ -57,6 +58,27 @@ export default function RegisterPage() {
       // Error is handled by the useAuth hook
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const detectCapacitorAndroid = async () => {
+      try {
+        const native = await import('@/src/native');
+        if (mounted && (await native.isCapacitorAndroid())) {
+          setIsCapacitorAndroid(true);
+        }
+      } catch {
+        // Not running in Capacitor or unable to detect platform
+      }
+    };
+
+    detectCapacitorAndroid();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleGoogleSignIn = async () => {
     try {

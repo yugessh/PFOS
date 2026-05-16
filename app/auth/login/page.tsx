@@ -17,6 +17,7 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
+  const [isCapacitorAndroid, setIsCapacitorAndroid] = useState(false);
 
   const { signIn, loading, user, signInWithGoogle } = useAuthContext();
   const router = useRouter();
@@ -26,6 +27,26 @@ function LoginContent() {
       router.replace('/dashboard/transactions');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    let active = true;
+
+    const detectCapacitor = async () => {
+      try {
+        const native = await import('@/src/native');
+        if (active && (await native.isCapacitorAndroid())) {
+          setIsCapacitorAndroid(true);
+        }
+      } catch {
+        // Not running inside Capacitor Android
+      }
+    };
+
+    detectCapacitor();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,18 +158,24 @@ function LoginContent() {
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
-            <Button variant="outline" className="w-full" size="lg" type="button" onClick={async () => {
-              try {
-                setError('');
-                if (!signInWithGoogle) throw new Error('Google sign-in not available');
-                await signInWithGoogle();
-                router.push('/dashboard/transactions');
-              } catch (err: any) {
-                setError(err?.message || String(err));
-              }
-            }}>
-              Continue with Google
-            </Button>
+            {isCapacitorAndroid ? (
+              <div className="rounded-[20px] border border-[#F5A524]/30 bg-[#FFF4D8] p-4 text-sm text-[#7A5200]">
+                Google sign-in is unavailable in the Android app WebView. Please use email and password login instead.
+              </div>
+            ) : (
+              <Button variant="outline" className="w-full" size="lg" type="button" onClick={async () => {
+                try {
+                  setError('');
+                  if (!signInWithGoogle) throw new Error('Google sign-in not available');
+                  await signInWithGoogle();
+                  router.push('/dashboard/transactions');
+                } catch (err: any) {
+                  setError(err?.message || String(err));
+                }
+              }}>
+                Continue with Google
+              </Button>
+            )}
           </form>
 
           <div className="mt-8 rounded-[24px] border border-border bg-card-elevated/80 p-4 text-center text-sm text-secondary">

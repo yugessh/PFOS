@@ -7,6 +7,7 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
+import { isNativePlatform } from '@/src/native';
 import { User, AuthCredentials, AuthError } from '../types';
 
 const mapFirebaseUser = (firebaseUser: FirebaseUser): User => ({
@@ -42,6 +43,8 @@ const getErrorMessage = (code: string): string => {
       return 'Network error. Please check your connection.';
     case 'auth/popup-closed-by-user':
       return 'Sign-in popup was closed before completion.';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'Google sign-in is not supported inside the Capacitor Android app yet. Please use email/password login.';
     default:
       return 'An unexpected error occurred. Please try again.';
   }
@@ -76,6 +79,10 @@ export const authService = {
 
   async signInWithGoogle(): Promise<User> {
     try {
+      if (await isNativePlatform()) {
+        throw { code: 'auth/operation-not-supported-in-this-environment' };
+      }
+
       const result = await signInWithPopup(auth, googleProvider);
       return mapFirebaseUser(result.user);
     } catch (error) {
