@@ -377,3 +377,94 @@ export interface ListResponse<T> {
   lastDocument?: any;
   totalCount?: number;
 }
+
+// Net Worth Engine
+export interface Asset {
+  id: string;
+  accountId?: string; // Link to Account if applicable
+  name: string;
+  type: AssetType;
+  value: number;
+  currency: string;
+  description?: string;
+  lastUpdated: Date;
+}
+
+export type AssetType = 
+  | 'bank_account'
+  | 'cash'
+  | 'upi_wallet'
+  | 'investments'
+  | 'savings'
+  | 'crypto'
+  | 'property'
+  | 'vehicle'
+  | 'other';
+
+export interface Liability {
+  id: string;
+  emiId?: string; // Link to EMI if applicable
+  name: string;
+  type: LiabilityType;
+  amount: number;
+  currency: string;
+  description?: string;
+  dueDate?: Date;
+  lastUpdated: Date;
+}
+
+export type LiabilityType = 
+  | 'loan'
+  | 'credit_card'
+  | 'emi'
+  | 'borrowed_money'
+  | 'debt'
+  | 'other';
+
+export interface NetWorthSnapshot extends BaseDocument {
+  userId: string;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  currency: string;
+  month: string; // YYYY-MM
+  assetBreakdown: Record<AssetType, number>;
+  liabilityBreakdown: Record<LiabilityType, number>;
+  gainLoss?: number; // vs previous month
+  gainLossPercent?: number;
+}
+
+// Budget System
+export interface BudgetCategory extends BaseDocument {
+  userId: string;
+  category: string;
+  monthlyLimit: number;
+  alertThreshold: number; // 80 = alert at 80%
+  currency: string;
+  isActive: boolean;
+}
+
+export interface BudgetTracking extends BaseDocument {
+  userId: string;
+  budgetCategoryId: string;
+  category: string;
+  month: string; // YYYY-MM
+  limit: number;
+  spent: number;
+  remaining: number;
+  alertsSent: Array<{ threshold: number; sentAt: Date }>;
+  isExceeded: boolean;
+  currency: string;
+}
+
+export interface BudgetAlert extends BaseDocument {
+  userId: string;
+  budgetCategoryId: string;
+  category: string;
+  threshold: number; // 80, 90, 100
+  spent: number;
+  limit: number;
+  percentUsed: number;
+  status: 'pending' | 'sent' | 'read';
+  sentAt: Date;
+}

@@ -1,7 +1,7 @@
 {
   "appId": "com.pfos.app",
   "appName": "PFOS",
-  "webDir": "out",
+  "webDir": ".next/standalone/public",
 
   "linuxAndroidStudioPath": "C:\\Program Files\\Android\\Android Studio\\bin\\studio64.exe",
 
@@ -16,6 +16,8 @@
   },
 
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "url": "http://localhost:3000",
+    "cleartext": true
   }
 }

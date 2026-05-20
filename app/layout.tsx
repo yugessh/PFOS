@@ -1,6 +1,8 @@
-﻿import type { Metadata } from 'next'
+﻿import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { ErrorBoundary } from '../src/components/ErrorBoundary'
+import { OfflineFallback } from '../src/components/OfflineFallback'
 import Providers from '../src/components/Providers'
 import CapacitorBootstrap from '../components/capacitor/CapacitorBootstrap'
 import './globals.css'
@@ -11,6 +13,14 @@ const inter = Inter({
   display: 'swap',
 })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#0E1117',
+}
+
 export const metadata: Metadata = {
   title: {
     default: 'PFOS | Neo Finance OS',
@@ -18,13 +28,6 @@ export const metadata: Metadata = {
   },
   description: 'Premium personal finance operating system',
   generator: 'PFOS Neo Finance OS',
-  themeColor: '#0E1117',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    minimumScale: 1,
-    viewportFit: 'cover',
-  },
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -53,11 +56,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} bg-main dark`}>
       <body className="font-sans antialiased bg-main text-white min-h-screen selection:bg-[rgba(126,231,199,0.18)] selection:text-white">
-        <Providers>
-          <CapacitorBootstrap />
-          {children}
-          {process.env.NODE_ENV === 'production' && <Analytics />}
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            <CapacitorBootstrap />
+            <OfflineFallback />
+            {children}
+            {process.env.NODE_ENV === 'production' && <Analytics />}
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   )

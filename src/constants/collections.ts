@@ -10,6 +10,9 @@ export const COLLECTIONS = {
   RECURRING_TRANSACTIONS: 'recurringTransactions',
   CATEGORIES: 'categories',
   BUDGETS: 'budgets',
+  BUDGET_CATEGORIES: 'budgetCategories',
+  BUDGET_TRACKING: 'budgetTracking',
+  BUDGET_ALERTS: 'budgetAlerts',
   INVESTMENTS: 'investments',
   AUTOMATIONS: 'automations',
   INVESTMENT_TRANSACTIONS: 'investmentTransactions',
@@ -21,6 +24,7 @@ export const COLLECTIONS = {
   NOTIFICATIONS: 'notifications',
   AI_INSIGHTS: 'ai_insights',
   TRADING_JOURNAL: 'tradingJournal',
+  NET_WORTH_SNAPSHOTS: 'netWorthSnapshots',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
