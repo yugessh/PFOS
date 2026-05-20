@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { DataManagement } from '@/components/data-management';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuthContext();
@@ -139,21 +140,6 @@ export default function SettingsPage() {
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Data</h2>
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full">
-              Export PDF
-            </Button>
-            <Button variant="outline" className="w-full">
-              Export CSV
-            </Button>
-            <Button variant="outline" className="w-full">
-              Backup / Restore
-            </Button>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-foreground mb-4">Danger Zone</h2>
           <div className="space-y-4">
             <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50" onClick={handleLogout}>
@@ -164,6 +150,10 @@ export default function SettingsPage() {
             </Button>
           </div>
         </div>
+      </section>
+
+      <section>
+        <DataManagement />
       </section>
     </div>
   );

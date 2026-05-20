@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { getFirestoreClient } from '@/src/services/firestore/firebaseClient';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
+import { collection, doc, getDocs, query, serverTimestamp, setDoc, where, Timestamp } from 'firebase/firestore';
 
 export interface BackupMetadata {
   backupDate: Date;
@@ -44,6 +45,22 @@ export function useBackupRestore() {
     }
   }, [user?.uid]);
 
+  const normalizeFirestoreValue = useCallback((value: any): any => {
+    if (value && typeof value === 'object') {
+      if (typeof value.seconds === 'number' && typeof value.nanoseconds === 'number') {
+        return new Timestamp(value.seconds, value.nanoseconds);
+      }
+      if (typeof value.toDate === 'function') {
+        return value;
+      }
+      if (Array.isArray(value)) {
+        return value.map((item) => normalizeFirestoreValue(item));
+      }
+      return Object.fromEntries(Object.entries(value).map(([key, fieldValue]) => [key, normalizeFirestoreValue(fieldValue)]));
+    }
+    return value;
+  }, []);
+
   // Export user data as JSON
   const exportAsJSON = useCallback(async () => {
     if (!user?.uid) {
@@ -61,15 +78,15 @@ export function useBackupRestore() {
         return null;
       }
 
-      const userRef = collection(db, `users/${user.uid}/transactions`);
-      const accountsRef = collection(db, `users/${user.uid}/accounts`);
-      const categoriesRef = collection(db, `users/${user.uid}/categories`);
-      const goalsRef = collection(db, `users/${user.uid}/goals`);
-      const investmentsRef = collection(db, `users/${user.uid}/investments`);
-      const remindersRef = collection(db, `users/${user.uid}/reminders`);
+      const transactionsRef = query(collection(db, COLLECTIONS.TRANSACTIONS), where('userId', '==', user.uid));
+      const accountsRef = collection(db, SUBCOLLECTIONS.USER_ACCOUNTS(user.uid));
+      const categoriesRef = collection(db, SUBCOLLECTIONS.USER_CATEGORIES(user.uid));
+      const goalsRef = collection(db, SUBCOLLECTIONS.USER_GOALS(user.uid));
+      const investmentsRef = collection(db, SUBCOLLECTIONS.USER_INVESTMENTS(user.uid));
+      const remindersRef = collection(db, SUBCOLLECTIONS.USER_REMINDERS(user.uid));
 
       const [transactionsSnap, accountsSnap, categoriesSnap, goalsSnap, investmentsSnap, remindersSnap] = await Promise.all([
-        getDocs(userRef),
+        getDocs(transactionsRef),
         getDocs(accountsRef),
         getDocs(categoriesRef),
         getDocs(goalsRef),
@@ -127,7 +144,13 @@ export function useBackupRestore() {
     setError(null);
 
     try {
-      const transactionsRef = collection(db, `users/${user.uid}/transactions`);
+      const db = getFirestoreClient();
+      if (!db) {
+        setError('Firestore not initialized');
+        return null;
+      }
+
+      const transactionsRef = query(collection(db, COLLECTIONS.TRANSACTIONS), where('userId', '==', user.uid));
       const transactionsSnap = await getDocs(transactionsRef);
       const transactions = transactionsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
@@ -139,15 +162,16 @@ export function useBackupRestore() {
       const headers = Object.keys(transactions[0]);
       const csvContent = [
         headers.join(','),
-        ...transactions.map((tx) =>
-          headers.map((h) => {
-            const value = tx[h];
+        ...transactions.map((tx) => {
+          const row = tx as Record<string, any>;
+          return headers.map((h) => {
+            const value = row[h];
             if (typeof value === 'string' && value.includes(',')) {
               return `"${value}"`;
             }
             return value;
-          }).join(',')
-        ),
+          }).join(',');
+        }),
       ].join('\n');
 
       return csvContent;
@@ -171,23 +195,98 @@ export function useBackupRestore() {
     setError(null);
 
     try {
-      // Note: In a real implementation, you would need to:
-      // 1. Clear existing data (with user confirmation)
-      // 2. Upload backup data back to Firestore
-      // 3. This is a placeholder for the actual implementation
+      const db = getFirestoreClient();
+      if (!db) {
+        setError('Firestore not initialized');
+        return false;
+      }
 
-      // Update metadata
-      const metadata = { 
-        ...backupData.metadata, 
+      const normalizedData = (item: any) => ({
+        ...Object.fromEntries(
+          Object.entries(item || {}).map(([key, value]) => [key, normalizeFirestoreValue(value)])
+        ),
+      });
+
+      const transactionWrites = (backupData.transactions || []).map((transaction) => {
+        const payload = normalizedData(transaction);
+        return setDoc(doc(db, COLLECTIONS.TRANSACTIONS, transaction.id), {
+          ...payload,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          createdAt: payload.createdAt || serverTimestamp(),
+        });
+      });
+
+      const accountWrites = (backupData.accounts || []).map((account) => {
+        const payload = normalizedData(account);
+        return setDoc(doc(db, SUBCOLLECTIONS.USER_ACCOUNTS(user.uid), account.id), {
+          ...payload,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          createdAt: payload.createdAt || serverTimestamp(),
+        });
+      });
+
+      const categoryWrites = (backupData.categories || []).map((category) => {
+        const payload = normalizedData(category);
+        return setDoc(doc(db, SUBCOLLECTIONS.USER_CATEGORIES(user.uid), category.id), {
+          ...payload,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          createdAt: payload.createdAt || serverTimestamp(),
+        });
+      });
+
+      const goalWrites = (backupData.goals || []).map((goal) => {
+        const payload = normalizedData(goal);
+        return setDoc(doc(db, SUBCOLLECTIONS.USER_GOALS(user.uid), goal.id), {
+          ...payload,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          createdAt: payload.createdAt || serverTimestamp(),
+        });
+      });
+
+      const investmentWrites = (backupData.investments || []).map((investment) => {
+        const payload = normalizedData(investment);
+        return setDoc(doc(db, SUBCOLLECTIONS.USER_INVESTMENTS(user.uid), investment.id), {
+          ...payload,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          createdAt: payload.createdAt || serverTimestamp(),
+        });
+      });
+
+      const reminderWrites = (backupData.reminders || []).map((reminder) => {
+        const payload = normalizedData(reminder);
+        return setDoc(doc(db, SUBCOLLECTIONS.USER_REMINDERS(user.uid), reminder.id), {
+          ...payload,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+          createdAt: payload.createdAt || serverTimestamp(),
+        });
+      });
+
+      await Promise.all([
+        ...transactionWrites,
+        ...accountWrites,
+        ...categoryWrites,
+        ...goalWrites,
+        ...investmentWrites,
+        ...reminderWrites,
+      ]);
+
+      const metadata = {
+        ...backupData.metadata,
         lastRestoreDate: new Date(),
-        backupDate: backupData.metadata.backupDate
+        backupDate: backupData.metadata.backupDate,
       };
       localStorage.setItem(
         `pfos_backup_metadata_${user.uid}`,
         JSON.stringify({
           ...metadata,
           backupDate: metadata.backupDate.toISOString(),
-          lastRestoreDate: metadata.lastRestoreDate.toISOString(),
+          lastRestoreDate: metadata.lastRestoreDate?.toISOString(),
         })
       );
       setBackupMetadata(metadata);
@@ -200,7 +299,7 @@ export function useBackupRestore() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.uid]);
+  }, [user?.uid, normalizeFirestoreValue]);
 
   return {
     isLoading,

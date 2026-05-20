@@ -5,6 +5,8 @@ import type { Account } from '@/src/services/firestore/accounts.service';
 import { accountsService } from '@/src/services/firestore/accounts.service';
 import { usersService } from '@/src/services/firestore/users.service';
 import { useAuthContext } from '@/src/context/AuthContext';
+import { queueAdd, queueUpdate } from '@/src/services/offline/api';
+import { SUBCOLLECTIONS } from '@/src/constants/collections';
 
 interface AccountContextValue {
   accounts: Account[];
@@ -25,10 +27,38 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const accountCacheKey = (userId: string) => `pfos_accounts_cache_${userId}`;
+
+  const loadCachedAccounts = (userId: string) => {
+    try {
+      const raw = localStorage.getItem(accountCacheKey(userId));
+      if (!raw) return null;
+      return JSON.parse(raw) as Account[];
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCachedAccounts = (userId: string, items: Account[]) => {
+    try {
+      localStorage.setItem(accountCacheKey(userId), JSON.stringify(items));
+    } catch {
+      // ignore cache persistence failures
+    }
+  };
+
   // Fetch accounts from Firestore for current user
   const fetchAccountsForUser = useCallback(async (userId: string) => {
     setLoading(true);
     setError(null);
+
+    const offlineCached = typeof window !== 'undefined' && !navigator.onLine ? loadCachedAccounts(userId) : null;
+    if (offlineCached) {
+      setAccounts(offlineCached.filter((acc) => !acc.deletedAt));
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await accountsService.getUserAccounts(userId);
       // If permission error occurs, attempt to create a minimal user profile and retry once
@@ -45,6 +75,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           if (retry.success) {
             const activeAccounts = (retryFetchedAccounts as Account[]).filter((acc) => !acc.deletedAt);
             setAccounts(activeAccounts);
+            saveCachedAccounts(userId, activeAccounts);
             return;
           }
         } catch (initErr) {
@@ -63,16 +94,24 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           (acc) => !acc.deletedAt
         );
         setAccounts(activeAccounts);
+        saveCachedAccounts(userId, activeAccounts);
       } else {
         setAccounts([]);
         if (response.error) {
           setError(response.error);
+          const cached = loadCachedAccounts(userId);
+          if (cached) {
+            setAccounts(cached.filter((acc) => !acc.deletedAt));
+          }
         }
       }
     } catch (err: any) {
       console.error('Failed to fetch accounts:', err);
+      const cached = loadCachedAccounts(userId);
+      if (cached) {
+        setAccounts(cached.filter((acc) => !acc.deletedAt));
+      }
       setError(err.message || 'Failed to fetch accounts');
-      setAccounts([]);
     } finally {
       setLoading(false);
     }
@@ -95,6 +134,35 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
       setLoading(true);
       setError(null);
+      const tempId = `temp_${Date.now()}`;
+      const optimisticAccount: Account = {
+        id: tempId,
+        userId: user.uid,
+        name: accountData.name || accountData.accountName || 'New Account',
+        accountType: accountData.accountType as any || accountData.type as any || 'checking',
+        currentBalance: Number(accountData.currentBalance ?? accountData.balance ?? 0),
+        currency: accountData.currency || 'INR',
+        color: accountData.color || '#7EE7C7',
+        icon: accountData.icon || 'bank',
+        monthlyInflow: Number(accountData.monthlyInflow ?? 0),
+        monthlyOutflow: Number(accountData.monthlyOutflow ?? 0),
+        lastTransaction: accountData.lastTransaction || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      } as Account;
+
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        queueAdd(SUBCOLLECTIONS.USER_ACCOUNTS(user.uid), { ...accountData, userId: user.uid, isActive: true }, tempId);
+        setAccounts((prev) => {
+          const next = [...prev, optimisticAccount];
+          saveCachedAccounts(user.uid, next);
+          return next;
+        });
+        setLoading(false);
+        return optimisticAccount;
+      }
+
       try {
         // Debug: log current user id when creating account
         try {
@@ -143,6 +211,16 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           prev.map((acc) => (acc.id === id ? { ...acc, ...patch } : acc))
         );
 
+        if (typeof window !== 'undefined' && !navigator.onLine) {
+          setAccounts((prev) => {
+            const next = prev.map((acc) => (acc.id === id ? { ...acc, ...patch } : acc));
+            saveCachedAccounts(user.uid, next);
+            return next;
+          });
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(user.uid), id, patch);
+          return;
+        }
+
         const response = await accountsService.updateAccount(user.uid, id, patch);
         if (!response.success) {
           // Rollback on error
@@ -167,6 +245,19 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       try {
         // Optimistic update
         setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+
+        if (typeof window !== 'undefined' && !navigator.onLine) {
+          setAccounts((prev) => {
+            const next = prev.filter((acc) => acc.id !== id);
+            saveCachedAccounts(user.uid, next);
+            return next;
+          });
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(user.uid), id, {
+            deletedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+          return;
+        }
 
         const response = await accountsService.softDeleteAccount(user.uid, id);
         if (!response.success) {

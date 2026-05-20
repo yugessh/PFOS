@@ -9,6 +9,8 @@ import { transactionsService } from '@/src/services/firestore/transactions.servi
 import { useAuthContext } from '@/src/context/AuthContext';
 import { useAccountContext } from '@/src/context/AccountContext';
 import { accountsService } from '@/src/services/firestore/accounts.service';
+import { queueAdd, queueUpdate } from '@/src/services/offline/api';
+import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import { runRecurringAutomationForUser } from '@/src/services/recurring/automation';
 
 interface TransactionContextValue {
@@ -28,12 +30,32 @@ const TransactionContext = createContext<TransactionContextValue | undefined>(un
 
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthContext();
-  const { refresh: refreshAccounts } = useAccountContext();
+  const { refresh: refreshAccounts, accounts: accountList } = useAccountContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [creating, setCreating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const recurringAutomationRunForUid = useRef<string | null>(null);
+
+  const transactionCacheKey = (userId: string) => `pfos_transactions_cache_${userId}`;
+
+  const loadCachedTransactions = (userId: string) => {
+    try {
+      const raw = localStorage.getItem(transactionCacheKey(userId));
+      if (!raw) return null;
+      return JSON.parse(raw) as Transaction[];
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCachedTransactions = (userId: string, items: Transaction[]) => {
+    try {
+      localStorage.setItem(transactionCacheKey(userId), JSON.stringify(items));
+    } catch {
+      // ignore cache failures
+    }
+  };
 
   // Map Firestore transaction shape to local Transaction where possible
   function mapFirestoreToLocal(fx: any): Transaction {
@@ -53,15 +75,34 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     if (!userId) return;
     setLoading(true);
     setError(null);
+
+    const offlineCached = typeof window !== 'undefined' && !navigator.onLine ? loadCachedTransactions(userId) : null;
+    if (offlineCached) {
+      setTransactions(offlineCached);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await transactionsService.getUserTransactions(userId, { orderBy: { field: 'date', direction: 'desc' }, limit: 200 });
       if (res.success && res.data) {
         const docs = res.data.data.map((d: any) => mapFirestoreToLocal(d));
         setTransactions(docs);
+        saveCachedTransactions(userId, docs);
       } else {
         setError(res.error || 'Failed to load transactions');
+        if (res.error) {
+          const cached = loadCachedTransactions(userId);
+          if (cached) {
+            setTransactions(cached);
+          }
+        }
       }
     } catch (err: any) {
+      const cached = loadCachedTransactions(userId);
+      if (cached) {
+        setTransactions(cached);
+      }
       setError(err?.message || String(err));
     } finally {
       setLoading(false);
@@ -167,6 +208,51 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         date: form.date,
       } as any;
 
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        const sourceAccount = accountList.find((acc) => acc.id === form.account);
+        const destinationAccount = form.toAccount ? accountList.find((acc) => acc.id === form.toAccount) : undefined;
+
+        queueAdd(COLLECTIONS.TRANSACTIONS, { ...payload, userId: auth.user.uid }, tempId);
+        saveCachedTransactions(auth.user.uid, [optimistic, ...transactions]);
+
+        if (form.type === 'income' || form.type === 'expense') {
+          const currentBalance = sourceAccount?.currentBalance ?? sourceAccount?.balance ?? 0;
+          const nextBalance = form.type === 'income'
+            ? currentBalance + form.amount
+            : currentBalance - form.amount;
+
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(auth.user.uid), form.account, {
+            currentBalance: nextBalance,
+            balance: nextBalance,
+            monthlyInflow: form.type === 'income' ? (sourceAccount?.monthlyInflow ?? 0) + form.amount : sourceAccount?.monthlyInflow,
+            monthlyOutflow: form.type === 'expense' ? (sourceAccount?.monthlyOutflow ?? 0) + form.amount : sourceAccount?.monthlyOutflow,
+            lastTransaction: form.notes || form.category || (form.type === 'income' ? 'Income' : 'Expense'),
+            updatedAt: new Date().toISOString(),
+          });
+        } else if (form.type === 'transfer' && form.toAccount) {
+          const sourceBalance = sourceAccount?.currentBalance ?? sourceAccount?.balance ?? 0;
+          const destinationBalance = destinationAccount?.currentBalance ?? destinationAccount?.balance ?? 0;
+
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(auth.user.uid), form.account, {
+            currentBalance: sourceBalance - form.amount,
+            balance: sourceBalance - form.amount,
+            monthlyOutflow: (sourceAccount?.monthlyOutflow ?? 0) + form.amount,
+            lastTransaction: form.notes || 'Transfer',
+            updatedAt: new Date().toISOString(),
+          });
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(auth.user.uid), form.toAccount, {
+            currentBalance: destinationBalance + form.amount,
+            balance: destinationBalance + form.amount,
+            monthlyInflow: (destinationAccount?.monthlyInflow ?? 0) + form.amount,
+            lastTransaction: `Transfer from ${sourceAccount?.name || form.account}`,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+
+        await refreshAccounts();
+        return optimistic;
+      }
+
       const res = await transactionsService.createTransaction(auth.user.uid, payload);
       if (res.success && res.data) {
         const created = mapFirestoreToLocal(res.data);
@@ -200,6 +286,61 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
       setTransactions((s) => s.filter((t) => t.id !== tempId));
       throw new Error(res.error || 'Failed to create transaction');
     } catch (err: any) {
+      const offlinePayload = {
+        userId: auth.user.uid,
+        accountId: form.account,
+        ...(form.toAccount && { toAccount: form.toAccount }),
+        amount: form.amount,
+        type: form.type,
+        category: form.type === 'transfer' ? 'transfer' : form.category,
+        description: form.notes || form.category || (form.type === 'transfer' ? 'Transfer' : 'Transaction'),
+        date: form.date,
+      } as any;
+
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        queueAdd(COLLECTIONS.TRANSACTIONS, offlinePayload, tempId);
+        saveCachedTransactions(auth.user.uid, [optimistic, ...transactions]);
+
+        const sourceAccount = accountList.find((acc) => acc.id === form.account);
+        const destinationAccount = form.toAccount ? accountList.find((acc) => acc.id === form.toAccount) : undefined;
+
+        if (form.type === 'income' || form.type === 'expense') {
+          const currentBalance = sourceAccount?.currentBalance ?? sourceAccount?.balance ?? 0;
+          const nextBalance = form.type === 'income'
+            ? currentBalance + form.amount
+            : currentBalance - form.amount;
+
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(auth.user.uid), form.account, {
+            currentBalance: nextBalance,
+            balance: nextBalance,
+            monthlyInflow: form.type === 'income' ? (sourceAccount?.monthlyInflow ?? 0) + form.amount : sourceAccount?.monthlyInflow,
+            monthlyOutflow: form.type === 'expense' ? (sourceAccount?.monthlyOutflow ?? 0) + form.amount : sourceAccount?.monthlyOutflow,
+            lastTransaction: form.notes || form.category || (form.type === 'income' ? 'Income' : 'Expense'),
+            updatedAt: new Date().toISOString(),
+          });
+        } else if (form.type === 'transfer' && form.toAccount) {
+          const sourceBalance = sourceAccount?.currentBalance ?? sourceAccount?.balance ?? 0;
+          const destinationBalance = destinationAccount?.currentBalance ?? destinationAccount?.balance ?? 0;
+
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(auth.user.uid), form.account, {
+            currentBalance: sourceBalance - form.amount,
+            balance: sourceBalance - form.amount,
+            monthlyOutflow: (sourceAccount?.monthlyOutflow ?? 0) + form.amount,
+            lastTransaction: form.notes || 'Transfer',
+            updatedAt: new Date().toISOString(),
+          });
+          queueUpdate(SUBCOLLECTIONS.USER_ACCOUNTS(auth.user.uid), form.toAccount, {
+            currentBalance: destinationBalance + form.amount,
+            balance: destinationBalance + form.amount,
+            monthlyInflow: (destinationAccount?.monthlyInflow ?? 0) + form.amount,
+            lastTransaction: `Transfer from ${sourceAccount?.name || form.account}`,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        await refreshAccounts();
+        const created = optimistic;
+        return created;
+      }
       setTransactions((s) => s.filter((t) => t.id !== tempId));
       const message = err?.message || String(err);
       setError(message);
@@ -211,17 +352,30 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
 
   const updateTransaction = useCallback((id: string, patch: Partial<Transaction>) => {
     // Optimistic update
-    setTransactions((s) => s.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    setTransactions((s) => {
+      const next = s.map((t) => (t.id === id ? { ...t, ...patch } : t));
+      if (typeof window !== 'undefined' && !navigator.onLine && auth?.user?.uid) {
+        saveCachedTransactions(auth.user.uid, next);
+      }
+      return next;
+    });
 
-    // Persist in background
+    // Persist in background or queue while offline
     (async () => {
       if (!auth?.user?.uid) return;
+      const payload = {
+        ...patch,
+        accountId: (patch as any).account ?? undefined,
+        date: (patch as any).date ?? undefined,
+      } as any;
+
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        queueUpdate(COLLECTIONS.TRANSACTIONS, id, payload);
+        return;
+      }
+
       try {
-        await transactionsService.update(id, {
-          ...patch,
-          accountId: (patch as any).account ?? undefined,
-          date: (patch as any).date ?? undefined,
-        } as any);
+        await transactionsService.update(id, payload);
       } catch (err: any) {
         setError(err?.message || String(err));
         // on failure, refresh from server to reconcile
@@ -233,10 +387,25 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   const removeTransaction = useCallback((id: string) => {
     // Optimistic remove
     const previous = transactions;
-    setTransactions((s) => s.filter((t) => t.id !== id));
+    setTransactions((s) => {
+      const next = s.filter((t) => t.id !== id);
+      if (typeof window !== 'undefined' && !navigator.onLine && auth?.user?.uid) {
+        saveCachedTransactions(auth.user.uid, next);
+      }
+      return next;
+    });
 
     (async () => {
       if (!auth?.user?.uid) return;
+
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        queueUpdate(COLLECTIONS.TRANSACTIONS, id, {
+          deletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        return;
+      }
+
       try {
         await transactionsService.softDelete(id);
       } catch (err: any) {

@@ -21,6 +21,7 @@ export function DataManagement() {
     loadBackupMetadata,
     exportAsJSON,
     exportAsCSV,
+    importFromBackup,
   } = useBackupRestore();
 
   const [showExportOptions, setShowExportOptions] = useState(false);
@@ -62,8 +63,10 @@ export function DataManagement() {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      // You would call importFromBackup(data) here
-      console.log('Import data:', data);
+      const success = await importFromBackup(data);
+      if (success) {
+        setShowRestoreOptions(false);
+      }
     } catch (err) {
       console.error('Failed to parse backup file:', err);
     }
