@@ -52,7 +52,7 @@ export function TopNavbar() {
   }, []);
 
   return (
-    <header className="hidden lg:flex items-center justify-between gap-4 rounded-[32px] border border-border bg-card p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] sticky top-4 z-20 mx-6">
+    <header className="hidden lg:flex items-center justify-between gap-4 rounded-[32px] border border-border bg-bg-main/90 backdrop-blur-xl p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] sticky top-4 z-20 mx-6">
       <div className="space-y-1">
         <p className="text-xs uppercase tracking-[0.35em] text-secondary">Neo Finance OS</p>
         <h2 className="text-2xl font-semibold text-foreground">{pageTitle}</h2>

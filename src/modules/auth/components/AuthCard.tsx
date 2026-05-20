@@ -14,16 +14,16 @@ export function AuthCard({ children, className, title, description }: AuthCardPr
       'w-full max-w-md mx-auto',
       className
     )}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+      <div className="rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(21,26,32,0.92),rgba(14,17,23,0.88))] p-8 shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         {(title || description) && (
           <div className="mb-8 text-center">
             {title && (
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-2xl font-bold text-white mb-2">
                 {title}
               </h1>
             )}
             {description && (
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+              <p className="text-secondary text-sm">
                 {description}
               </p>
             )}

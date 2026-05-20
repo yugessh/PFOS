@@ -17,14 +17,14 @@ export default function MobileBottomNavigation() {
   const pathname = usePathname() || '/dashboard/transactions';
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 sm:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-main border-t border-border sm:hidden">
       <div className="max-w-md mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = pathname === t.href || (t.href !== '/dashboard' && pathname?.startsWith(t.href));
             return (
-              <Link key={t.href} href={t.href} className={`flex-1 flex flex-col items-center justify-center py-2 ${active ? 'text-blue-600' : 'text-zinc-500'}`}>
+              <Link key={t.href} href={t.href} className={`flex-1 flex flex-col items-center justify-center py-2 ${active ? 'text-accent-mint' : 'text-secondary'}`}>
                 <Icon className="w-5 h-5" />
                 <span className="text-xs mt-1">{t.label}</span>
               </Link>

@@ -9,7 +9,7 @@ export function BottomNav() {
   const { isActive } = useActiveRoute();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 px-4 z-50 bg-bg-secondary border-t border-border backdrop-blur-xl shadow-[0_-12px_32px_rgba(0,0,0,0.45)]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 px-4 z-50 bg-bg-main border-t border-border backdrop-blur-xl shadow-[0_-12px_32px_rgba(0,0,0,0.45)]">
       <div className="mx-auto flex h-full max-w-4xl items-center justify-between gap-2">
         {bottomNavItems.map((item) => {
           const Icon = item.icon;
@@ -19,7 +19,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-3 py-2 transition-all duration-200',
+                'flex flex-1 flex-col items-center justify-center gap-1 rounded-[26px] px-3 py-2 transition-all duration-200',
                 active ? 'bg-[rgba(126,231,199,0.12)] text-accent-mint' : 'text-secondary hover:bg-card',
               )}
             >

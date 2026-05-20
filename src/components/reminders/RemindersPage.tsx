@@ -53,51 +53,51 @@ export function RemindersPage() {
   }, [reminders, reminderAlerts]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24 animate-in fade-in duration-300">
-      <div className="bg-gradient-to-br from-amber-600 to-orange-700 dark:from-amber-800 dark:to-orange-900 text-white px-4 pt-6 pb-7 rounded-b-3xl shadow-lg">
+    <div className="min-h-screen bg-main pb-24 animate-in fade-in duration-300">
+      <div className="bg-[linear-gradient(180deg,rgba(21,26,32,0.98),rgba(8,10,15,0.96))] text-white px-4 pt-6 pb-7 rounded-b-[34px] border-b border-border shadow-[0_18px_45px_rgba(0,0,0,0.4)]">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <p className="text-amber-100 text-xs mb-1">Bill Reminders</p>
+            <p className="text-secondary text-xs mb-1">Bill Reminders</p>
             <h1 className="text-2xl font-bold">Payment Tracker</h1>
           </div>
-          <Button size="sm" className="bg-white text-amber-700 hover:bg-amber-50" onClick={() => setOpen(true)}>
+          <Button size="sm" className="button-primary" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
           </Button>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-            <p className="text-[11px] text-amber-100">Active</p>
+          <div className="rounded-[24px] border border-white/6 bg-white/5 p-3 backdrop-blur-sm">
+            <p className="text-[11px] text-secondary">Active</p>
             <p className="text-sm font-semibold">{stats.active}</p>
           </div>
-          <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-            <p className="text-[11px] text-amber-100">Due This Week</p>
+          <div className="rounded-[24px] border border-white/6 bg-white/5 p-3 backdrop-blur-sm">
+            <p className="text-[11px] text-secondary">Due This Week</p>
             <p className="text-sm font-semibold">{stats.dueThisWeek}</p>
           </div>
-          <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-            <p className="text-[11px] text-amber-100">Total Amount</p>
+          <div className="rounded-[24px] border border-white/6 bg-white/5 p-3 backdrop-blur-sm">
+            <p className="text-[11px] text-secondary">Total Amount</p>
             <p className="text-sm font-semibold">{formatCurrencyCompact(stats.totalAmount)}</p>
           </div>
         </div>
       </div>
 
       <div className="px-4 -mt-3 space-y-3">
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <section className="card-surface p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="size-4 text-red-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Overdue Payments</h2>
+            <AlertTriangle className="size-4 text-red-300" />
+            <h2 className="text-sm font-semibold text-white">Overdue Payments</h2>
           </div>
           {reminderAlerts.filter((a) => a.isOverdue).length === 0 ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">No overdue payments.</p>
+            <p className="text-xs text-secondary">No overdue payments.</p>
           ) : (
             <div className="space-y-2">
               {reminderAlerts.filter((a) => a.isOverdue).slice(0, 3).map((alert) => (
-                <div key={`${alert.reminderId}-${alert.dueDate.toISOString()}`} className="rounded-lg bg-red-50 dark:bg-red-900/30 p-2.5">
+                <div key={`${alert.reminderId}-${alert.dueDate.toISOString()}`} className="rounded-[20px] bg-red-500/10 border border-red-500/15 p-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-red-900 dark:text-red-100 truncate">{alert.title}</p>
-                    <p className="text-xs font-semibold text-red-700 dark:text-red-300">{alert.amount ? formatCurrency(alert.amount) : 'N/A'}</p>
+                    <p className="text-xs font-medium text-white truncate">{alert.title}</p>
+                    <p className="text-xs font-semibold text-red-300">{alert.amount ? formatCurrency(alert.amount) : 'N/A'}</p>
                   </div>
-                  <p className="text-[11px] mt-1 text-red-600 dark:text-red-400">
+                  <p className="text-[11px] mt-1 text-red-300">
                     {Math.abs(alert.daysUntilDue)} days overdue
                   </p>
                 </div>
@@ -106,22 +106,22 @@ export function RemindersPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <section className="card-surface p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Bell className="size-4 text-amber-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Upcoming Payments</h2>
+            <Bell className="size-4 text-accent-mint" />
+            <h2 className="text-sm font-semibold text-white">Upcoming Payments</h2>
           </div>
           {reminderAlerts.filter((a) => !a.isOverdue).length === 0 ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">No upcoming payments in the next 7 days.</p>
+            <p className="text-xs text-secondary">No upcoming payments in the next 7 days.</p>
           ) : (
             <div className="space-y-2">
               {reminderAlerts.filter((a) => !a.isOverdue).slice(0, 4).map((alert) => (
-                <div key={`${alert.reminderId}-${alert.dueDate.toISOString()}`} className="rounded-lg bg-amber-50 dark:bg-amber-900/30 p-2.5">
+                <div key={`${alert.reminderId}-${alert.dueDate.toISOString()}`} className="rounded-[20px] bg-white/5 border border-border/70 p-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-amber-900 dark:text-amber-100 truncate">{alert.title}</p>
-                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{alert.amount ? formatCurrency(alert.amount) : 'N/A'}</p>
+                    <p className="text-xs font-medium text-white truncate">{alert.title}</p>
+                    <p className="text-xs font-semibold text-secondary">{alert.amount ? formatCurrency(alert.amount) : 'N/A'}</p>
                   </div>
-                  <p className="text-[11px] mt-1 text-amber-600 dark:text-amber-400">
+                  <p className="text-[11px] mt-1 text-accent-mint">
                     {alert.daysUntilDue === 0 ? 'Due today' : `Due in ${alert.daysUntilDue} days`}
                   </p>
                 </div>
@@ -131,13 +131,13 @@ export function RemindersPage() {
         </section>
 
         {loading ? (
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+          <div className="card-surface p-6 text-center text-sm text-secondary">
             Loading reminders...
           </div>
         ) : reminders.length === 0 ? (
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm text-center dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">No reminders yet</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Set up reminders for bills, subscriptions, and payments.</p>
+          <div className="card-surface p-6 text-center">
+            <p className="text-sm font-medium text-white">No reminders yet</p>
+            <p className="text-xs text-secondary mt-1">Set up reminders for bills, subscriptions, and payments.</p>
             <Button className="mt-4" onClick={() => setOpen(true)}>Add Reminder</Button>
           </div>
         ) : (
@@ -147,19 +147,19 @@ export function RemindersPage() {
             const isPaid = reminder.isPaid;
 
             return (
-              <article key={reminder.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <article key={reminder.id} className="card-surface p-4">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="min-w-0 flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-lg">
+                    <div className="size-10 rounded-full bg-white/5 border border-border flex items-center justify-center text-lg">
                       {TYPE_ICONS[reminder.type] || '📄'}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{reminder.title}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 capitalize">
+                      <p className="text-sm font-semibold text-white truncate">{reminder.title}</p>
+                      <p className="text-xs text-secondary mt-0.5 capitalize">
                         {TYPE_LABELS[reminder.type]} • {reminder.category}
                       </p>
                       {accountName && (
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">
+                        <p className="text-[11px] text-secondary mt-1 truncate">
                           {accountName}
                         </p>
                       )}
@@ -167,9 +167,9 @@ export function RemindersPage() {
                   </div>
                   <div className="text-right">
                     {reminder.amount && (
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(reminder.amount)}</p>
+                      <p className="text-sm font-semibold text-white">{formatCurrency(reminder.amount)}</p>
                     )}
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    <p className="text-[11px] text-secondary">
                       {new Date(reminder.dueDate).toLocaleDateString()}
                     </p>
                   </div>
@@ -179,15 +179,15 @@ export function RemindersPage() {
                   <div className="flex items-center gap-2 text-[11px]">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${
                       isPaid
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        ? 'bg-[rgba(126,231,199,0.08)] text-accent-mint'
                         : isOverdue
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                          ? 'bg-red-500/10 text-red-300'
+                          : 'bg-warning/10 text-warning'
                     }`}>
                       <Calendar className="size-3" />
                       {isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-gray-600 dark:bg-gray-700 dark:text-gray-300 capitalize">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-secondary capitalize">
                       {reminder.frequency}
                     </span>
                   </div>
@@ -219,7 +219,7 @@ export function RemindersPage() {
         )}
 
         {error ? (
-          <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200">
+          <div className="rounded-[20px] border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
             {error}
           </div>
         ) : null}

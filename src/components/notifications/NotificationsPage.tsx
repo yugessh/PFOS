@@ -7,22 +7,22 @@ import { useNotifications } from '@/src/hooks/useNotifications';
 
 function getPriorityColor(priority: string) {
   const colors: Record<string, string> = {
-    urgent: 'left-red-500',
-    high: 'left-orange-500',
-    medium: 'left-yellow-500',
-    low: 'left-blue-500',
+    urgent: 'bg-red-500',
+    high: 'bg-[var(--warning)]',
+    medium: 'bg-[var(--accent-mint)]',
+    low: 'bg-blue-500',
   };
-  return colors[priority] || 'left-blue-500';
+  return colors[priority] || 'bg-blue-500';
 }
 
 function getPriorityBgColor(priority: string) {
   const colors: Record<string, string> = {
-    urgent: 'bg-red-50 dark:bg-red-900/10',
-    high: 'bg-orange-50 dark:bg-orange-900/10',
-    medium: 'bg-yellow-50 dark:bg-yellow-900/10',
-    low: 'bg-blue-50 dark:bg-blue-900/10',
+    urgent: 'bg-red-500/10 border border-red-500/15',
+    high: 'bg-[rgba(255,204,102,0.10)] border border-[rgba(255,204,102,0.16)]',
+    medium: 'bg-[rgba(126,231,199,0.08)] border border-[rgba(126,231,199,0.14)]',
+    low: 'bg-blue-500/10 border border-blue-500/15',
   };
-  return colors[priority] || 'bg-blue-50 dark:bg-blue-900/10';
+  return colors[priority] || 'bg-blue-500/10 border border-blue-500/15';
 }
 
 function formatTime(date: Date) {
@@ -80,10 +80,10 @@ export function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
+      <div className="flex min-h-screen items-center justify-center bg-main">
+        <div className="rounded-[32px] border border-border bg-card p-6 text-center shadow-[0_18px_45px_rgba(0,0,0,0.4)]">
+          <div className="inline-block w-8 h-8 border-2 border-accent-mint border-t-transparent rounded-full animate-spin mb-2" />
+          <p className="text-sm text-secondary">Loading notifications...</p>
         </div>
       </div>
     );
@@ -93,13 +93,13 @@ export function NotificationsPage() {
   const orderedGroups = groupOrder.filter((g) => groupedNotifications[g]?.length);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 pb-24">
+    <div className="min-h-screen bg-main pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+      <div className="sticky top-0 z-10 bg-bg-main/90 backdrop-blur-xl border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Notifications</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{notifications.length} total</p>
+            <h1 className="text-lg font-bold text-white">Notifications</h1>
+            <p className="text-xs text-secondary">{notifications.length} total</p>
           </div>
         </div>
       </div>
@@ -107,9 +107,9 @@ export function NotificationsPage() {
       {/* Empty State */}
       {notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4">
-          <div className="text-5xl mb-4">🔔</div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">No notifications</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Stay tuned for updates</p>
+          <div className="mb-4 rounded-full border border-border bg-card p-4 text-3xl">🔔</div>
+          <p className="text-secondary font-medium">No notifications</p>
+          <p className="text-xs text-muted-foreground mt-1">Stay tuned for updates</p>
         </div>
       ) : (
         /* Notifications Feed */
@@ -118,7 +118,7 @@ export function NotificationsPage() {
             <div key={group} className="space-y-1.5">
               {/* Date Group Header */}
               <div className="px-2 py-1">
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                <p className="text-xs font-semibold text-secondary uppercase tracking-wide">
                   {group}
                 </p>
               </div>
@@ -128,12 +128,12 @@ export function NotificationsPage() {
                 <div
                   key={notification.id}
                   className={`
-                    flex gap-3 p-3 rounded-lg transition-colors cursor-pointer
+                    flex gap-3 p-3 rounded-[24px] transition-colors cursor-pointer border shadow-[0_12px_24px_rgba(0,0,0,0.25)]
                     ${notification.isRead 
-                      ? 'bg-gray-50 dark:bg-gray-900/50' 
+                      ? 'bg-card'
                       : `${getPriorityBgColor(notification.priority)}`
                     }
-                    ${expandedId === notification.id ? 'ring-2 ring-blue-500' : ''}
+                    ${expandedId === notification.id ? 'ring-2 ring-accent-mint/30' : ''}
                   `}
                   onClick={() => setExpandedId(expandedId === notification.id ? null : notification.id)}
                 >
@@ -146,28 +146,28 @@ export function NotificationsPage() {
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium line-clamp-1 ${
                           notification.isRead
-                            ? 'text-gray-600 dark:text-gray-400'
-                            : 'text-gray-900 dark:text-white'
+                            ? 'text-secondary'
+                            : 'text-white'
                         }`}>
                           {notification.title}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 line-clamp-1">
+                        <p className="text-xs text-secondary mt-0.5 line-clamp-1">
                           {notification.message}
                         </p>
-                        <p className="text-[11px] text-gray-400 dark:text-gray-600 mt-1">
+                        <p className="text-[11px] text-muted-foreground mt-1">
                           {formatTime(notification.createdAt as any)}
                         </p>
                       </div>
                       {!notification.isRead && (
                         <div className="flex-shrink-0">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-1" />
+                          <div className="w-2 h-2 bg-[var(--accent-mint)] rounded-full mt-1" />
                         </div>
                       )}
                     </div>
 
                     {/* Expanded Actions */}
                     {expandedId === notification.id && (
-                      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                         {!notification.isRead && (
                           <Button
                             size="sm"
@@ -186,7 +186,7 @@ export function NotificationsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1 h-8 text-xs text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="flex-1 h-8 text-xs text-red-300 border-red-500/20 hover:bg-red-500/10"
                           onClick={(e) => {
                             e.stopPropagation();
                             markAsArchived(notification.id);

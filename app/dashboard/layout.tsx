@@ -23,9 +23,9 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <div className="flex min-h-screen items-center justify-center bg-main">
+        <div className="rounded-[32px] border border-border bg-card p-8 text-center shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
+          <div className="w-12 h-12 border-4 border-[var(--accent-mint)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-secondary">Loading your finances...</p>
         </div>
       </div>
@@ -37,9 +37,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex min-h-screen overflow-hidden bg-main text-foreground">
       <Sidebar />
-      <div className="flex-1 overflow-auto lg:ml-[260px] pt-16 lg:pt-0 pb-20 lg:pb-0">
+      <div className="flex-1 overflow-auto lg:ml-[260px] pt-16 lg:pt-0 pb-24 lg:pb-0">
         <TopNavbar />
         <main className="mx-auto w-full max-w-[1600px] px-4 py-4 lg:px-6">{children}</main>
       </div>

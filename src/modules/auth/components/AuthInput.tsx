@@ -11,25 +11,22 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
     return (
       <div className="space-y-2">
         {label && (
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-secondary">
             {label}
           </label>
         )}
         <input
           ref={ref}
           className={cn(
-            'w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600',
-            'bg-white dark:bg-gray-700 text-gray-900 dark:text-white',
-            'placeholder-gray-500 dark:placeholder-gray-400',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-            'transition-colors duration-200',
+            'input-surface w-full px-4 py-3',
+            'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(126,231,199,0.22)]',
             error && 'border-red-500 focus:ring-red-500',
             className
           )}
           {...props}
         />
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">
+          <p className="text-sm text-red-400">
             {error}
           </p>
         )}

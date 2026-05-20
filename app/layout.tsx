@@ -40,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} bg-main`}>
-      <body className="font-sans antialiased bg-main text-white min-h-screen">
+    <html lang="en" className={`${inter.variable} bg-main dark`}>
+      <body className="font-sans antialiased bg-main text-white min-h-screen selection:bg-[rgba(126,231,199,0.18)] selection:text-white">
         <Providers>
           <CapacitorBootstrap />
           {children}

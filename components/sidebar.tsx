@@ -41,7 +41,7 @@ export function Sidebar({ className }: { className?: string }) {
         >
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <h1 className="text-lg font-semibold text-foreground">Neo Finance OS</h1>
+        <h1 className="text-xs font-semibold tracking-[0.35em] uppercase text-foreground">Neo Finance OS</h1>
         <Bell size={20} className="text-secondary" />
       </div>
 
@@ -87,7 +87,7 @@ export function Sidebar({ className }: { className?: string }) {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={cn('flex items-center gap-3 rounded-[18px] px-4 py-3 transition-all duration-200', isCollapsed && 'justify-center px-0')}
+                        className={cn('flex items-center gap-3 rounded-[24px] px-4 py-3 transition-all duration-200', isCollapsed && 'justify-center px-0')}
                         onClick={() => setIsOpen(false)}
                         style={active ? { backgroundColor: 'rgba(126,231,199,0.12)', color: 'var(--accent-mint)' } : { color: 'var(--text-secondary)' }}
                       >
@@ -116,7 +116,7 @@ export function Sidebar({ className }: { className?: string }) {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={cn('flex items-center gap-3 rounded-[18px] px-4 py-3 transition-all duration-200', isCollapsed && 'justify-center px-0')}
+                        className={cn('flex items-center gap-3 rounded-[24px] px-4 py-3 transition-all duration-200', isCollapsed && 'justify-center px-0')}
                         onClick={() => setIsOpen(false)}
                         style={active ? { backgroundColor: 'rgba(126,231,199,0.12)', color: 'var(--accent-mint)' } : { color: 'var(--text-secondary)' }}
                       >
@@ -150,7 +150,7 @@ export function Sidebar({ className }: { className?: string }) {
               <div className="mt-4 space-y-2">
                 <Link
                   href="/dashboard/settings"
-                  className="flex items-center gap-3 rounded-[18px] px-4 py-3 text-sm text-secondary transition hover:bg-card-elevated hover:text-foreground"
+                  className="flex items-center gap-3 rounded-[24px] px-4 py-3 text-sm text-secondary transition hover:bg-card-elevated hover:text-foreground"
                   onClick={() => setIsOpen(false)}
                 >
                   <Settings size={18} />
@@ -161,7 +161,7 @@ export function Sidebar({ className }: { className?: string }) {
                 <button
                   type="button"
                   onClick={() => setShowLogoutConfirm(true)}
-                  className="flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-sm text-secondary transition hover:bg-card-elevated hover:text-foreground"
+                  className="flex w-full items-center gap-3 rounded-[24px] px-4 py-3 text-sm text-secondary transition hover:bg-card-elevated hover:text-foreground"
                 >
                   <LogOut size={18} />
                   <span className={cn('transition-opacity duration-200', isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100')}>
@@ -176,7 +176,7 @@ export function Sidebar({ className }: { className?: string }) {
 
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
-          <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+          <div className="w-full max-w-md rounded-[32px] border border-border bg-card p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
             <h2 className="text-xl font-semibold text-foreground">Sign out?</h2>
             <p className="mt-3 text-sm text-secondary">You will be returned to the login screen and your session will be cleared.</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
