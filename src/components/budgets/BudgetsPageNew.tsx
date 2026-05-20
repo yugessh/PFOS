@@ -61,7 +61,7 @@ export function BudgetsPageNew() {
 
   // Alerts for budgets
   const alerts = useMemo(() => {
-    const result = [];
+    const result: Array<{ type: string; item: any; percent: number }> = [];
     budgetItems.forEach((item) => {
       const percent = (item.spent / item.monthlyLimit) * 100;
       if (percent >= 100) {

@@ -1,6 +1,30 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@theme {
+  --color-background: #080A0F;
+  --color-main: #080A0F;
+  --color-secondary: #0E1117;
+  --color-card: #151A20;
+  --color-card-elevated: #1B212B;
+  --color-border: rgba(255,255,255,0.06);
+  --color-ring: rgba(126,231,199,0.7);
+  --color-foreground: #FFFFFF;
+  --color-text: #FFFFFF;
+  --color-text-secondary: #B0B7C3;
+  --color-muted: #B0B7C3;
+  --color-muted-foreground: #B0B7C3;
+  --color-accent: #7EE7C7;
+  --color-accent-mint: #7EE7C7;
+  --color-accent-secondary: #B9F5D8;
+  --color-destructive: #FF5D5D;
+  --color-destructive-foreground: #FFFFFF;
+  --color-warning: #FFCC66;
+  --color-blue: #60A5FA;
+  --color-primary: #7EE7C7;
+  --color-secondary-text: #B0B7C3;
+}
+
 :root {
   color-scheme: dark;
   --bg-main: #080A0F;
@@ -21,6 +45,7 @@
   --radius-pill: 9999px;
   --card-padding: 20px;
   --card-shadow: 0px 8px 30px rgba(0,0,0,0.45);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
 
 html,
@@ -56,7 +81,8 @@ body {
   input, textarea, select, button { font: inherit; color: inherit; }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
   }
 }
 

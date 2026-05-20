@@ -28,7 +28,7 @@ import { QueryOptions, PaginationOptions, ServiceResponse, ListResponse, BaseDoc
  * Base Firestore service providing generic CRUD operations
  * All other services should extend this base class
  */
-export abstract class BaseFirestoreService<T extends BaseDocument> {
+export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
   protected collectionRef: CollectionReference<DocumentData> | null;
   protected collectionName: string;
 

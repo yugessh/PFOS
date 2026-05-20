@@ -3,7 +3,8 @@
 import { formatDate } from '@/lib/date';
 import { formatCurrency } from '@/src/lib/currency';
 import type { Transaction } from '@/types';
-import { ArrowUpRight, ArrowDownLeft, memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback } from 'react';
+import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 interface TransactionGroup {
   date: Date;

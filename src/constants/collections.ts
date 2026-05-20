@@ -11,6 +11,7 @@ export const COLLECTIONS = {
   CATEGORIES: 'categories',
   BUDGETS: 'budgets',
   INVESTMENTS: 'investments',
+  AUTOMATIONS: 'automations',
   INVESTMENT_TRANSACTIONS: 'investmentTransactions',
   GOALS: 'goals',
   EMI: 'emi',
@@ -18,6 +19,7 @@ export const COLLECTIONS = {
   SETTLEMENTS: 'settlements',
   POLICIES: 'policies',
   NOTIFICATIONS: 'notifications',
+  AI_INSIGHTS: 'ai_insights',
   TRADING_JOURNAL: 'tradingJournal',
 } as const;
 

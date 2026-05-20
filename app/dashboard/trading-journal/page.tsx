@@ -35,8 +35,7 @@ export default function TradingJournalPage() {
   async function handleDelete(id?: string) {
     if (!uid || !id) return;
     await tradingJournalService.deleteTrade(uid, id);
-    const res: any = await tradingJournalService.getUserTrades(uid);
-    if (res.success) setTrades(res.data || []);
+    await reload();
   }
 
   return (

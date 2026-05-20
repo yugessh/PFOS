@@ -2,8 +2,8 @@
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Providers from '../src/components/Providers'
+import CapacitorBootstrap from '../components/capacitor/CapacitorBootstrap'
 import './globals.css'
-import CapacitorBootstrap from '../src/components/capacitor/CapacitorBootstrap'
 
 const inter = Inter({
   subsets: ['latin'],

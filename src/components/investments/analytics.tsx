@@ -30,15 +30,15 @@ export default function Analytics({ investment, transactions }: Props) {
         </div>
         <div>
           <div className="text-xs text-gray-400">Avg Buy Price</div>
-          <div className="font-semibold">₹{stats?.avgPrice?.toFixed(2)}</div>
+          <div className="font-semibold">₹{(stats?.avgPrice ?? 0).toFixed(2)}</div>
         </div>
         <div>
           <div className="text-xs text-gray-400">Unrealized</div>
-          <div className="font-semibold">₹{stats?.unrealized?.toFixed(2)}</div>
+          <div className="font-semibold">₹{(stats?.unrealized ?? 0).toFixed(2)}</div>
         </div>
         <div>
           <div className="text-xs text-gray-400">Allocation</div>
-          <div className="font-semibold">{(stats?.allocationPct * 100 || 0).toFixed(2)}%</div>
+          <div className="font-semibold">{((stats?.allocationPct ?? 0) * 100).toFixed(2)}%</div>
         </div>
       </div>
     </div>

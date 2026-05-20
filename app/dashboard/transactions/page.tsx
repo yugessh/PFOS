@@ -149,6 +149,11 @@ export default function TransactionsPage() {
 
   const monthLabel = useMemo(() => getMonthLabel(displayMonth), [displayMonth]);
 
+  const categories = useMemo(
+    () => Array.from(new Set(transactions.map((tx) => tx.category))).sort(),
+    [transactions]
+  );
+
   if (filterLoading) {
     return (
       <div className="min-h-screen bg-main px-4 py-10 text-white">
@@ -157,12 +162,12 @@ export default function TransactionsPage() {
     );
   }
 
-  if (filterError || transactionsError) {
+  if (filterError) {
     return (
       <div className="min-h-screen bg-main px-4 py-10 text-white">
         <ErrorState
           title="Unable to load transactions"
-          description={filterError || transactionsError || 'Please refresh or check your connection.'}
+          description={filterError || 'Please refresh or check your connection.'}
           retryAction={
             <button
               type="button"
@@ -243,11 +248,6 @@ export default function TransactionsPage() {
   }, [transactions, viewMode, timeFilter, selectedDate, selectedDateObject]);
 
   const { income, expenses, savings } = useMemo(() => computeTotals(filteredTransactions), [filteredTransactions]);
-
-  const categories = useMemo(
-    () => Array.from(new Set(transactions.map((tx) => tx.category))).sort(),
-    [transactions]
-  );
 
   const totalBalance = useMemo(
     () => accounts.reduce((s, a) => s + (a.balance || 0), 0),

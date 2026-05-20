@@ -415,8 +415,8 @@ export default function ReportsPage() {
   }, [filteredTransactions]);
 
   const handleDownloadCSV = () => {
-    const headers = ['Date', 'Type', 'Category', 'Account', 'Amount', 'Description'];
-    const lines = [headers.join(','), ...exportRows.map((row) => headers.map((key) => `"${String(row[key]).replace(/"/g, '""')}"`).join(','))];
+    const headers = ['Date', 'Type', 'Category', 'Account', 'Amount', 'Description'] as const;
+    const lines = [headers.join(','), ...exportRows.map((row) => headers.map((key) => `"${String(row[key as keyof typeof row]).replace(/"/g, '""')}"`).join(','))];
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

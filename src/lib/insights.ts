@@ -1,3 +1,5 @@
+import type { BaseDocument } from '@/src/types/firestore';
+
 export type InsightPriority = 'critical' | 'high' | 'medium' | 'low';
 
 export type InsightType =
@@ -12,15 +14,12 @@ export type InsightType =
   | 'Cashflow Warning'
   | 'Custom Insight';
 
-export interface InsightModel {
-  id?: string;
-  userId?: string;
+export interface InsightModel extends BaseDocument {
+  userId: string;
   insightType: InsightType;
   title: string;
   description: string;
   priority: InsightPriority;
   sourceModule?: string;
-  createdAt?: Date | any;
-  updatedAt?: Date | any;
   status?: 'active' | 'dismissed' | 'archived';
 }
