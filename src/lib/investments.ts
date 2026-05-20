@@ -32,6 +32,25 @@ export function getInvestmentTypeLabel(type: InvestmentModel['type']): string {
   return labels[type];
 }
 
+export interface InvestmentTransaction {
+  id: string;
+  userId: string;
+  investmentId: string;
+  transactionType: 'BUY' | 'SELL';
+  assetName: string;
+  assetType: InvestmentModel['type'];
+  quantity: number;
+  price: number;
+  amount: number;
+  linkedAccount?: string;
+  fees?: number;
+  notes?: string;
+  transactionDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
+}
+
 export function getInvestmentTypeColor(type: InvestmentModel['type']): string {
   const colors: Record<InvestmentModel['type'], string> = {
     sip: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
