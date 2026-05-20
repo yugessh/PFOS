@@ -16,7 +16,7 @@ export async function initNativeBridge() {
   if (typeof window === 'undefined') return;
   try {
     const cap = await import('@capacitor/core');
-    const { StatusBar, App, SplashScreen } = cap;
+    const { StatusBar, App, SplashScreen } = cap as any;
     bridge.init = async () => {
       try {
         await SplashScreen.hide();

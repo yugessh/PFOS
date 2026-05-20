@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Providers from '../src/components/Providers'
 import './globals.css'
-import CapacitorBootstrap from '@/components/capacitor/CapacitorBootstrap'
+import CapacitorBootstrap from '../src/components/capacitor/CapacitorBootstrap'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,9 +12,20 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'PFOS | Neo Finance OS',
+  title: {
+    default: 'PFOS | Neo Finance OS',
+    template: '%s | PFOS',
+  },
   description: 'Premium personal finance operating system',
   generator: 'PFOS Neo Finance OS',
+  themeColor: '#0E1117',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    minimumScale: 1,
+    viewportFit: 'cover',
+  },
+  manifest: '/manifest.json',
   icons: {
     icon: [
       {

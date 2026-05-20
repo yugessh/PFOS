@@ -7,8 +7,10 @@
     "cap:init": "npx cap init PFOS com.pfos.app --web-dir=out",
     "cap:add:android": "npx cap add android",
     "cap:open:android": "npx cap open android",
-    "cap:copy": "npx cap copy",
-    "build": "next build",
+    "cap:copy": "npx cap sync android",
+    "cap:sync": "npx cap sync",
+    "build": "next build && next export",
+    "export": "next export",
     "start": "next start",
     "lint": "eslint ."
   },
