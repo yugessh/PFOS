@@ -16,6 +16,7 @@ import {
 export interface TradeRecord {
   id?: string;
   userId: string;
+  // existing shorthand
   pair: string;
   buyPrice: number;
   sellPrice?: number | null;
@@ -28,6 +29,17 @@ export interface TradeRecord {
   createdAt?: any;
   updatedAt?: any;
   deletedAt?: any;
+
+  // extended schema
+  assetName?: string | null;
+  marketType?: string | null; // e.g., crypto, stocks, forex, options
+  direction?: 'LONG' | 'SHORT' | null;
+  entryPrice?: number | null;
+  exitPrice?: number | null;
+  fees?: number | null;
+  emotion?: string | null; // emotion tag
+  riskReward?: number | null;
+  holdingDurationMinutes?: number | null;
 }
 
 export class TradingJournalService {
@@ -39,8 +51,19 @@ export class TradingJournalService {
     const prepared: DocumentData = {
       ...data,
       userId,
+      // keep backward-compatible fields
       pnl: data.pnl ?? null,
       screenshots: data.screenshots ?? null,
+      // extended fields
+      assetName: data.assetName ?? data.pair ?? null,
+      marketType: data.marketType ?? null,
+      direction: data.direction ?? null,
+      entryPrice: data.entryPrice ?? data.buyPrice ?? null,
+      exitPrice: data.exitPrice ?? data.sellPrice ?? null,
+      fees: data.fees ?? null,
+      emotion: data.emotion ?? null,
+      riskReward: data.riskReward ?? null,
+      holdingDurationMinutes: data.holdingDurationMinutes ?? null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       deletedAt: null,

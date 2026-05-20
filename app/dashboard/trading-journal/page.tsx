@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { tradingJournalService, type TradeRecord } from '@/src/services/firestore/tradingJournal.service';
+import { useTradingJournal } from '@/src/hooks/useTradingJournal';
+import JournalAnalytics from '@/src/components/trading-journal/analytics';
 
 function currency(v: number) {
   return `₹${v.toLocaleString()}`;
@@ -11,35 +13,11 @@ function currency(v: number) {
 export default function TradingJournalPage() {
   const { user } = useAuthContext();
   const uid = user?.uid;
-  const [trades, setTrades] = useState<TradeRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { trades, loading, reload, stats } = useTradingJournal();
   const [editing, setEditing] = useState<TradeRecord | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
-  useEffect(() => {
-    if (!uid) return;
-    let mounted = true;
-    setLoading(true);
-    void tradingJournalService.getUserTrades(uid).then((res: any) => {
-      if (!mounted) return;
-      if (res.success) setTrades(res.data || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-    return () => { mounted = false };
-  }, [uid]);
-
-  const stats = useMemo(() => {
-    const total = trades.length;
-    let wins = 0;
-    let totalPnl = 0;
-    trades.forEach(t => {
-      const pnl = typeof t.pnl === 'number' ? t.pnl : ((t.sellPrice ?? 0) - (t.buyPrice ?? 0)) * (t.quantity ?? 1);
-      if (pnl > 0) wins++;
-      totalPnl += pnl;
-    });
-    const winRate = total === 0 ? 0 : Math.round((wins / total) * 100 * 10) / 10;
-    return { total, wins, winRate, totalPnl };
-  }, [trades]);
+  // stats now from hook
 
   async function handleSaveTrade(payload: Partial<TradeRecord>) {
     if (!uid) return;
@@ -49,8 +27,7 @@ export default function TradingJournalPage() {
       await tradingJournalService.createTrade(uid, payload as any);
     }
     // refresh
-    const res: any = await tradingJournalService.getUserTrades(uid);
-    if (res.success) setTrades(res.data || []);
+    await reload();
     setFormOpen(false);
     setEditing(null);
   }
@@ -84,12 +61,16 @@ export default function TradingJournalPage() {
         </div>
         <div className="bg-card rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Win Rate</p>
-          <p className="text-xl font-bold text-emerald-600">{stats.winRate}%</p>
+          <p className="text-xl font-bold text-emerald-600">{Math.round(stats.winRate * 10) / 10}%</p>
         </div>
         <div className="bg-card rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Total P&L</p>
           <p className={`text-xl font-bold ${stats.totalPnl >= 0 ? 'text-primary' : 'text-red-600'}`}>{currency(stats.totalPnl)}</p>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <JournalAnalytics trades={trades} />
       </div>
 
       <div className="space-y-3">
