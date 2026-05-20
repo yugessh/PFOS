@@ -1,3 +1,75 @@
+"use client";
+
+import React, { useState } from 'react';
+import { investmentsService } from '@/src/services/firestore/investments.service';
+import { useAuthContext } from '@/src/context/AuthContext';
+import { useEffect, useMemo } from 'react';
+import InvestmentCard from '@/src/components/investments/InvestmentCard';
+import AddInvestmentModal from '@/src/components/investments/AddInvestmentModal';
+import EmptyInvestments from '@/src/components/investments/EmptyInvestments';
+
+export default function InvestmentsPage() {
+  const auth = useAuthContext();
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      if (!auth?.user?.uid) {
+        setInvestments([]);
+        setLoading(false);
+        return;
+      }
+      const res = await investmentsService.getUserInvestments(auth.user.uid);
+      const items = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+      setInvestments(items as any[]);
+      setLoading(false);
+    }
+    void load();
+  }, [auth?.user?.uid]);
+
+  const stats = useMemo(() => {
+    const totalInvested = investments.reduce((s, i) => s + (i.amountInvested || 0), 0);
+    const currentValue = investments.reduce((s, i) => s + (i.currentValue || 0), 0);
+    const profit = currentValue - totalInvested;
+    return { totalInvested, currentValue, profit };
+  }, [investments]);
+
+  return (
+    <div style={{ padding: 20, minHeight: '100vh', background: '#080A0F', color: '#fff' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800 }}>Investments</div>
+          <div style={{ color: '#9aa2a9' }}>Track your portfolio</div>
+        </div>
+        <div>
+          <button onClick={() => setShowAdd(true)} style={{ background: '#7EE7C7', border: 'none', padding: '10px 14px', borderRadius: 16, color: '#041018' }}>+ Add Investment</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <div style={{ background: '#151A20', borderRadius: 28, padding: 16 }}>
+          <div style={{ fontWeight: 700 }}>Portfolio Summary</div>
+          <div style={{ marginTop: 12 }}>
+            <div>Total Invested: ₹{Math.round(stats.totalInvested).toLocaleString()}</div>
+            <div>Current Value: ₹{Math.round(stats.currentValue).toLocaleString()}</div>
+            <div>Profit/Loss: ₹{Math.round(stats.profit).toLocaleString()}</div>
+          </div>
+        </div>
+
+        {(!loading && investments.length === 0) ? (
+          <EmptyInvestments onCreate={() => setShowAdd(true)} />
+        ) : (
+          investments.map((inv) => <InvestmentCard key={inv.id} investment={inv} onOpen={() => { /* TODO details */ }} />)
+        )}
+      </div>
+
+      {showAdd && <div style={{ position: 'fixed', right: 20, bottom: 20 }}><AddInvestmentModal onClose={() => setShowAdd(false)} onDone={() => { setShowAdd(false); void window.location.reload(); }} /></div>}
+    </div>
+  );
+}
 'use client';
 
 import { useState } from 'react';
