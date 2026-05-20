@@ -1,3 +1,56 @@
+"use client";
+
+import React, { useState } from 'react';
+import { useGoals } from '@/src/hooks/useGoals';
+import GoalCard from '@/src/components/goals/GoalCard';
+import EmptyGoals from '@/src/components/goals/EmptyGoals';
+import AddGoalModal from '@/src/components/goals/AddGoalModal';
+import ContributionModal from '@/src/components/goals/ContributionModal';
+
+export default function GoalsPage() {
+  const { goals, loading, getGoalStats, reload } = useGoals();
+  const [showAdd, setShowAdd] = useState(false);
+  const [contributeFor, setContributeFor] = useState<string | null>(null);
+
+  const stats = getGoalStats();
+
+  return (
+    <div style={{ padding: 20, minHeight: '100vh', background: '#080A0F', color: '#fff' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800 }}>Goals</div>
+          <div style={{ color: '#9aa2a9' }}>Track and plan your savings</div>
+        </div>
+        <div>
+          <button onClick={() => setShowAdd(true)} style={{ background: '#7EE7C7', border: 'none', padding: '10px 14px', borderRadius: 16, color: '#041018' }}>+ Create Goal</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <div style={{ background: '#151A20', borderRadius: 28, padding: 16 }}>
+          <div style={{ fontWeight: 700 }}>Summary</div>
+          <div style={{ marginTop: 12 }}>
+            <div>Total Goals: {stats.total}</div>
+            <div>Total Target: ₹{stats.totalTarget.toLocaleString()}</div>
+            <div>Saved: ₹{stats.totalSaved.toLocaleString()}</div>
+            <div>Completion: {Math.round(stats.overallProgress)}%</div>
+          </div>
+        </div>
+
+        {goals.length === 0 && !loading ? (
+          <EmptyGoals onCreate={() => setShowAdd(true)} />
+        ) : (
+          goals.map((g) => (
+            <GoalCard key={g.id} goal={g} onOpen={() => { /* TODO: open details */ }} onContribute={() => setContributeFor(g.id)} />
+          ))
+        )}
+      </div>
+
+      {showAdd && <div style={{ position: 'fixed', right: 20, bottom: 20 }}><AddGoalModal onClose={() => { setShowAdd(false); void reload(); }} /></div>}
+      {contributeFor && <div style={{ position: 'fixed', right: 20, bottom: 20 }}><ContributionModal goalId={contributeFor} onClose={() => setContributeFor(null)} onDone={() => { setContributeFor(null); void reload(); }} /></div>}
+    </div>
+  );
+}
 'use client';
 
 import { useState } from 'react';
