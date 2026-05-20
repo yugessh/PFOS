@@ -120,9 +120,13 @@ export default function QATestingPage() {
       message: 'No critical console errors detected',
     });
 
-    // Test 10: Memory check
-    if (performance.memory) {
-      const percentUsed = (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100;
+    // Test 10: Memory check (guarded, typed)
+    type PerfWithMemory = Performance & {
+      memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number };
+    };
+    const perf = (performance as PerfWithMemory);
+    if (perf && perf.memory && typeof perf.memory.usedJSHeapSize === 'number' && typeof perf.memory.jsHeapSizeLimit === 'number') {
+      const percentUsed = (perf.memory.usedJSHeapSize / perf.memory.jsHeapSizeLimit) * 100;
       results.push({
         name: 'Memory Usage',
         passed: percentUsed < 80,

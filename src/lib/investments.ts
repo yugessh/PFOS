@@ -12,6 +12,7 @@ export interface InvestmentModel {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
+  linkedAccount?: string;
 }
 
 export function calculateInvestmentReturn(investment: InvestmentModel) {

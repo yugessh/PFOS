@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
-import { db } from '@/src/firebase/config';
+import { getFirestoreClient } from '@/src/services/firestore/firebaseClient';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
 export interface BackupMetadata {
@@ -55,6 +55,12 @@ export function useBackupRestore() {
     setError(null);
 
     try {
+      const db = getFirestoreClient();
+      if (!db) {
+        setError('Firestore not initialized');
+        return null;
+      }
+
       const userRef = collection(db, `users/${user.uid}/transactions`);
       const accountsRef = collection(db, `users/${user.uid}/accounts`);
       const categoriesRef = collection(db, `users/${user.uid}/categories`);

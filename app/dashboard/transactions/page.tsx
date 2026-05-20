@@ -15,6 +15,9 @@ import { formatDate } from '@/lib/date';
 import { CompactSummaryHeader } from '@/src/components/mobile/CompactSummaryHeader';
 import { CompactTransactionFeed } from '@/src/components/mobile/CompactTransactionFeed';
 import { FilterBottomSheet } from '@/src/components/mobile/FilterBottomSheet';
+import { ErrorState } from '@/components/states/ErrorState';
+import { EmptyState } from '@/components/states/EmptyState';
+import { LoadingState } from '@/components/states/LoadingState';
 import type { TransactionFormData } from '@/src/components/transactions/types';
 import type { Transaction } from '@/src/types/transaction';
 
@@ -145,6 +148,81 @@ export default function TransactionsPage() {
   );
 
   const monthLabel = useMemo(() => getMonthLabel(displayMonth), [displayMonth]);
+
+  if (filterLoading) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <LoadingState type="table" className="mx-auto max-w-5xl" />
+      </div>
+    );
+  }
+
+  if (filterError || transactionsError) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <ErrorState
+          title="Unable to load transactions"
+          description={filterError || transactionsError || 'Please refresh or check your connection.'}
+          retryAction={
+            <button
+              type="button"
+              onClick={() => void loadTransactions()}
+              className="rounded-full bg-accent-mint px-5 py-3 text-sm font-semibold text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)] transition hover:brightness-95"
+            >
+              Retry
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <EmptyState
+          title="No transactions yet"
+          description="Your spending and income will appear here when you add your first entry."
+          icon={<Filter className="size-6 text-accent-mint" />}
+          action={
+            <Button onClick={() => setAddOpen(true)} size="sm" className="rounded-full bg-accent-mint px-5 py-3 text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)]">
+              Add transaction
+            </Button>
+          }
+          className="max-w-xl mx-auto"
+        />
+        <FilterBottomSheet
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
+          onReset={() => {
+            setCategoryFilter('all');
+            setAccountFilter('all');
+          }}
+          onApply={() => {
+            // Filters auto-apply
+          }}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium block mb-2">Category</label>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+              >
+                <option value="all">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </FilterBottomSheet>
+      </div>
+    );
+  }
 
   const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
   const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);

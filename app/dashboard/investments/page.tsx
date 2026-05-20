@@ -1,77 +1,5 @@
 "use client";
 
-import React, { useState } from 'react';
-import { investmentsService } from '@/src/services/firestore/investments.service';
-import { useAuthContext } from '@/src/context/AuthContext';
-import { useEffect, useMemo } from 'react';
-import InvestmentCard from '@/src/components/investments/InvestmentCard';
-import AddInvestmentModal from '@/src/components/investments/AddInvestmentModal';
-import EmptyInvestments from '@/src/components/investments/EmptyInvestments';
-
-export default function InvestmentsPage() {
-  const auth = useAuthContext();
-  const [investments, setInvestments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      if (!auth?.user?.uid) {
-        setInvestments([]);
-        setLoading(false);
-        return;
-      }
-      const res = await investmentsService.getUserInvestments(auth.user.uid);
-      const items = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
-      setInvestments(items as any[]);
-      setLoading(false);
-    }
-    void load();
-  }, [auth?.user?.uid]);
-
-  const stats = useMemo(() => {
-    const totalInvested = investments.reduce((s, i) => s + (i.amountInvested || 0), 0);
-    const currentValue = investments.reduce((s, i) => s + (i.currentValue || 0), 0);
-    const profit = currentValue - totalInvested;
-    return { totalInvested, currentValue, profit };
-  }, [investments]);
-
-  return (
-    <div style={{ padding: 20, minHeight: '100vh', background: '#080A0F', color: '#fff' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Investments</div>
-          <div style={{ color: '#9aa2a9' }}>Track your portfolio</div>
-        </div>
-        <div>
-          <button onClick={() => setShowAdd(true)} style={{ background: '#7EE7C7', border: 'none', padding: '10px 14px', borderRadius: 16, color: '#041018' }}>+ Add Investment</button>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        <div style={{ background: '#151A20', borderRadius: 28, padding: 16 }}>
-          <div style={{ fontWeight: 700 }}>Portfolio Summary</div>
-          <div style={{ marginTop: 12 }}>
-            <div>Total Invested: ₹{Math.round(stats.totalInvested).toLocaleString()}</div>
-            <div>Current Value: ₹{Math.round(stats.currentValue).toLocaleString()}</div>
-            <div>Profit/Loss: ₹{Math.round(stats.profit).toLocaleString()}</div>
-          </div>
-        </div>
-
-        {(!loading && investments.length === 0) ? (
-          <EmptyInvestments onCreate={() => setShowAdd(true)} />
-        ) : (
-          investments.map((inv) => <InvestmentCard key={inv.id} investment={inv} onOpen={() => { /* TODO details */ }} />)
-        )}
-      </div>
-
-      {showAdd && <div style={{ position: 'fixed', right: 20, bottom: 20 }}><AddInvestmentModal onClose={() => setShowAdd(false)} onDone={() => { setShowAdd(false); void window.location.reload(); }} /></div>}
-    </div>
-  );
-}
-'use client';
-
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -84,11 +12,25 @@ import {
 import { useInvestments } from '@/src/hooks/useInvestments';
 import { calculateInvestmentReturn, getInvestmentTypeLabel, getInvestmentTypeColor, type InvestmentModel } from '@/src/lib/investments';
 import { formatCurrency } from '@/src/lib/currency';
+import { ErrorState } from '@/components/states/ErrorState';
+import { LoadingState } from '@/components/states/LoadingState';
+import { EmptyState } from '@/components/states/EmptyState';
 
 export default function InvestmentsPage() {
-  const { investments, loading, saving, addInvestment, updateInvestment, deleteInvestment, getTotalStats } = useInvestments();
+  const {
+    investments,
+    loading,
+    saving,
+    error: investmentError,
+    addInvestment,
+    updateInvestment,
+    deleteInvestment,
+    getTotalStats,
+    reload: reloadInvestments,
+  } = useInvestments();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
     type: 'mutual_funds' as InvestmentModel['type'],
@@ -98,6 +40,15 @@ export default function InvestmentsPage() {
   });
 
   const { totalInvested, totalValue, totalReturn } = getTotalStats();
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!formData.name.trim()) nextErrors.name = 'Investment name is required';
+    if (formData.amountInvested <= 0) nextErrors.amountInvested = 'Enter a valid invested amount';
+    if (formData.currentValue < 0) nextErrors.currentValue = 'Current value cannot be negative';
+    setFormErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleOpen = (investment?: InvestmentModel) => {
     if (investment) {
@@ -119,10 +70,15 @@ export default function InvestmentsPage() {
         notes: '',
       });
     }
+    setFormErrors({});
     setSheetOpen(true);
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       if (editingId) {
         await updateInvestment(editingId, formData);
@@ -147,11 +103,28 @@ export default function InvestmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading investments...</p>
-        </div>
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <LoadingState type="page" className="mx-auto max-w-3xl" />
+      </div>
+    );
+  }
+
+  if (investmentError) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <ErrorState
+          title="Investment load failed"
+          description={investmentError}
+          retryAction={
+            <button
+              type="button"
+              onClick={() => reloadInvestments?.()}
+              className="rounded-full bg-accent-mint px-5 py-3 text-sm font-semibold text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)] transition hover:brightness-95"
+            >
+              Retry
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -197,15 +170,18 @@ export default function InvestmentsPage() {
 
       {/* Investments List */}
       {investments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-4">
-          <TrendingUp className="size-12 text-gray-300 dark:text-gray-700 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 font-medium">No investments yet</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Start tracking your portfolio</p>
-          <Button onClick={() => handleOpen()} className="mt-4">
-            <Plus className="size-4 mr-2" />
-            Add Investment
-          </Button>
-        </div>
+        <EmptyState
+          title="No investments yet"
+          description="Track your portfolio, watch returns, and stay in control of your wealth."
+          icon={<TrendingUp className="size-6 text-accent-mint" />}
+          action={
+            <Button onClick={() => handleOpen()} className="rounded-full bg-accent-mint px-5 py-3 text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)]">
+              <Plus className="size-4 mr-2" />
+              Add Investment
+            </Button>
+          }
+          className="max-w-xl mx-auto"
+        />
       ) : (
         <div className="space-y-2 px-4 py-4">
           {investments.map(investment => {
@@ -284,6 +260,9 @@ export default function InvestmentsPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
+              {formErrors.name ? (
+                <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+              ) : null}
             </div>
 
             <div>
@@ -302,27 +281,32 @@ export default function InvestmentsPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-gray-900 dark:text-white">Amount Invested</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.amountInvested}
-                  onChange={(e) => setFormData({ ...formData, amountInvested: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-900 dark:text-white">Current Value</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={formData.currentValue}
-                  onChange={(e) => setFormData({ ...formData, currentValue: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-900 dark:text-white">Amount Invested</label>
+              <input
+                type="number"
+                placeholder="0"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                value={formData.amountInvested}
+                onChange={(e) => setFormData({ ...formData, amountInvested: parseFloat(e.target.value) || 0 })}
+              />
+              {formErrors.amountInvested ? (
+                <p className="mt-1 text-sm text-red-500">{formErrors.amountInvested}</p>
+              ) : null}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-900 dark:text-white">Current Value</label>
+              <input
+                type="number"
+                placeholder="0"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                value={formData.currentValue}
+                onChange={(e) => setFormData({ ...formData, currentValue: parseFloat(e.target.value) || 0 })}
+              />
+              {formErrors.currentValue ? (
+                <p className="mt-1 text-sm text-red-500">{formErrors.currentValue}</p>
+              ) : null}
             </div>
 
             <div>

@@ -14,6 +14,8 @@ import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
 import { FloatingActionButton } from '@/components/floating-action-button';
 import { UniversalActionsSheet } from '@/components/universal-actions-sheet';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
+import { ErrorState } from '@/components/states/ErrorState';
+import { LoadingState } from '@/components/states/LoadingState';
 import type { Account } from '@/src/services/firestore/accounts.service';
 
 export default function Dashboard() {
@@ -23,12 +25,13 @@ export default function Dashboard() {
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { accounts, loading: accountsLoading, addAccount } = useAccounts();
+  const { accounts, loading: accountsLoading, addAccount, error: accountsError, refresh: refreshAccounts } = useAccounts();
   const {
     transactions,
     addTransaction,
     getTotals,
     loading: transactionsLoading,
+    error: transactionsError,
   } = useTransactions();
 
   const { income: totalIncome, expenses: totalExpenses } = getTotals();
@@ -53,6 +56,39 @@ export default function Dashboard() {
   };
 
   const monthName = currentDate.toLocaleDateString('en-US', { month: 'short' });
+
+  if (accountsLoading || transactionsLoading) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-8 lg:px-8">
+        <LoadingState type="dashboard" className="mx-auto max-w-6xl" />
+      </div>
+    );
+  }
+
+  if (accountsError || transactionsError) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-8 lg:px-8">
+        <ErrorState
+          title="Unable to load your dashboard"
+          description={
+            accountsError || transactionsError ||
+            'We could not load your accounts or transactions. Please try again.'
+          }
+          retryAction={
+            <button
+              type="button"
+              onClick={() => {
+                refreshAccounts?.();
+              }}
+              className="rounded-full bg-accent-mint px-5 py-3 text-sm font-semibold text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)] transition hover:brightness-95"
+            >
+              Retry
+            </button>
+          }
+        />
+      </div>
+    );
+  }
 
   if (accounts.length === 0 && !accountsLoading) {
     return (

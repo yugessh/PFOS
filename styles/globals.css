@@ -123,3 +123,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@layer utilities {
+  .bg-main {
+    background-color: #080A0F;
+  }
+  .bg-card {
+    background-color: #151A20;
+  }
+  .bg-card-elevated {
+    background-color: rgba(21, 26, 32, 0.95);
+  }
+  .bg-accent-mint {
+    background-color: #7EE7C7;
+  }
+  .text-secondary {
+    color: #9CA3AF;
+  }
+  .text-muted-foreground {
+    color: #A3AAB5;
+  }
+  .border-border {
+    border-color: #24303A;
+  }
+  .ring-accent-mint\/30 {
+    box-shadow: 0 0 0 2px rgba(126,231,199,0.30);
+  }
+}

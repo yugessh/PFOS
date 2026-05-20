@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Edit2, Trash2, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,9 +12,23 @@ import {
 import { useGoals } from '@/src/hooks/useGoals';
 import { calculateGoalProgress, getGoalStatus, type GoalModel } from '@/src/lib/goals';
 import { formatCurrency } from '@/src/lib/currency';
+import { ErrorState } from '@/components/states/ErrorState';
+import { LoadingState } from '@/components/states/LoadingState';
+import { EmptyState } from '@/components/states/EmptyState';
 
 export default function GoalsPage() {
-  const { goals, loading, saving, addGoal, updateGoal, deleteGoal, updateSavedAmount, getGoalStats } = useGoals();
+  const {
+    goals,
+    loading,
+    saving,
+    error: goalError,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    updateSavedAmount,
+    getGoalStats,
+    reload,
+  } = useGoals();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -25,9 +39,21 @@ export default function GoalsPage() {
     deadline: new Date().toISOString().split('T')[0],
     notes: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [contributionAmounts, setContributionAmounts] = useState<Record<string, number>>({});
 
   const { completed, totalTarget, totalSaved, overallProgress } = getGoalStats();
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!formData.title.trim()) nextErrors.title = 'Goal title is required';
+    if (formData.targetAmount <= 0) nextErrors.targetAmount = 'Target amount must be greater than zero';
+    if (formData.savedAmount < 0) nextErrors.savedAmount = 'Saved amount cannot be negative';
+    if (formData.savedAmount > formData.targetAmount) nextErrors.savedAmount = 'Saved amount cannot exceed target';
+    if (new Date(formData.deadline) < new Date()) nextErrors.deadline = 'Deadline must be in the future';
+    setFormErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleOpen = (goal?: GoalModel) => {
     if (goal) {
@@ -55,6 +81,10 @@ export default function GoalsPage() {
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
@@ -84,11 +114,28 @@ export default function GoalsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading goals...</p>
-        </div>
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <LoadingState type="page" className="mx-auto max-w-2xl" />
+      </div>
+    );
+  }
+
+  if (goalError) {
+    return (
+      <div className="min-h-screen bg-main px-4 py-10 text-white">
+        <ErrorState
+          title="Unable to load your goals"
+          description={goalError}
+          retryAction={
+            <button
+              type="button"
+              onClick={() => reload?.()}
+              className="rounded-full bg-accent-mint px-5 py-3 text-sm font-semibold text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)] transition hover:brightness-95"
+            >
+              Retry
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -118,15 +165,18 @@ export default function GoalsPage() {
 
       <div className="p-4 space-y-2">
         {goals.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <Target className="size-12 text-gray-300 dark:text-gray-700 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 font-medium">No goals yet</p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Start planning your financial goals</p>
-            <Button onClick={() => handleOpen()} className="mt-4">
-              <Plus className="size-4 mr-2" />
-              Add Goal
-            </Button>
-          </div>
+          <EmptyState
+            title="No goals yet"
+            description="Create your first goal to track progress, savings, and deadlines in your Neo Finance OS."
+            icon={<Target className="size-6 text-accent-mint" />}
+            action={
+              <Button onClick={() => handleOpen()} className="rounded-full bg-accent-mint px-5 py-3 text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)]">
+                <Plus className="size-4 mr-2" />
+                Create Goal
+              </Button>
+            }
+            className="max-w-xl mx-auto"
+          />
         ) : (
           goals.map(goal => {
             const { progress, remaining, daysRemaining } = calculateGoalProgress(goal);
@@ -184,22 +234,49 @@ export default function GoalsPage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-900 dark:text-white">Goal Title</label>
-              <input type="text" placeholder="e.g., Emergency Fund" className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              <input
+                type="text"
+                placeholder="e.g., Emergency Fund"
+                className={`mt-1 w-full px-3 py-2 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${formErrors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+              {formErrors.title ? <p className="mt-1 text-xs text-red-400">{formErrors.title}</p> : null}
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-900 dark:text-white">Target Amount</label>
-              <input type="number" placeholder="0" className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value={formData.targetAmount} onChange={(e) => setFormData({ ...formData, targetAmount: parseFloat(e.target.value) || 0 })} />
+              <input
+                type="number"
+                placeholder="0"
+                className={`mt-1 w-full px-3 py-2 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${formErrors.targetAmount ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
+                value={formData.targetAmount}
+                onChange={(e) => setFormData({ ...formData, targetAmount: parseFloat(e.target.value) || 0 })}
+              />
+              {formErrors.targetAmount ? <p className="mt-1 text-xs text-red-400">{formErrors.targetAmount}</p> : null}
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-900 dark:text-white">Currently Saved</label>
-              <input type="number" placeholder="0" className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value={formData.savedAmount} onChange={(e) => setFormData({ ...formData, savedAmount: parseFloat(e.target.value) || 0 })} />
+              <input
+                type="number"
+                placeholder="0"
+                className={`mt-1 w-full px-3 py-2 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${formErrors.savedAmount ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
+                value={formData.savedAmount}
+                onChange={(e) => setFormData({ ...formData, savedAmount: parseFloat(e.target.value) || 0 })}
+              />
+              {formErrors.savedAmount ? <p className="mt-1 text-xs text-red-400">{formErrors.savedAmount}</p> : null}
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-900 dark:text-white">Deadline</label>
-              <input type="date" className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+              <input
+                type="date"
+                className={`mt-1 w-full px-3 py-2 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${formErrors.deadline ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              />
+              {formErrors.deadline ? <p className="mt-1 text-xs text-red-400">{formErrors.deadline}</p> : null}
             </div>
 
             <div>

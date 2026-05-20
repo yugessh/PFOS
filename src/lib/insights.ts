@@ -14,11 +14,13 @@ export type InsightType =
 
 export interface InsightModel {
   id?: string;
+  userId?: string;
   insightType: InsightType;
   title: string;
   description: string;
   priority: InsightPriority;
   sourceModule?: string;
   createdAt?: Date | any;
+  updatedAt?: Date | any;
   status?: 'active' | 'dismissed' | 'archived';
 }

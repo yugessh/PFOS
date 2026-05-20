@@ -3,7 +3,7 @@ import AutomationDashboard from '@/src/components/automation/automation-dashboar
 import RemindersTimeline from '@/src/components/automation/reminders-timeline';
 
 export default function Page() {
-  const sampleReminders = [];
+  const sampleReminders: any[] = [];
   return (
     <div className="space-y-6 p-4">
       <div className="flex items-center justify-between">

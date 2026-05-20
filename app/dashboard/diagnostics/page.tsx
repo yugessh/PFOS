@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
-import { db } from '@/src/firebase/config';
+import { getFirestoreClient } from '@/src/services/firestore/firebaseClient';
 import { collection, getDocs } from 'firebase/firestore';
 import {
   Database,
@@ -59,10 +59,14 @@ export default function DiagnosticsPage() {
       try {
         const collections = ['transactions', 'accounts', 'categories'];
         const checkTime = Date.now();
-        for (const colName of collections) {
-          const colRef = collection(db, `users/${user?.uid}/${colName}`);
-          await getDocs(colRef);
-        }
+          for (const colName of collections) {
+            const db = getFirestoreClient();
+            if (!db) {
+              throw new Error('Firestore not initialized');
+            }
+            const colRef = collection(db, `users/${user?.uid}/${colName}`);
+            await getDocs(colRef);
+          }
         responseTime = Date.now() - checkTime;
       } catch (err) {
         firestoreStatus = 'error';
@@ -89,6 +93,11 @@ export default function DiagnosticsPage() {
 
       for (const colName of collectionNames) {
         try {
+          const db = getFirestoreClient();
+          if (!db) {
+            storage.collections[colName] = 0;
+            continue;
+          }
           const colRef = collection(db, `users/${user?.uid}/${colName}`);
           const snap = await getDocs(colRef);
           const count = snap.docs.length;
@@ -128,7 +137,7 @@ export default function DiagnosticsPage() {
         auth: {
           status: authStatus as any,
           user: user
-            ? { uid: user.uid, email: user.email, displayName: user.displayName }
+            ? { uid: user.uid, email: user.email ?? undefined, displayName: user.displayName ?? undefined }
             : undefined,
         },
         storage,
