@@ -9,81 +9,38 @@ interface EmptyAccountsStateProps {
 
 export function EmptyAccountsState({ onAddAccount }: EmptyAccountsStateProps) {
   return (
-    <div className="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center px-6 py-12">
-      {/* Hero Section */}
-      <div className="max-w-md w-full text-center space-y-8">
-        {/* Icon */}
-        <div className="flex justify-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-900/10 rounded-3xl flex items-center justify-center">
-            <Wallet className="size-10 text-blue-600 dark:text-blue-400" />
-          </div>
+    <div className="rounded-[32px] border border-border/60 bg-[linear-gradient(160deg,rgba(21,26,32,0.96),rgba(11,14,19,0.98))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.32)] sm:p-8">
+      <div className="mx-auto flex max-w-xl flex-col items-center gap-6 text-center">
+        <div className="flex size-24 items-center justify-center rounded-[30px] border border-[#7EE7C7]/20 bg-[#7EE7C7]/10 shadow-[0_18px_42px_rgba(126,231,199,0.12)]">
+          <Wallet className="size-12 text-[#7EE7C7]" />
         </div>
 
-        {/* Heading */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            No Accounts Yet
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Create your first bank account to start tracking transactions and managing your finances
+        <div className="space-y-3">
+          <h2 className="text-3xl font-semibold tracking-tight text-white">No accounts added yet</h2>
+          <p className="max-w-lg text-sm leading-relaxed text-white/55 sm:text-base">
+            Create your first bank, wallet, or investment account to start tracking balances, transfers, and financial flow in one place.
           </p>
         </div>
 
-        {/* Getting Started Steps */}
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 space-y-4 text-left">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Getting Started
-          </h2>
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                1
+        <div className="grid w-full gap-3 rounded-[28px] border border-border/60 bg-card-elevated/70 p-5 text-left sm:grid-cols-3">
+          {[
+            { title: 'Add account', copy: 'Set up every money source you use.' },
+            { title: 'Move money', copy: 'Transfer between accounts with one tap.' },
+            { title: 'Track flow', copy: 'See inflow, outflow, and latest activity.' },
+          ].map((item, index) => (
+            <div key={item.title} className="space-y-2 rounded-[24px] border border-border/50 bg-black/10 p-4">
+              <div className="flex size-8 items-center justify-center rounded-full bg-[#7EE7C7]/10 text-xs font-semibold text-[#B9F5D8]">
+                {index + 1}
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Add your first account
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Bank account, credit card, or savings
-                </p>
-              </div>
+              <p className="font-medium text-white">{item.title}</p>
+              <p className="text-xs leading-relaxed text-white/50">{item.copy}</p>
             </div>
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                2
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Create transactions
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Log income and expenses
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                3
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Watch your balance grow
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Real-time balance updates
-                </p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* CTA Button */}
-        <Button
-          onClick={onAddAccount}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold gap-2"
-        >
-          <Plus className="size-5" />
-          Add Your First Account
+        <Button onClick={onAddAccount} className="h-12 w-full rounded-full bg-[#7EE7C7] px-6 font-semibold text-[#04140F] hover:bg-[#90ead1] sm:w-auto">
+          <Plus className="size-4" />
+          + Add Account
         </Button>
       </div>
     </div>

@@ -193,7 +193,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
   // Calculate total balance across all accounts
   const getTotalBalance = useCallback(() => {
-    return accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    return accounts.reduce((sum, acc) => sum + Number(acc.currentBalance ?? acc.balance ?? 0), 0);
   }, [accounts]);
 
   const value = useMemo(

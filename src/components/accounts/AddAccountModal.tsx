@@ -1,231 +1,236 @@
 'use client';
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { getAccountTypeMeta, ACCOUNT_TYPE_OPTIONS } from '@/src/lib/account-types';
+import { formatCurrency } from '@/src/lib/currency';
 import type { Account } from '@/src/services/firestore/accounts.service';
-import {
-  ACCOUNT_TYPE_OPTIONS,
-  getAccountTypeIcon,
-  getAccountTypeMeta,
-  toCanonicalAccountType,
-} from '@/src/lib/account-types';
 
-interface AddAccountModalProps {
+type Mode = 'add' | 'edit';
+
+interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave?: (account: Partial<Account>) => Promise<void> | void;
+  onSave: (accountData: Partial<Account>) => Promise<void> | void;
+  account?: Partial<Account> | null;
+  mode?: Mode;
 }
 
-export function AddAccountModal({ open, onOpenChange, onSave }: AddAccountModalProps) {
-  const [formData, setFormData] = useState<Partial<Account> & { icon?: string }>({
-    name: '',
-    type: 'checking',
-    balance: 0,
-    currency: 'INR',
-    icon: getAccountTypeIcon('checking'),
-    isActive: true,
-  });
+const currencyOptions = ['INR', 'USD', 'EUR', 'GBP'];
+
+const defaultColorByType: Record<string, string> = {
+  bank_account: '#7EE7C7',
+  cash: '#B9F5D8',
+  upi_wallet: '#5DE2C5',
+  credit_card: '#7EA8FF',
+  savings_account: '#82E6A0',
+  investment_account: '#9AE6B4',
+  crypto_wallet: '#62DDBA',
+  custom_account: '#A3F7D8',
+};
+
+function formatAmountInput(value: number | undefined) {
+  if (value == null || Number.isNaN(value)) return '0';
+  return `${Math.round(value * 100) / 100}`;
+}
+
+export function AddAccountModal({ open, onOpenChange, onSave, account, mode = account?.id ? 'edit' : 'add' }: Props) {
+  const isMobile = useIsMobile();
+
+  const initialType = useMemo(() => account?.accountType || account?.type || 'bank_account', [account?.accountType, account?.type]);
+  const initialMeta = useMemo(() => getAccountTypeMeta(initialType), [initialType]);
+
+  const [name, setName] = useState(account?.name || account?.accountName || '');
+  const [accountType, setAccountType] = useState(initialType);
+  const [currentBalance, setCurrentBalance] = useState(formatAmountInput(account?.currentBalance ?? account?.balance ?? 0));
+  const [currency, setCurrency] = useState(account?.currency || 'INR');
+  const [color, setColor] = useState(account?.color || defaultColorByType[initialType] || '#7EE7C7');
+  const [icon, setIcon] = useState(account?.icon || initialMeta.icon);
+  const [monthlyInflow, setMonthlyInflow] = useState(formatAmountInput(account?.monthlyInflow ?? 0));
+  const [monthlyOutflow, setMonthlyOutflow] = useState(formatAmountInput(account?.monthlyOutflow ?? 0));
+  const [lastTransaction, setLastTransaction] = useState(account?.lastTransaction || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSave = async () => {
-    setError(null);
+  useEffect(() => {
+    if (!open) return;
 
-    // Validate form
-    if (!formData.name?.trim()) {
-      setError('Account name is required');
-      return;
-    }
+    const nextType = account?.accountType || account?.type || 'bank_account';
+    const nextMeta = getAccountTypeMeta(nextType);
+    setName(account?.name || account?.accountName || '');
+    setAccountType(nextType);
+    setCurrentBalance(formatAmountInput(account?.currentBalance ?? account?.balance ?? 0));
+    setCurrency(account?.currency || 'INR');
+    setColor(account?.color || defaultColorByType[nextType] || '#7EE7C7');
+    setIcon(account?.icon || nextMeta.icon);
+    setMonthlyInflow(formatAmountInput(account?.monthlyInflow ?? 0));
+    setMonthlyOutflow(formatAmountInput(account?.monthlyOutflow ?? 0));
+    setLastTransaction(account?.lastTransaction || '');
+  }, [account, open]);
 
-    if (!formData.type) {
-      setError('Account type is required');
-      return;
-    }
-
+  async function handleSubmit() {
     setSaving(true);
     try {
-      // Debug: log form data before save
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('AddAccountModal.handleSave formData=', formData);
-      } catch (_) {}
-      if (typeof onSave === 'function') {
-        await onSave(formData);
-      } else {
-        console.warn('AddAccountModal: onSave handler not provided');
-      }
-      onOpenChange(false);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        type: 'checking',
-        balance: 0,
-        currency: 'INR',
-        icon: getAccountTypeIcon('checking'),
-        isActive: true,
+      setError(null);
+      await onSave({
+        id: account?.id,
+        name: name.trim() || getAccountTypeMeta(accountType).label,
+        accountName: name.trim() || getAccountTypeMeta(accountType).label,
+        accountType,
+        type: accountType,
+        currentBalance: Number(currentBalance || 0),
+        balance: Number(currentBalance || 0),
+        currency,
+        color,
+        icon,
+        monthlyInflow: Number(monthlyInflow || 0),
+        monthlyOutflow: Number(monthlyOutflow || 0),
+        lastTransaction: lastTransaction.trim() || null,
+        isActive: account?.isActive ?? true,
+        isDefault: account?.isDefault ?? false,
       });
+      onOpenChange(false);
     } catch (err: any) {
-      const message = err?.message || String(err);
-      if (message.includes('Permission denied') || message.includes('permission')) {
-        setError('Permission denied. Try signing out and signing back in, then try again.');
-      } else {
-        setError(message || 'Failed to create account');
-      }
-      console.error('Failed to create account:', err);
+      setError(err?.message || 'Failed to save account');
     } finally {
       setSaving(false);
     }
-  };
+  }
+
+  const content = (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Account name</span>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="SBI Bank" />
+        </label>
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Account type</span>
+          <select
+            value={accountType}
+            onChange={(e) => {
+              const nextType = e.target.value as typeof accountType;
+              setAccountType(nextType);
+              setColor((current) => current || defaultColorByType[nextType] || '#7EE7C7');
+              setIcon(getAccountTypeMeta(nextType).icon);
+            }}
+            className="input-surface h-11 w-full"
+          >
+            {ACCOUNT_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Current balance</span>
+          <Input value={currentBalance} onChange={(e) => setCurrentBalance(e.target.value)} inputMode="decimal" placeholder="52400" />
+          <p className="text-[11px] text-muted-foreground">Preview: {formatCurrency(currentBalance || 0, currency as any)}</p>
+        </label>
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Currency</span>
+          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="input-surface h-11 w-full">
+            {currencyOptions.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Monthly inflow</span>
+          <Input value={monthlyInflow} onChange={(e) => setMonthlyInflow(e.target.value)} inputMode="decimal" placeholder="10000" />
+        </label>
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Monthly outflow</span>
+          <Input value={monthlyOutflow} onChange={(e) => setMonthlyOutflow(e.target.value)} inputMode="decimal" placeholder="2300" />
+        </label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-[1fr_120px_1fr]">
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Last transaction</span>
+          <Input value={lastTransaction} onChange={(e) => setLastTransaction(e.target.value)} placeholder="Transfer from Cash" />
+        </label>
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Icon</span>
+          <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🏦" />
+        </label>
+        <label className="space-y-2">
+          <span className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Accent color</span>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="h-11 w-full cursor-pointer rounded-[20px] border border-border/60 bg-card-elevated p-1"
+          />
+        </label>
+      </div>
+
+      {error ? <p className="rounded-[20px] border border-[#FF6B6B]/25 bg-[#FF6B6B]/10 px-4 py-3 text-sm text-[#FFB1B1]">{error}</p> : null}
+    </div>
+  );
 
   if (!open) return null;
 
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="border-border/60 px-5 pb-6 pt-4 sm:max-w-none">
+          <SheetHeader className="px-0 pt-2 text-left">
+            <SheetTitle>{mode === 'edit' ? 'Edit Account' : 'Add Account'}</SheetTitle>
+            <SheetDescription>
+              Keep your money sources organized across cash, bank, wallets, and investments.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-5 max-h-[70vh] overflow-y-auto pr-1">{content}</div>
+          <SheetFooter className="px-0 pb-0 pt-5">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button className="w-full sm:w-auto" onClick={() => void handleSubmit()} disabled={saving}>
+                {mode === 'edit' ? 'Save Changes' : 'Create Account'}
+              </Button>
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-t-3xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Account</h2>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
-          >
-            <X className="size-5 text-gray-600 dark:text-gray-400" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <div className="p-6 space-y-6">
-          {/* Account Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Account Name
-            </label>
-            <input
-              type="text"
-              value={formData.name || ''}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="e.g., My Bank Account"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl border-border/60 px-0 py-0">
+        <DialogHeader className="border-b border-border/60 px-6 py-5 text-left">
+          <DialogTitle>{mode === 'edit' ? 'Edit Account' : 'Add Account'}</DialogTitle>
+          <DialogDescription>
+            Keep your money sources organized across cash, bank, wallets, and investments.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{content}</div>
+        <DialogFooter className="border-t border-border/60 px-6 py-5">
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button onClick={() => void handleSubmit()} disabled={saving}>
+              {mode === 'edit' ? 'Save Changes' : 'Create Account'}
+            </Button>
           </div>
-
-          {/* Account Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Account Type
-            </label>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {ACCOUNT_TYPE_OPTIONS.map((typeOption) => {
-                const selectedType = toCanonicalAccountType(formData.type);
-                const isSelected = selectedType === typeOption.value;
-
-                return (
-                <button
-                  key={typeOption.value}
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      type: typeOption.value,
-                      icon: typeOption.icon,
-                    }));
-                  }}
-                  className={`p-3 rounded-lg border-2 text-center transition-all ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-50 shadow-sm dark:border-blue-400 dark:bg-blue-900/30'
-                      : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{typeOption.icon}</div>
-                  <div className="text-xs font-semibold text-gray-900 dark:text-white">
-                    {typeOption.label}
-                  </div>
-                  <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
-                    {typeOption.description}
-                  </div>
-                </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Starting Balance */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Starting Balance (₹)
-            </label>
-            <input
-              type="number"
-              value={formData.balance || 0}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  balance: parseFloat(e.target.value) || 0,
-                }))
-              }
-              placeholder="0"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Currency */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Currency
-            </label>
-            <select
-              value={formData.currency || 'INR'}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, currency: e.target.value }))
-              }
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="INR">₹ Indian Rupee</option>
-              <option value="USD">$ US Dollar</option>
-              <option value="EUR">€ Euro</option>
-              <option value="GBP">£ British Pound</option>
-            </select>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/60">
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Selected Type</p>
-            <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-              {getAccountTypeMeta(formData.type).icon} {getAccountTypeMeta(formData.type).label}
-            </p>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="flex-1"
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            disabled={saving}
-          >
-            {saving ? 'Creating...' : 'Create Account'}
-          </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

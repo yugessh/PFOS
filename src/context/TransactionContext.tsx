@@ -173,25 +173,23 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         // Replace temp with created
         setTransactions((s) => s.map((t) => (t.id === tempId ? created : t)));
 
-        // Update account balances in Firestore so account views stay in sync across pages
+        // Update account balances and monthly rollups in Firestore so the account dashboard stays in sync.
         if (form.type === 'income' || form.type === 'expense') {
-          const accountRes = await accountsService.getAccountById(auth.user.uid, form.account);
-          if (accountRes.success && accountRes.data) {
-            const current = Number(accountRes.data.balance || 0);
-            const next = form.type === 'income' ? current + form.amount : current - form.amount;
-            await accountsService.updateBalance(auth.user.uid, form.account, next);
-          }
+          await accountsService.recordAccountMovement(auth.user.uid, form.account, {
+            amount: form.amount,
+            direction: form.type === 'income' ? 'inflow' : 'outflow',
+            description: form.notes || form.category || (form.type === 'income' ? 'Income' : 'Expense'),
+            date: form.date,
+          });
         } else if (form.type === 'transfer' && form.toAccount) {
-          const fromRes = await accountsService.getAccountById(auth.user.uid, form.account);
-          const toRes = await accountsService.getAccountById(auth.user.uid, form.toAccount);
-          if (fromRes.success && fromRes.data) {
-            const nextFrom = Number(fromRes.data.balance || 0) - form.amount;
-            await accountsService.updateBalance(auth.user.uid, form.account, nextFrom);
-          }
-          if (toRes.success && toRes.data) {
-            const nextTo = Number(toRes.data.balance || 0) + form.amount;
-            await accountsService.updateBalance(auth.user.uid, form.toAccount, nextTo);
-          }
+          await accountsService.transferBetweenAccounts(
+            auth.user.uid,
+            form.account,
+            form.toAccount,
+            form.amount,
+            form.notes || 'Transfer',
+            form.date
+          );
         }
 
         await refreshAccounts();

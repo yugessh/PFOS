@@ -51,30 +51,41 @@ export interface PrivacyPreferences {
 // Account collection
 export interface Account extends BaseDocument {
   userId: string;
-  accountName: string;
+  name: string;
+  accountName?: string;
   accountType: AccountType;
-  balance: number;
+  type?: AccountType;
+  currentBalance: number;
+  balance?: number;
   currency: string;
+  color: string;
+  icon: string;
+  monthlyInflow: number;
+  monthlyOutflow: number;
+  lastTransaction: string | null;
   isActive: boolean;
   isDefault: boolean;
   bankName?: string;
   accountNumber?: string;
   ifscCode?: string;
   description?: string;
-  color?: string;
-  icon?: string;
-  lastUpdated: Date;
+  lastUpdated?: Date;
 }
 
 export type AccountType = 
+  | 'bank_account'
   | 'cash'
+  | 'upi_wallet'
+  | 'credit_card'
+  | 'savings_account'
+  | 'investment_account'
+  | 'crypto_wallet'
+  | 'custom_account'
   | 'savings'
   | 'checking'
-  | 'credit_card'
   | 'investment'
   | 'loan'
   | 'wallet'
-  | 'crypto_wallet'
   | 'debit_card'
   | 'digital_wallet'
   | 'other';
