@@ -15,6 +15,7 @@ import {
   Settings,
   Bell,
   LucideIcon,
+  FileText,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -35,6 +36,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
+  { href: '/dashboard/documents', label: 'Documents', icon: FileText, description: 'Bills, policies & vault' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
   { href: '/dashboard/settlements', label: 'Settlements', icon: Handshake, description: 'View settlements' },
 ];
@@ -56,6 +58,7 @@ export const sidebarNavItems: NavItem[] = [
   { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
+  { href: '/dashboard/documents', label: 'Document Vault', icon: FileText, description: 'Bills & policies' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
   { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Advanced analytics' },
 ];

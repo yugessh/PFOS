@@ -154,6 +154,47 @@ export default function TransactionsPage() {
     [transactions]
   );
 
+  const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
+  const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);
+
+  const filteredTransactions = useMemo(() => {
+    if (viewMode === 'calendar') return transactions;
+    if (timeFilter === 'daily') {
+      return transactions.filter((tx) => formatDate(new Date(tx.date)) === selectedDate);
+    }
+    if (timeFilter === 'weekly') {
+      const { start, end } = getWeekRange(selectedDateObject);
+      return transactions.filter((tx) => {
+        const date = new Date(tx.date);
+        return date >= start && date <= end;
+      });
+    }
+    return transactions;
+  }, [transactions, viewMode, timeFilter, selectedDate, selectedDateObject]);
+
+  const { income, expenses, savings } = useMemo(() => computeTotals(filteredTransactions), [filteredTransactions]);
+
+  const totalBalance = useMemo(
+    () => accounts.reduce((s, a) => s + (a.balance || 0), 0),
+    [accounts]
+  );
+
+  const selectedDayTransactions = useMemo(
+    () => grouped[selectedDate] || [],
+    [grouped, selectedDate]
+  );
+
+  const selectedDaySummary = useMemo(() => {
+    return selectedDayTransactions.reduce(
+      (sum, tx) => {
+        if (tx.type === 'income') sum.income += tx.amount;
+        if (tx.type === 'expense') sum.expenses += tx.amount;
+        return sum;
+      },
+      { income: 0, expenses: 0 }
+    );
+  }, [selectedDayTransactions]);
+
   if (filterLoading) {
     return (
       <div className="min-h-screen bg-main px-4 py-10 text-white">
@@ -228,47 +269,6 @@ export default function TransactionsPage() {
       </div>
     );
   }
-
-  const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
-  const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);
-
-  const filteredTransactions = useMemo(() => {
-    if (viewMode === 'calendar') return transactions;
-    if (timeFilter === 'daily') {
-      return transactions.filter((tx) => formatDate(new Date(tx.date)) === selectedDate);
-    }
-    if (timeFilter === 'weekly') {
-      const { start, end } = getWeekRange(selectedDateObject);
-      return transactions.filter((tx) => {
-        const date = new Date(tx.date);
-        return date >= start && date <= end;
-      });
-    }
-    return transactions;
-  }, [transactions, viewMode, timeFilter, selectedDate, selectedDateObject]);
-
-  const { income, expenses, savings } = useMemo(() => computeTotals(filteredTransactions), [filteredTransactions]);
-
-  const totalBalance = useMemo(
-    () => accounts.reduce((s, a) => s + (a.balance || 0), 0),
-    [accounts]
-  );
-
-  const selectedDayTransactions = useMemo(
-    () => grouped[selectedDate] || [],
-    [grouped, selectedDate]
-  );
-
-  const selectedDaySummary = useMemo(() => {
-    return selectedDayTransactions.reduce(
-      (sum, tx) => {
-        if (tx.type === 'income') sum.income += tx.amount;
-        if (tx.type === 'expense') sum.expenses += tx.amount;
-        return sum;
-      },
-      { income: 0, expenses: 0 }
-    );
-  }, [selectedDayTransactions]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-28 animate-in fade-in duration-300">

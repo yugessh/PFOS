@@ -1,6 +1,8 @@
 export type NotificationType =
   | 'emi_upcoming'
   | 'emi_overdue'
+  | 'debt_due'
+  | 'debt_overdue'
   | 'budget_overspend'
   | 'low_balance'
   | 'recurring_reminder'
@@ -42,6 +44,8 @@ export function getNotificationIcon(type: NotificationType): string {
   switch (type) {
     case 'emi_upcoming':
     case 'emi_overdue':
+    case 'debt_due':
+    case 'debt_overdue':
       return '💳';
     case 'budget_overspend':
       return '📊';
@@ -61,10 +65,12 @@ export function getNotificationIcon(type: NotificationType): string {
 export function getNotificationColor(type: NotificationType): string {
   switch (type) {
     case 'emi_overdue':
+    case 'debt_overdue':
     case 'budget_overspend':
     case 'low_balance':
       return 'red';
     case 'emi_upcoming':
+    case 'debt_due':
     case 'bill_reminder':
       return 'amber';
     case 'recurring_reminder':

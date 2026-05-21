@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,15 +13,32 @@ import { useSettlements } from '@/src/hooks/useSettlements';
 import type { SettlementModel } from '@/src/lib/settlements';
 import { formatCurrency } from '@/src/lib/currency';
 
+const typeOptions: Array<{ value: SettlementModel['type']; label: string }> = [
+  { value: 'lent', label: 'Lent to someone' },
+  { value: 'borrowed', label: 'Borrowed from someone' },
+  { value: 'custom', label: 'Custom' },
+];
+
 export default function SettlementsPage() {
-  const { settlements, loading, saving, addSettlement, updateSettlement, deleteSettlement, markAsPaid, getSummary } = useSettlements();
+  const {
+    settlements,
+    loading,
+    saving,
+    addSettlement,
+    updateSettlement,
+    deleteSettlement,
+    markAsPaid,
+    getSummary,
+  } = useSettlements();
+
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<SettlementModel>>({
     personName: '',
     amount: 0,
-    isPaid: false,
-    note: '',
+    type: 'lent',
+    description: '',
+    notes: '',
   });
 
   const safeSettlements = Array.isArray(settlements) ? settlements : [];
@@ -33,16 +50,21 @@ export default function SettlementsPage() {
       setFormData({
         personName: settlement.personName,
         amount: settlement.amount,
-        isPaid: settlement.isPaid,
-        note: settlement.note || '',
+        type: settlement.type,
+        dueDate: settlement.dueDate,
+        linkedAccount: settlement.linkedAccount,
+        phone: settlement.phone,
+        description: settlement.description,
+        notes: settlement.notes,
       });
     } else {
       setEditingId(null);
       setFormData({
         personName: '',
         amount: 0,
-        isPaid: false,
-        note: '',
+        type: 'lent',
+        description: '',
+        notes: '',
       });
     }
     setSheetOpen(true);
@@ -51,9 +73,9 @@ export default function SettlementsPage() {
   const handleSubmit = async () => {
     try {
       if (editingId) {
-        await updateSettlement(editingId, formData);
+        await updateSettlement(editingId, formData as Partial<SettlementModel>);
       } else {
-        await addSettlement(formData);
+        await addSettlement(formData as Omit<SettlementModel, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'>);
       }
       setSheetOpen(false);
     } catch (err) {
@@ -75,197 +97,199 @@ export default function SettlementsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading settlements...</p>
+          <div className="inline-block w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mb-2" />
+          <p className="text-sm text-slate-400">Loading settlements...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 pb-24">
-      {/* Header with Stats */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Settlements</h1>
-          <Button
-            size="sm"
-            onClick={() => handleOpen()}
-            className="h-8 gap-1"
-          >
+    <div className="min-h-screen bg-[#080A0F] pb-24 text-white">
+      <div className="sticky top-0 z-10 bg-[#080A0F] border-b border-[#151A20] px-4 py-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Debt Manager</p>
+            <h1 className="text-2xl font-semibold">Settlements</h1>
+          </div>
+          <Button size="sm" onClick={() => handleOpen()} className="h-10 gap-2 bg-[#151A20] text-white border-none hover:bg-slate-800">
             <Plus className="size-4" />
-            Add
+            New
           </Button>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
-            <p className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Pending</p>
-            <p className="text-sm font-bold text-orange-600 dark:text-orange-400">{formatCurrency(summary.totalPending)}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[28px] border border-[#151A20] bg-[#151A20] p-4">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-slate-500">Total Lent</p>
+            <p className="mt-2 text-2xl font-semibold text-[#7EE7C7]">{formatCurrency(summary.totalLent)}</p>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-            <p className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Settled</p>
-            <p className="text-sm font-bold text-green-600 dark:text-green-400">{formatCurrency(summary.totalPaid)}</p>
+          <div className="rounded-[28px] border border-[#151A20] bg-[#151A20] p-4">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-slate-500">Total Borrowed</p>
+            <p className="mt-2 text-2xl font-semibold text-rose-400">{formatCurrency(summary.totalBorrowed)}</p>
+          </div>
+          <div className="rounded-[28px] border border-[#151A20] bg-[#151A20] p-4">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-slate-500">Pending</p>
+            <p className="mt-2 text-2xl font-semibold text-[#7EE7C7]">{formatCurrency(summary.totalPending)}</p>
           </div>
         </div>
       </div>
 
-      {/* Settlements List */}
-      {safeSettlements.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-4">
-          <Users className="size-12 text-gray-300 dark:text-gray-700 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 font-medium">No settlements yet</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Track money you owe or are owed</p>
-          <Button onClick={() => handleOpen()} className="mt-4">
-            <Plus className="size-4 mr-2" />
-            Add Settlement
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-2 px-4 py-4">
-          {/* Pending Settlements */}
-          {safeSettlements.filter(s => !s.isPaid).length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 uppercase tracking-wide">
-                Pending
-              </p>
-              {safeSettlements
-                .filter(s => !s.isPaid)
-                .map(settlement => (
-                  <div
-                    key={settlement.id}
-                    className="p-3 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-900/30"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {settlement.personName}
-                        </p>
-                        {settlement.note && (
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 truncate">
-                            {settlement.note}
-                          </p>
-                        )}
+      <div className="space-y-4 px-4 py-6">
+        {safeSettlements.length === 0 ? (
+          <div className="rounded-[28px] border border-[#151A20] bg-[#151A20]/70 p-8 text-center">
+            <Users className="mx-auto mb-4 size-14 text-slate-500" />
+            <p className="text-lg font-semibold text-white">No settlement entries yet</p>
+            <p className="mt-2 text-sm text-slate-400">Add loans, borrowings, due dates and reminders quickly.</p>
+            <Button onClick={() => handleOpen()} className="mt-4 bg-[#7EE7C7] text-slate-950">Add Settlement</Button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {safeSettlements.map((settlement) => {
+              const status = settlement.status || 'pending';
+              const isOverdue = status === 'overdue';
+              return (
+                <div key={settlement.id} className="rounded-[28px] border border-[#151A20] bg-[#151A20] p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em] text-slate-500">{settlement.type === 'lent' ? 'Lent' : settlement.type === 'borrowed' ? 'Borrowed' : 'Debt'}</p>
+                      <h2 className="mt-1 text-xl font-semibold text-white">{settlement.personName}</h2>
+                      {settlement.description && <p className="mt-2 text-sm text-slate-400">{settlement.description}</p>}
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+                        {settlement.dueDate && <span className="rounded-full border border-slate-700 px-3 py-1">Due {new Date(settlement.dueDate).toLocaleDateString()}</span>}
+                        {settlement.linkedAccount && <span className="rounded-full border border-slate-700 px-3 py-1">Account {settlement.linkedAccount}</span>}
+                        {settlement.phone && <span className="rounded-full border border-slate-700 px-3 py-1">{settlement.phone}</span>}
                       </div>
-                      <p className="text-sm font-bold text-orange-600 dark:text-orange-400 flex-shrink-0">
-                        {formatCurrency(settlement.amount)}
-                      </p>
                     </div>
-
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 h-7 text-xs gap-1"
-                        onClick={() => markAsPaid(settlement.id)}
-                        disabled={saving}
-                      >
-                        <CheckCircle2 className="size-3" />
-                        Mark Paid
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0"
-                        onClick={() => handleOpen(settlement)}
-                      >
-                        <Edit2 className="size-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => handleDelete(settlement.id)}
-                      >
-                        <Trash2 className="size-3" />
-                      </Button>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm text-slate-400">Status</p>
+                      <p className={`mt-1 text-lg font-semibold ${isOverdue ? 'text-rose-400' : 'text-[#7EE7C7]'}`}>{status.toUpperCase()}</p>
+                      <p className="mt-3 text-2xl font-bold text-white">{formatCurrency(settlement.remainingAmount ?? settlement.amount)}</p>
                     </div>
                   </div>
-                ))}
-            </div>
-          )}
 
-          {/* Settled Settlements */}
-          {safeSettlements.filter(s => s.isPaid).length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 uppercase tracking-wide mt-4">
-                Settled
-              </p>
-              {safeSettlements
-                .filter(s => s.isPaid)
-                .map(settlement => (
-                  <div
-                    key={settlement.id}
-                    className="p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-900/30 opacity-75"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="size-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate line-through">
-                            {settlement.personName}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-sm font-bold text-green-600 dark:text-green-400 flex-shrink-0">
-                        {formatCurrency(settlement.amount)}
-                      </p>
-                    </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" className="h-9 px-3 border-[#7EE7C7] text-[#7EE7C7]" onClick={() => markAsPaid(settlement.id)} disabled={saving}>
+                      Mark Paid
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-9 px-3 border-slate-600 text-slate-200" onClick={() => handleOpen(settlement)}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-9 px-3 text-rose-300" onClick={() => handleDelete(settlement.id)}>
+                      Delete
+                    </Button>
                   </div>
-                ))}
-            </div>
-          )}
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* Add/Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
+        <SheetContent side="bottom" className="rounded-t-[28px] bg-[#080A0F] border-t border-[#151A20]">
           <SheetHeader className="mb-4">
-            <SheetTitle>
-              {editingId ? 'Edit Settlement' : 'Add Settlement'}
-            </SheetTitle>
+            <SheetTitle>{editingId ? 'Edit Settlement' : 'Add Settlement'}</SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 pb-6">
             <div>
-              <label className="text-sm font-medium text-gray-900 dark:text-white">Person Name</label>
+              <label className="text-sm font-medium text-slate-200">Person Name</label>
               <input
                 type="text"
                 placeholder="e.g., John Doe"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                value={formData.personName}
+                className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white placeholder:text-slate-500"
+                value={formData.personName ?? ''}
                 onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-900 dark:text-white">Amount</label>
-              <input
-                type="number"
-                placeholder="0"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-200">Amount</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                  value={formData.amount ?? 0}
+                  onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-200">Type</label>
+                <select
+                  className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                  value={formData.type ?? 'lent'}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as SettlementModel['type'] })}
+                >
+                  {typeOptions.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-[#080A0F] text-white">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-200">Due Date</label>
+                <input
+                  type="date"
+                  className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                  value={formData.dueDate ? new Date(formData.dueDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-200">Linked Account</label>
+                <input
+                  type="text"
+                  placeholder="Account name or ID"
+                  className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                  value={formData.linkedAccount ?? ''}
+                  onChange={(e) => setFormData({ ...formData, linkedAccount: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-200">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                  value={formData.phone ?? ''}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-200">Description</label>
+                <input
+                  type="text"
+                  placeholder="Short description"
+                  className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                  value={formData.description ?? ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-900 dark:text-white">Note (optional)</label>
+              <label className="text-sm font-medium text-slate-200">Note</label>
               <textarea
-                placeholder="e.g., Coffee, Dinner..."
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                placeholder="Add context, reminder notes, or settlement details"
                 rows={3}
-                value={formData.note}
-                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
+                value={formData.notes ?? ''}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
 
             <Button
               onClick={handleSubmit}
-              disabled={saving || !formData.personName || formData.amount <= 0}
-              className="w-full"
+              disabled={saving || !formData.personName || (formData.amount ?? 0) <= 0}
+              className="w-full bg-[#7EE7C7] text-slate-950"
             >
               {saving ? 'Saving...' : editingId ? 'Update Settlement' : 'Add Settlement'}
             </Button>

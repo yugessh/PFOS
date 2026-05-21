@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { useAccounts } from '@/src/hooks/useAccounts';
 import { useInvestments } from '@/src/hooks/useInvestments';
+import { useSettlements } from '@/src/hooks/useSettlements';
 import { netWorthService } from '@/src/services/firestore/networth.service';
 
 interface NetWorthData {
@@ -31,6 +32,7 @@ export function useNetWorth() {
   const { user } = useAuthContext();
   const { accounts, loading: accountsLoading } = useAccounts();
   const { investments, loading: investmentsLoading } = useInvestments();
+  const { settlements, loading: settlementsLoading } = useSettlements();
 
   const [netWorthData, setNetWorthData] = useState<NetWorthData>({
     totalAssets: 0,
@@ -57,14 +59,16 @@ export function useNetWorth() {
 
       // Get investments
       const investmentList = investments || [];
+      const settlementList = settlements || [];
 
-      // Calculate from accounts and investments
+      // Calculate from accounts, investments, and settlement debt balances
       const result = await netWorthService.calculateNetWorth(
         user.uid,
         accountList,
         investmentList,
         [], // EMIs would come from a separate hook
-        []  // Credit cards would come from accounts with negative balance
+        [], // Credit cards would come from accounts with negative balance
+        settlementList
       );
 
       setNetWorthData({
@@ -88,7 +92,7 @@ export function useNetWorth() {
 
   useEffect(() => {
     calculateNetWorth();
-  }, [calculateNetWorth, user?.uid, accounts, investments]);
+  }, [calculateNetWorth, user?.uid, accounts, investments, settlements]);
 
   const refresh = useCallback(() => {
     calculateNetWorth();

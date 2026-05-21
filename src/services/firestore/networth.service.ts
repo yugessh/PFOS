@@ -21,7 +21,8 @@ export class NetWorthService extends BaseFirestoreService<NetWorthSnapshot> {
     accounts: any[] = [],
     investments: any[] = [],
     emis: any[] = [],
-    creditCards: any[] = []
+    creditCards: any[] = [],
+    debts: any[] = []
   ): Promise<{ assets: number; liabilities: number; netWorth: number }> {
     try {
       let totalAssets = 0;
@@ -40,6 +41,23 @@ export class NetWorthService extends BaseFirestoreService<NetWorthSnapshot> {
       if (investments && investments.length > 0) {
         totalAssets += investments.reduce((sum, inv) => {
           return sum + (inv.currentValue || inv.investedAmount || 0);
+        }, 0);
+      }
+
+      // Add outstanding lent balances as assets
+      if (debts && debts.length > 0) {
+        totalAssets += debts.reduce((sum, debt) => {
+          if (debt.type === 'lent') {
+            return sum + (debt.remainingAmount || 0);
+          }
+          return sum;
+        }, 0);
+
+        totalLiabilities += debts.reduce((sum, debt) => {
+          if (debt.type === 'borrowed') {
+            return sum + (debt.remainingAmount || 0);
+          }
+          return sum;
         }, 0);
       }
 

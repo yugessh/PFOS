@@ -1,13 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { settlementsService } from '@/src/services/firestore/settlements.service';
-import { calculateSettlementSummary } from '@/src/lib/settlements';
-import type { SettlementModel } from '@/src/lib/settlements';
+import { notificationsService } from '@/src/services/firestore/notifications.service';
+import { calculateSettlementSummary, getSettlementStatus, type SettlementModel } from '@/src/lib/settlements';
+import { useTransactions } from '@/src/hooks/useTransactions';
 
 export function useSettlements() {
   const auth = useAuthContext();
+  const { refresh: refreshTransactions } = useTransactions();
   const [settlements, setSettlements] = useState<SettlementModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,10 +28,6 @@ export function useSettlements() {
 
     try {
       const response = await settlementsService.getUserSettlements(userId);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('settlements type:', typeof response.data, response.data);
-      }
-
       const safeSettlements = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response?.data?.data)
@@ -114,14 +112,31 @@ export function useSettlements() {
     [loadSettlements]
   );
 
-  const markAsPaid = useCallback(
-    async (settlementId: string) => {
+  const applyPayment = useCallback(
+    async (settlementId: string, payment: {
+      amount: number;
+      date: Date;
+      notes?: string;
+      accountId?: string;
+      transactionType: 'income' | 'expense';
+      description?: string;
+    }) => {
+      const userId = auth?.user?.uid;
+      if (!userId) throw new Error('User not authenticated');
+      if (!payment.amount || payment.amount <= 0) throw new Error('Enter a valid payment amount');
+
       setSaving(true);
       setError(null);
 
       try {
-        await settlementsService.markAsPaid(settlementId);
+        const result = await settlementsService.applyPayment(userId, settlementId, payment);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to apply payment');
+        }
+
+        await refreshTransactions();
         await loadSettlements();
+        return result.data;
       } catch (err: any) {
         const message = err?.message || String(err);
         setError(message);
@@ -130,12 +145,98 @@ export function useSettlements() {
         setSaving(false);
       }
     },
-    [loadSettlements]
+    [auth?.user?.uid, loadSettlements, refreshTransactions]
   );
 
-  const getSummary = useCallback(() => {
-    return calculateSettlementSummary(settlements);
+  const searchSettlements = useCallback(
+    (query: string) => {
+      const text = query.trim().toLowerCase();
+      if (!text) return settlements;
+
+      return settlements.filter((settlement) => {
+        return [
+          settlement.personName,
+          settlement.status,
+          settlement.type,
+          settlement.description,
+          settlement.notes,
+          settlement.phone,
+          settlement.linkedAccount,
+        ]
+          .filter(Boolean)
+          .some((value) => value?.toString().toLowerCase().includes(text));
+      });
+    },
+    [settlements]
+  );
+
+  const getSummary = useMemo(() => calculateSettlementSummary(settlements), [settlements]);
+
+  const overdueReminders = useMemo(() => {
+    const now = new Date();
+    return settlements.filter((settlement) => {
+      return (
+        settlement.remainingAmount > 0 &&
+        settlement.dueDate &&
+        new Date(settlement.dueDate) < now
+      );
+    });
   }, [settlements]);
+
+  const upcomingReminders = useMemo(() => {
+    const now = new Date();
+    const soon = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    return settlements.filter((settlement) => {
+      return (
+        settlement.remainingAmount > 0 &&
+        settlement.dueDate &&
+        new Date(settlement.dueDate) >= now &&
+        new Date(settlement.dueDate) <= soon
+      );
+    });
+  }, [settlements]);
+
+  useEffect(() => {
+    const userId = auth?.user?.uid;
+    if (!userId || settlements.length === 0) return;
+
+    const runNotifications = async () => {
+      try {
+        const existingNotifications = await notificationsService.getUserNotifications(userId);
+        const allReminders = [...upcomingReminders, ...overdueReminders];
+
+        for (const settlement of allReminders) {
+          const type = settlement.status === 'overdue' ? 'debt_overdue' : 'debt_due';
+          const title = settlement.status === 'overdue'
+            ? `${settlement.personName} settlement overdue`
+            : `${settlement.personName} payment due soon`;
+          const message = settlement.status === 'overdue'
+            ? `₹${settlement.remainingAmount} overdue for ${settlement.personName}. Settle now.`
+            : `₹${settlement.remainingAmount} due by ${new Date(settlement.dueDate!).toLocaleDateString()}.`;
+
+          const alreadyExists = existingNotifications.some((notification) => {
+            return notification.metadata?.settlementId === settlement.id && notification.type === type;
+          });
+
+          if (!alreadyExists) {
+            await notificationsService.createNotification(
+              userId,
+              type,
+              title,
+              message,
+              'high',
+              { settlementId: settlement.id, type: settlement.type },
+              '/dashboard/settlements'
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Failed to create settlement notifications:', error);
+      }
+    };
+
+    void runNotifications();
+  }, [auth?.user?.uid, upcomingReminders, overdueReminders, settlements]);
 
   return {
     settlements,
@@ -145,8 +246,11 @@ export function useSettlements() {
     addSettlement,
     updateSettlement,
     deleteSettlement,
-    markAsPaid,
-    getSummary,
+    applyPayment,
+    searchSettlements,
+    summary: getSummary,
+    overdueReminders,
+    upcomingReminders,
     reload: loadSettlements,
   };
 }

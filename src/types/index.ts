@@ -9,6 +9,15 @@ export type {
   StatCardProps,
   StatCardTrend,
 } from './dashboard';
+export type {
+  Document,
+  DocumentAttachment,
+  DocumentCategory,
+  DocumentReminder,
+  DocumentStatus,
+  DocumentVaultSummary,
+  ReminderType,
+} from './document';
 export type { Investment } from './investment';
 export type {
   Transaction,
