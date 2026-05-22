@@ -280,6 +280,37 @@ export type ReminderType =
 
 export type ReminderPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+export interface FinancialEvent extends BaseDocument {
+  userId: string;
+  title: string;
+  eventType: FinancialEventType;
+  amount?: number;
+  date: Date;
+  status: EventStatus;
+  linkedModule: string;
+  linkedId?: string;
+  priority: EventPriority;
+  notes?: string;
+  metadata?: Record<string, any>;
+}
+
+export type FinancialEventType =
+  | 'emi_due'
+  | 'subscription_renewal'
+  | 'bill_payment'
+  | 'goal_contribution'
+  | 'investment_buy'
+  | 'investment_sell'
+  | 'trade_entry'
+  | 'lending_due'
+  | 'borrowing_due'
+  | 'reminder'
+  | 'custom';
+
+export type EventStatus = 'pending' | 'completed' | 'missed' | 'upcoming';
+
+export type EventPriority = 'low' | 'medium' | 'high' | 'urgent';
+
 // Settlements collection
 export interface Settlement extends BaseDocument {
   userId: string;

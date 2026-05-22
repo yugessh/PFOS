@@ -14,6 +14,7 @@ import {
   BookOpen,
   Settings,
   Bell,
+  CalendarDays,
   LucideIcon,
   FileText,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
   { href: '/dashboard/recurring', label: 'Recurring', icon: Repeat, description: 'Automate recurring finances' },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart financial alerts' },
+  { href: '/dashboard/calendar', label: 'Calendar', icon: CalendarDays, description: 'Financial calendar & timeline' },
   { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
   { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'Lightweight financial summary' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
