@@ -6,13 +6,18 @@ import ResponsiveGrid from '@/components/dashboard-grid/ResponsiveGrid';
 import { DashboardWidget } from '@/components/dashboard-grid/DashboardWidget';
 import { useAuthContext } from '@/src/context/AuthContext';
 import dashboardService, { DashboardWidgetRecord, WidgetSize } from '@/src/services/firestore/dashboard.service';
-import QuickActionsWidget from '@/components/widgets/quick-actions-widget';
-import NetWorthCard from '@/components/net-worth-card';
-import BudgetCard from '@/components/budget-card';
-import GoalCard from '@/components/goal-card';
-import InvestmentCard from '@/components/investment-card';
-import CompactTransactionFeed from '@/components/compact-transaction-feed';
-import WidgetSettings from '@/components/widget-settings';
+import { QuickActionsWidget } from '@/components/widgets/quick-actions-widget';
+import { CurrentNetWorthCard, NetWorthCard } from '@/components/net-worth-card';
+import { BudgetSummaryCard as BudgetCard } from '@/components/budget-card';
+import { GoalCard } from '@/components/goal-card';
+import { InvestmentCard } from '@/components/investment-card';
+import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
+import { WidgetSettings } from '@/components/widget-settings';
+import { useNetWorth } from '@/src/hooks/useNetWorth';
+import { useTransactions } from '@/src/hooks/useTransactions';
+import { useBudgets } from '@/src/hooks/useBudgets';
+import { useGoals } from '@/src/hooks/useGoals';
+import { useInvestments } from '@/src/hooks/useInvestments';
 
 const SIZE_TO_SPAN = (size: WidgetSize) => {
   switch (size) {
@@ -29,9 +34,14 @@ const SIZE_TO_SPAN = (size: WidgetSize) => {
   }
 };
 
-export default function DashboardManager() {
+export function DashboardManager() {
   const { user } = useAuthContext();
   const uid = user?.uid;
+  const { netWorthData } = useNetWorth();
+  const { transactions } = useTransactions();
+  const { budgetSummary } = useBudgets(transactions || []);
+  const { goals } = useGoals();
+  const { investments } = useInvestments();
   const [widgets, setWidgets] = useState<DashboardWidgetRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -134,6 +144,86 @@ export default function DashboardManager() {
     return all.filter((a) => a.name.toLowerCase().includes(query.toLowerCase()));
   }, [query]);
 
+  const renderWidgetBody = (w: DashboardWidgetRecord) => {
+    switch (w.widgetType) {
+      case 'networth':
+        return (
+          <CurrentNetWorthCard
+            netWorth={netWorthData?.netWorth || 0}
+            monthlyChange={netWorthData?.monthlyChange}
+            monthlyChangePercent={netWorthData?.monthlyChangePercent}
+          />
+        );
+      case 'transactions':
+        return <CompactTransactionFeed transactions={transactions || []} />;
+      case 'budgets':
+        return (
+          <BudgetCard
+            totalBudget={budgetSummary?.totalBudget || 0}
+            totalSpent={budgetSummary?.totalSpent || 0}
+            healthScore={
+              budgetSummary && budgetSummary.totalBudget > 0
+                ? Math.max(0, Math.round((1 - budgetSummary.totalSpent / budgetSummary.totalBudget) * 100))
+                : 100
+            }
+          />
+        );
+      case 'goals':
+        return (
+          <GoalCard
+            goal={
+              (goals && goals.length > 0 && (goals[0] as any)) || {
+                category: 'General',
+                name: 'No goals set',
+                currentAmount: 0,
+                targetAmount: 1,
+                deadline: new Date(),
+              }
+            }
+          />
+        );
+      case 'investments':
+        return (
+          <InvestmentCard
+            investment={
+              (investments && investments.length > 0 && (investments[0] as any)) || {
+                id: '0',
+                name: 'No investments',
+                type: 'other',
+                currentValue: 0,
+                investedAmount: 0,
+                returns: 0,
+                returnPercentage: 0,
+              }
+            }
+          />
+        );
+      case 'quick':
+        return <QuickActionsWidget />;
+      case 'trading':
+      case 'bills':
+      case 'emi':
+      case 'calendar':
+      case 'ai':
+      case 'cashflow':
+      case 'lending':
+      case 'notifications':
+        return (
+          <div className="rounded-[26px] border border-border bg-background p-5 text-sm text-secondary">
+            <div className="font-semibold text-foreground capitalize">{w.widgetType.replace(/-/g, ' ')}</div>
+            <p className="mt-2">This widget is available in the dashboard library. Add your financial data to view live insights here.</p>
+          </div>
+        );
+      default:
+        return (
+          <div className="rounded-[26px] border border-border bg-background p-5 text-sm text-secondary">
+            <div className="font-semibold text-foreground">Unsupported widget</div>
+            <p className="mt-2">This widget type is not yet supported. Please remove it from the dashboard library or choose a different card.</p>
+          </div>
+        );
+    }
+  };
+
   if (!uid) return null;
 
   return (
@@ -168,15 +258,7 @@ export default function DashboardManager() {
                   <DashboardWidget title={w.widgetType} className="drag-handle" colSpan={span.col as any} rowSpan={span.row as any}>
                     <div className="flex items-start justify-between">
                       <div className="w-full">
-                        {w.widgetType === 'networth' && <NetWorthCard />}
-                        {w.widgetType === 'transactions' && <CompactTransactionFeed transactions={[]} />}
-                        {w.widgetType === 'budgets' && <BudgetCard />}
-                        {w.widgetType === 'goals' && <GoalCard />}
-                        {w.widgetType === 'investments' && <InvestmentCard />}
-                        {w.widgetType === 'quick' && <QuickActionsWidget />}
-                        {['trading','bills','emi','calendar','ai','cashflow','lending','notifications'].includes(w.widgetType) && (
-                          <div className="text-sm text-secondary">{w.widgetType} widget — loading data…</div>
-                        )}
+                        {renderWidgetBody(w)}
                       </div>
                         <div className="ml-3 flex flex-col items-end gap-2">
                         <select value={w.size} onChange={(e) => updateWidget(w.id!, { size: e.target.value as WidgetSize })} className="rounded-md bg-card px-2 py-1 text-sm">

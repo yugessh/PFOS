@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DashboardWidgetRecord } from '@/src/services/firestore/dashboard.service';
 
-export default function WidgetSettings({ widget, open, onClose, onSave }: { widget: DashboardWidgetRecord | null; open: boolean; onClose: () => void; onSave: (updates: Partial<DashboardWidgetRecord>) => void; }) {
+export function WidgetSettings({ widget, open, onClose, onSave }: { widget: DashboardWidgetRecord | null; open: boolean; onClose: () => void; onSave: (updates: Partial<DashboardWidgetRecord>) => void; }) {
   const [refresh, setRefresh] = useState(60);
   const [timeRange, setTimeRange] = useState('1M');
   const [compact, setCompact] = useState(false);

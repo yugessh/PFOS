@@ -37,11 +37,13 @@ import { emiService } from '@/src/services/firestore/emi.service';
 import { goalsService } from '@/src/services/firestore/goals.service';
 import { investmentsService } from '@/src/services/firestore/investments.service';
 import { transactionsService } from '@/src/services/firestore/transactions.service';
+import { addScheduledReport } from '@/src/services/firestore/reports.service';
 import { ChartCard } from '@/components/charts/ChartCard';
 import { FilterSelect } from '@/components/filters/FilterSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/stat-card/StatCard';
+import { AppModal } from '@/components/modals/AppModal';
 import type { ExpenseBreakdownItem, MonthlySpendingRow } from '@/types';
 import type { Transaction } from '@/src/types/firestore';
 import type { Account } from '@/src/services/firestore/accounts.service';
@@ -123,6 +125,12 @@ export default function ReportsPage() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // scheduling
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleName, setScheduleName] = useState('Monthly Summary');
+  const [scheduleCadence, setScheduleCadence] = useState<'daily'|'weekly'|'monthly'|'quarterly'>('monthly');
+  const [scheduling, setScheduling] = useState(false);
 
   const monthOptions = useMemo(
     () => [
@@ -469,6 +477,24 @@ export default function ReportsPage() {
     setTimeout(() => win.print(), 350);
   };
 
+  const scheduleReport = async () => {
+    if (!userId) return;
+    try {
+      setScheduling(true);
+      await addScheduledReport(userId, {
+        name: scheduleName,
+        type: 'custom',
+        filters: { month: selectedMonth, year: selectedYear, account: selectedAccount, category: selectedCategory },
+        cadence: scheduleCadence,
+      });
+      setScheduleOpen(false);
+    } catch (err) {
+      console.error('Failed to schedule report', err);
+    } finally {
+      setScheduling(false);
+    }
+  };
+
   const cardSummary = [
     {
       title: 'Total income',
@@ -520,6 +546,10 @@ export default function ReportsPage() {
             >
               <Filter className="size-4" />
               Filters
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setScheduleOpen(true)}>
+              <CalendarDays className="size-4" />
+              Schedule
             </Button>
             <Button variant="secondary" size="sm" className="gap-2" onClick={handleExportPDF}>
               <FileText className="size-4" />
@@ -791,6 +821,71 @@ export default function ReportsPage() {
           </Card>
         </div>
       </div>
+
+      <AppModal
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        title="Schedule Report"
+        description="Send this report to yourself on a regular cadence."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setScheduleOpen(false)}>Cancel</Button>
+            <Button
+              variant="default"
+              onClick={scheduleReport}
+              disabled={scheduling}
+            >
+              {scheduling ? 'Scheduling…' : 'Schedule'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Report name</label>
+            <input
+              value={scheduleName}
+              onChange={(e) => setScheduleName(e.target.value)}
+              className="mt-2 w-full rounded-md bg-card px-3 py-2 text-sm"
+              placeholder="Monthly Summary"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Cadence</label>
+            <select
+              value={scheduleCadence}
+              onChange={(e) => setScheduleCadence(e.target.value as any)}
+              className="mt-2 w-full rounded-md bg-card px-3 py-2 text-sm"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Filters</label>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <FilterSelect
+                label="Month"
+                value={String(selectedMonth)}
+                options={monthOptions}
+                onValueChange={(value) => setSelectedMonth(value === 'all' ? 'all' : Number(value))}
+                id="schedule-month"
+              />
+              <FilterSelect
+                label="Year"
+                value={String(selectedYear)}
+                options={yearOptions}
+                onValueChange={(value) => setSelectedYear(Number(value))}
+                id="schedule-year"
+              />
+            </div>
+          </div>
+        </div>
+      </AppModal>
 
       {loading ? (
         <div className="rounded-3xl border border-border/70 bg-muted p-6 text-center text-sm text-muted-foreground">Loading reports from Firestore…</div>

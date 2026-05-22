@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { DataManagement } from '@/components/data-management';
+import { isBiometricAvailable, promptBiometricAuth } from '@/src/native/biometrics';
+
+const BIOMETRIC_STORAGE_KEY = 'pfos.biometricEnabled';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuthContext();
@@ -15,6 +18,49 @@ export default function SettingsPage() {
   const [reminders, setReminders] = useState(true);
   const [goalAlerts, setGoalAlerts] = useState(true);
   const [biometricLock, setBiometricLock] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const initializeBiometrics = async () => {
+      try {
+        const available = await isBiometricAvailable();
+        if (!active) return;
+        const storedEnabled = typeof window !== 'undefined' ? window.localStorage.getItem(BIOMETRIC_STORAGE_KEY) === 'true' : false;
+        setBiometricAvailable(available);
+        setBiometricLock(available && storedEnabled);
+      } catch (error) {
+        console.warn('Biometrics initialization failed', error);
+        if (active) setBiometricAvailable(false);
+      } finally {
+        if (active) setBiometricLoading(false);
+      }
+    };
+
+    void initializeBiometrics();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleBiometricToggle = async (enabled: boolean) => {
+    if (!enabled) {
+      setBiometricLock(false);
+      if (typeof window !== 'undefined') window.localStorage.setItem(BIOMETRIC_STORAGE_KEY, 'false');
+      return;
+    }
+
+    const verified = await promptBiometricAuth();
+    if (verified) {
+      setBiometricLock(true);
+      if (typeof window !== 'undefined') window.localStorage.setItem(BIOMETRIC_STORAGE_KEY, 'true');
+    } else {
+      setBiometricLock(false);
+      if (typeof window !== 'undefined') window.localStorage.setItem(BIOMETRIC_STORAGE_KEY, 'false');
+    }
+  };
 
   const handleLogout = async () => {
     const confirmed = window.confirm('Logout?');
@@ -127,9 +173,15 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-4">
               <div>
                 <p className="text-sm font-medium text-foreground">Biometric lock</p>
-                <p className="text-xs text-secondary">Placeholder for Android biometric unlock</p>
+                <p className="text-xs text-secondary">
+                  {biometricLoading
+                    ? 'Detecting biometric support…'
+                    : biometricAvailable
+                    ? 'Use device biometrics to secure app settings and session access.'
+                    : 'Biometric authentication is not available on this device.'}
+                </p>
               </div>
-              <Switch checked={biometricLock} onCheckedChange={setBiometricLock} />
+              <Switch checked={biometricLock} onCheckedChange={handleBiometricToggle} disabled={!biometricAvailable || biometricLoading} />
             </div>
             <div className="rounded-2xl border border-border bg-background px-4 py-4 text-sm text-secondary">
               Session management coming soon. Sign out to end this session.

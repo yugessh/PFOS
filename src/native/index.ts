@@ -96,4 +96,6 @@ export async function takePhoto() {
   return null;
 }
 
+export * from './biometrics';
+
 export default { initNativeBridge, getBridge, isNativePlatform, getCapacitorPlatform, isCapacitorAndroid, isCapacitorAndroidSync };

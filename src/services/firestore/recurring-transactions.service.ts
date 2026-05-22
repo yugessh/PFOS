@@ -100,6 +100,9 @@ export class RecurringTransactionsService {
         updatedAt: serverTimestamp(),
         deletedAt: null,
       });
+      if (!docRef) {
+        return { success: false, error: 'Failed to create recurring transaction document' };
+      }
 
       return {
         success: true,

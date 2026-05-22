@@ -14,7 +14,7 @@ import { CompactHeader } from '@/components/compact-header';
 import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
 import { FloatingActionButton } from '@/components/floating-action-button';
 import { UniversalActionsSheet } from '@/components/universal-actions-sheet';
-import DashboardManager from '@/components/dashboard-manager';
+import { DashboardManager } from '@/components/dashboard-manager';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 import { ErrorState } from '@/components/states/ErrorState';
 import { LoadingState } from '@/components/states/LoadingState';

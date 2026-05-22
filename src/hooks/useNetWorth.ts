@@ -80,7 +80,7 @@ export function useNetWorth() {
       // Get historical data
       const historyResult = await netWorthService.getMonthlyTrend(user.uid, 12);
       if (historyResult.success && historyResult.data) {
-        setHistory(historyResult.data);
+        setHistory(historyResult.data as NetWorthHistory[]);
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to calculate net worth');

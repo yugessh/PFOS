@@ -91,6 +91,9 @@ export class EventsService {
         updatedAt: serverTimestamp(),
         deletedAt: null,
       });
+      if (!docRef) {
+        return { success: false, error: 'Failed to create event document' };
+      }
 
       return { success: true, data: { id: docRef.id, ...payload, userId, createdAt: new Date(), updatedAt: new Date(), deletedAt: null } as FinancialEvent };
     } catch (error: any) {

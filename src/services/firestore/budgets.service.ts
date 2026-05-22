@@ -116,6 +116,9 @@ export class BudgetsService {
       };
 
       const docRef = await addDocSafe(colRef, createdPayload);
+      if (!docRef) {
+        return { success: false, error: 'Failed to create budget document' };
+      }
       const created = {
         id: docRef.id,
         ...budget,

@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function QuickActionsWidget() {
+export function QuickActionsWidget() {
   const router = useRouter();
 
   return (

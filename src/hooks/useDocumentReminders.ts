@@ -2,7 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { documentsService } from '@/src/services/firestore/documents.service';
 import { toast } from '@/hooks/use-toast';
-import { Document } from '@/src/types/document';
+import { Document, DocumentReminder } from '@/src/types/document';
 
 export function useDocumentReminders() {
   const auth = useAuthContext();
@@ -29,7 +29,7 @@ export function useDocumentReminders() {
         const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
         // Check 7 days reminder
-        const sevenDayReminder = doc.reminders?.find(r => r.type === 'before_7_days');
+        const sevenDayReminder = doc.reminders?.find((r: DocumentReminder) => r.type === 'before_7_days');
         if (sevenDayReminder?.enabled && daysUntilDue === 7 && !sevenDayReminder.notified) {
           toast({
             title: `${doc.title} renewal in 7 days`,
@@ -40,7 +40,7 @@ export function useDocumentReminders() {
         }
 
         // Check 3 days reminder
-        const threeDayReminder = doc.reminders?.find(r => r.type === 'before_3_days');
+        const threeDayReminder = doc.reminders?.find((r: DocumentReminder) => r.type === 'before_3_days');
         if (threeDayReminder?.enabled && daysUntilDue === 3 && !threeDayReminder.notified) {
           toast({
             title: `${doc.title} renewal in 3 days`,
@@ -51,7 +51,7 @@ export function useDocumentReminders() {
         }
 
         // Check 1 day reminder
-        const oneDayReminder = doc.reminders?.find(r => r.type === 'before_1_day');
+        const oneDayReminder = doc.reminders?.find((r: DocumentReminder) => r.type === 'before_1_day');
         if (oneDayReminder?.enabled && daysUntilDue === 1 && !oneDayReminder.notified) {
           toast({
             title: `${doc.title} renewal tomorrow`,
@@ -62,7 +62,7 @@ export function useDocumentReminders() {
         }
 
         // Check on due date reminder
-        const dueDateReminder = doc.reminders?.find(r => r.type === 'on_due_date');
+        const dueDateReminder = doc.reminders?.find((r: DocumentReminder) => r.type === 'on_due_date');
         if (dueDateReminder?.enabled && daysUntilDue === 0 && !dueDateReminder.notified) {
           toast({
             title: `${doc.title} is due today`,

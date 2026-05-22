@@ -68,6 +68,9 @@ export class TradingJournalService {
     };
 
     const docRef = await addDocSafe(colRef, prepared);
+    if (!docRef) {
+      return { success: false, error: 'Failed to create trading journal entry' };
+    }
     return { success: true, data: { id: docRef.id, ...data } };
   }
 

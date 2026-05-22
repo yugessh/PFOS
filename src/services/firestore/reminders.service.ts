@@ -98,6 +98,9 @@ export class RemindersService {
         updatedAt: serverTimestamp(),
         deletedAt: null,
       });
+      if (!docRef) {
+        return { success: false, error: 'Failed to create reminder document' };
+      }
 
       return {
         success: true,

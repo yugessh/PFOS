@@ -129,7 +129,7 @@ export default function SettlementsPage() {
           </div>
           <div className="rounded-[28px] border border-[#151A20] bg-[#151A20] p-4">
             <p className="text-[11px] uppercase tracking-[0.25em] text-slate-500">Pending</p>
-            <p className="mt-2 text-2xl font-semibold text-[#7EE7C7]">{formatCurrency(summary.totalPending)}</p>
+            <p className="mt-2 text-2xl font-semibold text-[#7EE7C7]">{formatCurrency(summary.pendingAmount)}</p>
           </div>
         </div>
       </div>
@@ -237,7 +237,7 @@ export default function SettlementsPage() {
                   type="date"
                   className="mt-1 w-full rounded-[28px] border border-[#151A20] bg-[#151A20] px-4 py-3 text-white"
                   value={formData.dueDate ? new Date(formData.dueDate).toISOString().split('T')[0] : ''}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value ? new Date(e.target.value) : undefined })}
                 />
               </div>
               <div>

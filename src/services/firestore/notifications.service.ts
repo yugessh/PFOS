@@ -156,6 +156,9 @@ export class NotificationsService {
         updatedAt: Timestamp.fromDate(notification.updatedAt),
         expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : null,
       });
+      if (!docRef) {
+        throw new Error('Failed to create notification document');
+      }
 
       return docRef.id;
     } catch (error) {

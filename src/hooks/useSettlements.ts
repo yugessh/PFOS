@@ -170,7 +170,9 @@ export function useSettlements() {
     [settlements]
   );
 
-  const getSummary = useMemo(() => calculateSettlementSummary(settlements), [settlements]);
+  const summaryValue = useMemo(() => calculateSettlementSummary(settlements), [settlements]);
+
+  const getSummary = () => summaryValue;
 
   const overdueReminders = useMemo(() => {
     const now = new Date();
@@ -238,6 +240,10 @@ export function useSettlements() {
     void runNotifications();
   }, [auth?.user?.uid, upcomingReminders, overdueReminders, settlements]);
 
+  const markAsPaid = useCallback(async (settlementId: string) => {
+    await updateSettlement(settlementId, { remainingAmount: 0, status: 'completed' });
+  }, [updateSettlement]);
+
   return {
     settlements,
     loading,
@@ -248,9 +254,10 @@ export function useSettlements() {
     deleteSettlement,
     applyPayment,
     searchSettlements,
-    summary: getSummary,
+    getSummary,
     overdueReminders,
     upcomingReminders,
+    markAsPaid,
     reload: loadSettlements,
   };
 }

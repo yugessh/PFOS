@@ -98,6 +98,9 @@ export class EMIService {
         updatedAt: serverTimestamp(),
         deletedAt: null,
       });
+      if (!docRef) {
+        return { success: false, error: 'Failed to create EMI document' };
+      }
 
       return {
         success: true,

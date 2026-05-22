@@ -173,6 +173,9 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const prepared = prepareAccountDocument(userId, accountData as any);
 
       const docRef = await addDocSafe(colRef, prepared);
+      if (!docRef) {
+        return { success: false, error: 'Failed to create account document' };
+      }
       return {
         success: true,
         data: mapDocumentToAccount(docRef.id, {

@@ -26,14 +26,18 @@ export interface DashboardWidgetRecord {
 const collectionPathFor = (uid: string) => `users/${uid}/dashboardWidgets`;
 
 export async function getWidgets(uid: string) {
-  const colRef = collection(getFirestoreSafe(), collectionPathFor(uid));
+  const db = getFirestoreSafe();
+  if (!db) throw new Error('Firestore not initialized');
+  const colRef = collection(db, collectionPathFor(uid));
   const snap = await getDocsSafe(colRef);
   if (!snap) return [] as DashboardWidgetRecord[];
   return snap.docs.map((d: any) => ({ id: d.id, ...(d.data?.() ?? d.data) })) as DashboardWidgetRecord[];
 }
 
 export async function addWidget(uid: string, widget: Partial<DashboardWidgetRecord>) {
-  const colRef = collection(getFirestoreSafe(), collectionPathFor(uid));
+  const db = getFirestoreSafe();
+  if (!db) throw new Error('Firestore not initialized');
+  const colRef = collection(db, collectionPathFor(uid));
   const payload = {
     userId: uid,
     widgetType: widget.widgetType || 'custom',
@@ -51,7 +55,9 @@ export async function addWidget(uid: string, widget: Partial<DashboardWidgetReco
 }
 
 export async function updateWidget(uid: string, docId: string, updates: Partial<DashboardWidgetRecord>) {
-  const docRef = doc(getFirestoreSafe(), `${collectionPathFor(uid)}/${docId}`);
+  const db = getFirestoreSafe();
+  if (!db) throw new Error('Firestore not initialized');
+  const docRef = doc(db, `${collectionPathFor(uid)}/${docId}`);
   const payload: any = { ...updates };
   // Avoid sending undefined
   if (payload.createdAt === undefined) delete payload.createdAt;
@@ -61,13 +67,17 @@ export async function updateWidget(uid: string, docId: string, updates: Partial<
 }
 
 export async function deleteWidget(uid: string, docId: string) {
-  const docRef = doc(getFirestoreSafe(), `${collectionPathFor(uid)}/${docId}`);
+  const db = getFirestoreSafe();
+  if (!db) throw new Error('Firestore not initialized');
+  const docRef = doc(db, `${collectionPathFor(uid)}/${docId}`);
   return deleteDocSafe(docRef);
 }
 
-export default {
+export const dashboardService = {
   getWidgets,
   addWidget,
   updateWidget,
   deleteWidget,
 };
+
+export default dashboardService;

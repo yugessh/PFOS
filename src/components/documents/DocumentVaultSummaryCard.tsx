@@ -12,11 +12,12 @@ export function DocumentVaultSummaryCard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth?.user?.uid) return;
+    const userId = auth?.user?.uid;
+    if (!userId) return;
 
     const loadDocuments = async () => {
       try {
-        const response = await documentsService.getUserDocuments(auth.user.uid!);
+        const response = await documentsService.getUserDocuments(userId);
         if (response.success && response.data) {
           const docs = Array.isArray(response.data)
             ? response.data

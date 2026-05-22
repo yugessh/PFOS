@@ -1,6 +1,7 @@
 import {
   collection as firestoreCollection,
   doc,
+  getDoc,
   query,
   where,
   orderBy,
@@ -95,6 +96,9 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
       }
       const preparedData = this.prepareData(data);
       const docRef = await addDocSafe(this.collectionRef, preparedData);
+      if (!docRef) {
+        throw new Error('Failed to create document');
+      }
       
       // Get created document
       const createdDoc = await getDocSafe(docRef);
