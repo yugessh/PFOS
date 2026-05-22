@@ -10,7 +10,6 @@ import {
   doc,
 } from 'firebase/firestore';
 import { addDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
-} from 'firebase/firestore';
 
 export interface TradeRecord {
   id?: string;

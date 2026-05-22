@@ -106,22 +106,25 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
   const userId = auth.user?.uid;
 
   const refreshSecurityData = useCallback(async () => {
-    if (!userId) return;
+    if (!auth.initialized || !userId) return;
     try {
       const [sessions, audits] = await Promise.all([
         securityService.getSecuritySessions(userId, 12),
         securityService.getAuditLogs(userId, 20),
       ]);
-      setRecentSessions(sessions);
-      setAuditLogs(audits);
-    } catch (error) {
-      console.error('Error refreshing security data', error);
+      setRecentSessions(sessions ?? []);
+      setAuditLogs(audits ?? []);
+    } catch (error: any) {
+      // Swallow permission/auth errors — safeFirestore already logged them
+      if (error?.code !== 'permission-denied' && error?.code !== 'unauthenticated') {
+        console.error('Error refreshing security data', error);
+      }
     }
-  }, [userId]);
+  }, [auth.initialized, userId]);
 
   const createAuditEvent = useCallback(
     async (eventType: string, summary: string, details: Record<string, any> = {}) => {
-      if (!userId) return;
+      if (!auth.initialized || !userId) return;
       try {
         const event = await securityService.logSecurityEvent(userId, {
           userId,
@@ -131,10 +134,11 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
         });
         setAuditLogs((prev) => [event, ...prev].slice(0, 20));
       } catch (error) {
-        console.error('Failed to write audit event', error);
+        // Non-critical — don't crash the app for audit log failures
+        console.warn('Failed to write audit event', error);
       }
     },
-    [userId]
+    [auth.initialized, userId]
   );
 
   const sendSecurityNotification = useCallback(
@@ -268,7 +272,7 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
   }, [privacyModeEnabled]);
 
   const registerCurrentSession = useCallback(async () => {
-    if (!userId) return;
+    if (!auth.initialized || !userId) return;
     try {
       const session: Omit<SecuritySession, 'id' | 'createdAt' | 'updatedAt'> = {
         userId,
@@ -281,9 +285,10 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
       await securityService.registerSession(userId, deviceId, session);
       await refreshSecurityData();
     } catch (error) {
-      console.error('Failed to register session', error);
+      // Non-critical — session registration failure should not crash the app
+      console.warn('Failed to register session', error);
     }
-  }, [deviceId, refreshSecurityData, userId]);
+  }, [auth.initialized, deviceId, refreshSecurityData, userId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -316,14 +321,14 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
   }, [appLockEnabled, auth.initialized, auth.user, hasPin]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!auth.initialized || !userId) return;
     registerCurrentSession();
-  }, [registerCurrentSession, userId]);
+  }, [auth.initialized, registerCurrentSession, userId]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!auth.initialized || !userId) return;
     void refreshSecurityData();
-  }, [refreshSecurityData, userId]);
+  }, [auth.initialized, refreshSecurityData, userId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

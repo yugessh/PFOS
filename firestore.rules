@@ -70,6 +70,63 @@ service cloud.firestore {
       match /notificationSettings/{settingsId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Security module subcollections — user can only access their own security data
+      match /securitySessions/{sessionId} {
+        allow read, write: if request.auth != null && isOwner(userId);
+      }
+
+      match /securityAuditLogs/{logId} {
+        allow read, write: if request.auth != null && isOwner(userId);
+      }
+
+      // Trading journal subcollection
+      match /tradingJournal/{entryId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Net worth snapshots subcollection
+      match /netWorthSnapshots/{snapshotId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Documents vault subcollection
+      match /documents/{documentId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // AI insights subcollection
+      match /ai_insights/{insightId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Investment transactions subcollection
+      match /investmentTransactions/{txnId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Events subcollection
+      match /events/{eventId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Budget subcollections
+      match /budgetCategories/{catId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /budgetTracking/{trackId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /budgetAlerts/{alertId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Automations subcollection
+      match /automations/{automationId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Top-level collection rules: enforce owner-only access and safe creates
