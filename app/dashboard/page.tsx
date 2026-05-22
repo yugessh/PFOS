@@ -14,6 +14,7 @@ import { CompactHeader } from '@/components/compact-header';
 import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
 import { FloatingActionButton } from '@/components/floating-action-button';
 import { UniversalActionsSheet } from '@/components/universal-actions-sheet';
+import DashboardManager from '@/components/dashboard-manager';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 import { ErrorState } from '@/components/states/ErrorState';
 import { LoadingState } from '@/components/states/LoadingState';
@@ -138,76 +139,16 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-main pb-24 animate-in fade-in duration-300">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
-        <CompactHeader
-          month={monthName}
-          year={currentDate.getFullYear()}
-          balance={totalBalance}
-          income={totalIncome}
-          expenses={totalExpenses}
-          onPreviousMonth={handlePreviousMonth}
-          onNextMonth={handleNextMonth}
-        />
-
-        <div className="mt-6 grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-          <section className="space-y-5">
-            <div className="rounded-[32px] border border-border bg-card p-6 shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.32em] text-secondary">Month overview</p>
-                  <h2 className="mt-3 text-2xl font-semibold text-foreground">{monthName} activity</h2>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={handlePreviousMonth} className="rounded-[22px] border border-border bg-card px-4 py-3 text-sm text-secondary transition hover:bg-card-elevated">
-                    Previous
-                  </button>
-                  <button onClick={handleNextMonth} className="rounded-[22px] bg-accent-mint px-4 py-3 text-sm font-semibold text-[#071a0d] shadow-[0_16px_36px_rgba(126,231,199,0.24)] transition hover:brightness-95">
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[32px] border border-border bg-card p-6 shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
-              {transactionsLoading ? (
-                <div className="flex min-h-[240px] items-center justify-center">
-                  <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-accent-mint border-t-transparent" />
-                </div>
-              ) : currentMonthTransactions.length > 0 ? (
-                <CompactTransactionFeed transactions={currentMonthTransactions} />
-              ) : (
-                <div className="flex min-h-[240px] items-center justify-center rounded-[28px] border border-border bg-card-elevated p-8 text-center">
-                  <p className="text-sm text-secondary">No transactions for {monthName} yet.</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <aside className="space-y-5">
-            <div className="rounded-[32px] border border-border bg-card p-6 shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.32em] text-secondary">Balance summary</p>
-                  <p className="mt-2 text-3xl font-semibold text-foreground">${totalBalance.toFixed(2)}</p>
-                </div>
-              </div>
-            </div>
-
-            <UpcomingPaymentsWidget compact />
-
-            <DocumentVaultSummaryCard />
-
-            <div className="rounded-[32px] border border-border bg-card p-6 shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
-              <p className="text-sm uppercase tracking-[0.32em] text-secondary">Quick actions</p>
-              <div className="mt-4 grid gap-3">
-                <button onClick={() => setAddActionsOpen(true)} className="rounded-[22px] bg-accent-mint px-4 py-3 text-sm font-semibold text-[#071a0d] transition hover:brightness-95">
-                  Add transaction
-                </button>
-                <button onClick={() => setAddAccountOpen(true)} className="rounded-[22px] border border-border bg-card px-4 py-3 text-sm text-secondary transition hover:bg-card-elevated">
-                  Add account
-                </button>
-              </div>
-            </div>
-          </aside>
+        {/* New customizable dashboard manager (widgets, library, persistence) */}
+        {/* Do not remove existing modals/controls below — only replace the main dashboard grid with the manager. */}
+        {/* eslint-disable-next-line @next/next/no-server-import-in-page */}
+        {/* Render DashboardManager client component */}
+        {/* Imported dynamically from components */}
+        <div id="pfos-dashboard-manager-root">
+          {/* DashboardManager loads client-side and manages widgets */}
+          {/* eslint-disable-next-line react/jsx-no-undef */}
+          {/* @ts-ignore */}
+          <DashboardManager />
         </div>
       </div>
 
