@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { DashboardGrid } from '@/components/dashboard-grid/DashboardGrid';
+import ResponsiveGrid from '@/components/dashboard-grid/ResponsiveGrid';
 import { DashboardWidget } from '@/components/dashboard-grid/DashboardWidget';
 import { useAuthContext } from '@/src/context/AuthContext';
 import dashboardService, { DashboardWidgetRecord, WidgetSize } from '@/src/services/firestore/dashboard.service';
@@ -12,6 +12,7 @@ import BudgetCard from '@/components/budget-card';
 import GoalCard from '@/components/goal-card';
 import InvestmentCard from '@/components/investment-card';
 import CompactTransactionFeed from '@/components/compact-transaction-feed';
+import WidgetSettings from '@/components/widget-settings';
 
 const SIZE_TO_SPAN = (size: WidgetSize) => {
   switch (size) {
@@ -35,6 +36,7 @@ export default function DashboardManager() {
   const [loading, setLoading] = useState(true);
   const [showLibrary, setShowLibrary] = useState(false);
   const [query, setQuery] = useState('');
+  const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!uid) return;
@@ -82,29 +84,34 @@ export default function DashboardManager() {
     setWidgets((prev) => prev.filter((w) => w.id !== id));
   };
 
-  // simple HTML5 drag reorder
-  const onDragStart = (e: React.DragEvent, idx: number) => {
-    e.dataTransfer.setData('text/plain', String(idx));
-    e.dataTransfer.effectAllowed = 'move';
-  };
+  // grid layout mapping (for react-grid-layout)
+  const layout = widgets.map((w, i) => {
+    const size = (w.size || 'medium') as WidgetSize;
+    const span = SIZE_TO_SPAN(size);
+    return {
+      i: w.id || String(i),
+      x: (w.settings?.grid?.x) ?? 0,
+      y: (w.settings?.grid?.y) ?? i,
+      w: span.col,
+      h: span.row,
+    };
+  });
 
-  const onDrop = async (e: React.DragEvent, toIdx: number) => {
-    e.preventDefault();
-    const from = Number(e.dataTransfer.getData('text/plain'));
-    if (Number.isNaN(from)) return;
-    if (from === toIdx) return;
-    const next = [...widgets];
-    const [moved] = next.splice(from, 1);
-    next.splice(toIdx, 0, moved);
-    // reassign positions
-    const now = Date.now();
-    const updated = next.map((w, i) => ({ ...w, position: now + i }));
-    setWidgets(updated as DashboardWidgetRecord[]);
-    // batch save
-    await Promise.all(updated.map((w) => w.id ? dashboardService.updateWidget(uid!, w.id!, { position: w.position }) : Promise.resolve(null)));
-  };
+  const onLayoutChange = async (nextLayout: any[]) => {
+    const updates = nextLayout.map((it) => {
+      const id = String(it.i);
+      const widget = widgets.find((w) => w.id === id);
+      if (!widget) return null;
+      return { id, updates: { settings: { ...widget.settings, grid: { x: it.x, y: it.y, w: it.w, h: it.h } }, position: (it.y || 0) * 1000 + (it.x || 0) } };
+    }).filter(Boolean) as { id: string; updates: Partial<DashboardWidgetRecord> }[];
 
-  const onDragOver = (e: React.DragEvent) => e.preventDefault();
+    setWidgets((prev) => prev.map((w) => {
+      const u = updates.find((x) => x.id === w.id);
+      return u ? { ...w, ...u.updates } : w;
+    }));
+
+    await Promise.all(updates.map((u) => dashboardService.updateWidget(uid!, u.id, u.updates)));
+  };
 
   const filteredLibrary = useMemo(() => {
     const all = [
@@ -152,48 +159,45 @@ export default function DashboardManager() {
             </div>
           </div>
         ) : (
-          <DashboardGrid>
+          <ResponsiveGrid layout={layout} onLayoutChange={onLayoutChange}>
             {widgets.map((w, idx) => {
               const size = (w.size || 'medium') as WidgetSize;
               const span = SIZE_TO_SPAN(size);
               return (
-                <div key={w.id || idx} draggable onDragStart={(e) => onDragStart(e, idx)} onDragOver={onDragOver} onDrop={(e) => onDrop(e, idx)}>
-                  <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
-                    <DashboardWidget title={w.widgetType} colSpan={span.col as any} rowSpan={span.row as any}>
-                      <div className="flex items-start justify-between">
-                        <div className="w-full">
-                          {/* Map widget content */}
-                          {w.widgetType === 'networth' && <NetWorthCard />}
-                          {w.widgetType === 'transactions' && <CompactTransactionFeed transactions={[]} />}
-                          {w.widgetType === 'budgets' && <BudgetCard />}
-                          {w.widgetType === 'goals' && <GoalCard />}
-                          {w.widgetType === 'investments' && <InvestmentCard />}
-                          {w.widgetType === 'quick' && <QuickActionsWidget />}
-                          {/* Fallback */}
-                          {['trading','bills','emi','calendar','ai','cashflow','lending','notifications'].includes(w.widgetType) && (
-                            <div className="text-sm text-secondary">{w.widgetType} widget — coming soon</div>
-                          )}
-                        </div>
+                <motion.div key={w.id || String(idx)} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+                  <DashboardWidget title={w.widgetType} className="drag-handle" colSpan={span.col as any} rowSpan={span.row as any}>
+                    <div className="flex items-start justify-between">
+                      <div className="w-full">
+                        {w.widgetType === 'networth' && <NetWorthCard />}
+                        {w.widgetType === 'transactions' && <CompactTransactionFeed transactions={[]} />}
+                        {w.widgetType === 'budgets' && <BudgetCard />}
+                        {w.widgetType === 'goals' && <GoalCard />}
+                        {w.widgetType === 'investments' && <InvestmentCard />}
+                        {w.widgetType === 'quick' && <QuickActionsWidget />}
+                        {['trading','bills','emi','calendar','ai','cashflow','lending','notifications'].includes(w.widgetType) && (
+                          <div className="text-sm text-secondary">{w.widgetType} widget — loading data…</div>
+                        )}
+                      </div>
                         <div className="ml-3 flex flex-col items-end gap-2">
-                          <select value={w.size} onChange={(e) => updateWidget(w.id!, { size: e.target.value as WidgetSize })} className="rounded-md bg-card px-2 py-1 text-sm">
-                            <option value="small">Small</option>
-                            <option value="medium">Medium</option>
-                            <option value="large">Large</option>
-                            <option value="full">Full</option>
-                          </select>
-                          <div className="flex gap-2">
-                            <button title="Collapse" onClick={() => updateWidget(w.id!, { collapsed: !w.collapsed })} className="rounded-md bg-card px-2 py-1 text-xs">{w.collapsed ? 'Expand' : 'Collapse'}</button>
-                            <button title="Hide" onClick={() => updateWidget(w.id!, { visible: false })} className="rounded-md bg-card px-2 py-1 text-xs">Hide</button>
-                            <button title="Remove" onClick={() => removeWidget(w.id!)} className="rounded-md bg-red-600 px-2 py-1 text-xs text-white">Remove</button>
-                          </div>
+                        <select value={w.size} onChange={(e) => updateWidget(w.id!, { size: e.target.value as WidgetSize })} className="rounded-md bg-card px-2 py-1 text-sm">
+                          <option value="small">Small</option>
+                          <option value="medium">Medium</option>
+                          <option value="large">Large</option>
+                          <option value="full">Full</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <button title="Settings" onClick={() => setSettingsWidgetId(w.id ?? null)} className="rounded-md bg-card px-2 py-1 text-xs">Settings</button>
+                          <button title="Collapse" onClick={() => updateWidget(w.id!, { collapsed: !w.collapsed })} className="rounded-md bg-card px-2 py-1 text-xs">{w.collapsed ? 'Expand' : 'Collapse'}</button>
+                          <button title="Hide" onClick={() => updateWidget(w.id!, { visible: false })} className="rounded-md bg-card px-2 py-1 text-xs">Hide</button>
+                          <button title="Remove" onClick={() => removeWidget(w.id!)} className="rounded-md bg-red-600 px-2 py-1 text-xs text-white">Remove</button>
                         </div>
                       </div>
-                    </DashboardWidget>
-                  </motion.div>
-                </div>
+                    </div>
+                  </DashboardWidget>
+                </motion.div>
               );
             })}
-          </DashboardGrid>
+          </ResponsiveGrid>
         )}
       </div>
 
@@ -229,6 +233,15 @@ export default function DashboardManager() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Widget settings modal */}
+      {settingsWidgetId != null && (
+        // dynamically import to avoid SSR issues
+        // eslint-disable-next-line @next/next/no-html-link-for-pages
+        <React.Suspense fallback={null}>
+          {/* @ts-ignore */}
+          <WidgetSettings widget={widgets.find((w) => w.id === settingsWidgetId) ?? null} open={true} onClose={() => setSettingsWidgetId(null)} onSave={(updates) => { if (settingsWidgetId) void updateWidget(settingsWidgetId, updates); }} />
+        </React.Suspense>
+      )}
     </div>
   );
 }
