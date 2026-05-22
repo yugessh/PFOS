@@ -2,7 +2,6 @@
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ErrorBoundary } from '../src/components/ErrorBoundary'
-import { OfflineFallback } from '../src/components/OfflineFallback'
 import Providers from '../src/components/Providers'
 import CapacitorBootstrap from '../components/capacitor/CapacitorBootstrap'
 import './globals.css'
@@ -59,7 +58,6 @@ export default function RootLayout({
         <ErrorBoundary>
           <Providers>
             <CapacitorBootstrap />
-            <OfflineFallback />
             {children}
             {process.env.NODE_ENV === 'production' && <Analytics />}
           </Providers>

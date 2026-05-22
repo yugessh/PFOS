@@ -9,20 +9,13 @@ export function useConnectionStatus() {
   const [pending, setPending] = useState<number>(syncManager.getPendingCount());
 
   useEffect(() => {
-    const onOnline = () => setOnline(true);
-    const onOffline = () => setOnline(false);
-
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-
+    // Remove online/offline event listeners to avoid Back Online UI triggers.
     const unsub = syncManager.subscribe(() => {
       setSyncing(syncManager.syncing);
       setPending(syncManager.getPendingCount());
     });
 
     return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
       unsub();
     };
   }, []);

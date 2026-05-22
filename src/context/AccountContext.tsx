@@ -52,13 +52,6 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
 
-    const offlineCached = typeof window !== 'undefined' && !navigator.onLine ? loadCachedAccounts(userId) : null;
-    if (offlineCached) {
-      setAccounts(offlineCached.filter((acc) => !acc.deletedAt));
-      setLoading(false);
-      return;
-    }
-
     try {
       const response = await accountsService.getUserAccounts(userId);
       // If permission error occurs, attempt to create a minimal user profile and retry once

@@ -30,10 +30,6 @@ class SyncManager {
 
   constructor() {
     this.load();
-    // flush when navigator goes online
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => this.flush());
-    }
     // periodic flush in background
     setInterval(() => this.flush(), 30_000);
   }
