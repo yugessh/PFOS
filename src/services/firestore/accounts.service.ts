@@ -4,16 +4,13 @@ import { usersService } from './users.service';
 import { getFirestoreClient } from './firebaseClient';
 import {
   collection as firestoreCollection,
-  addDoc,
   serverTimestamp,
   DocumentData,
-  getDocs,
   query,
   where,
   doc,
-  getDoc,
-  updateDoc,
 } from 'firebase/firestore';
+import { addDocSafe, getDocsSafe, getDocSafe, updateDocSafe } from './safeFirestore';
 import { getAuthSafe } from '@/src/firebase/firebase';
 import { roundToDecimal } from '@/src/lib/currency';
 import { getAccountTypeMeta, toCanonicalAccountType, type CanonicalAccountType } from '@/src/lib/account-types';
@@ -175,7 +172,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const colRef = firestoreCollection(db, colPath) as any;
       const prepared = prepareAccountDocument(userId, accountData as any);
 
-      const docRef = await addDoc(colRef, prepared);
+      const docRef = await addDocSafe(colRef, prepared);
       return {
         success: true,
         data: mapDocumentToAccount(docRef.id, {
@@ -205,7 +202,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const colPath = SUBCOLLECTIONS.USER_ACCOUNTS(userId);
       const colRef = firestoreCollection(db, colPath) as any;
       const q = query(colRef, where('deletedAt', '==', null));
-      const snap = await getDocs(q);
+      const snap = await getDocsSafe(q as any);
       const documents = snap.docs.map((d: any) => mapDocumentToAccount(d.id, d.data()));
 
       return { success: true, data: { data: documents } } as any;
@@ -235,14 +232,14 @@ export class AccountsService extends BaseFirestoreService<Account> {
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
       const current = roundToDecimal(Number(newBalance || 0), 2);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         currentBalance: current,
         balance: current,
         updatedAt: serverTimestamp(),
         lastUpdated: serverTimestamp(),
       });
 
-      const snapshot = await getDoc(docRef);
+      const snapshot = await getDocSafe(docRef);
       if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
       const data = snapshot.data();
       return {
@@ -260,7 +257,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
-      const snapshot = await getDoc(docRef);
+      const snapshot = await getDocSafe(docRef);
       if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
 
       const account = mapDocumentToAccount(snapshot.id, snapshot.data());
@@ -275,7 +272,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
         ? roundToDecimal(account.monthlyOutflow + amount, 2)
         : account.monthlyOutflow;
 
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         currentBalance: nextBalance,
         balance: nextBalance,
         monthlyInflow: nextInflow,
@@ -285,7 +282,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
         lastUpdated: serverTimestamp(),
       });
 
-      const updated = await getDoc(docRef);
+      const updated = await getDocSafe(docRef);
       return {
         success: true,
         data: mapDocumentToAccount(updated.id, updated.data()),
@@ -310,7 +307,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       const fromRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, fromAccountId);
       const toRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, toAccountId);
 
-      const [fromSnap, toSnap] = await Promise.all([getDoc(fromRef), getDoc(toRef)]);
+      const [fromSnap, toSnap] = await Promise.all([getDocSafe(fromRef), getDocSafe(toRef)]);
       if (!fromSnap.exists() || !toSnap.exists()) {
         return { success: false, error: 'Transfer account not found', code: 'not-found' };
       }
@@ -327,7 +324,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
         ? `${notes.trim()} • Transfer`
         : `Transfer to ${toAccount.name}`;
 
-      await updateDoc(fromRef, {
+      await updateDocSafe(fromRef, {
         currentBalance: roundToDecimal(fromAccount.currentBalance - transferAmount, 2),
         balance: roundToDecimal(fromAccount.currentBalance - transferAmount, 2),
         monthlyOutflow: roundToDecimal(fromAccount.monthlyOutflow + transferAmount, 2),
@@ -336,7 +333,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
         lastUpdated: serverTimestamp(),
       });
 
-      await updateDoc(toRef, {
+      await updateDocSafe(toRef, {
         currentBalance: roundToDecimal(toAccount.currentBalance + transferAmount, 2),
         balance: roundToDecimal(toAccount.currentBalance + transferAmount, 2),
         monthlyInflow: roundToDecimal(toAccount.monthlyInflow + transferAmount, 2),
@@ -345,7 +342,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
         lastUpdated: serverTimestamp(),
       });
 
-      const [updatedFrom, updatedTo] = await Promise.all([getDoc(fromRef), getDoc(toRef)]);
+      const [updatedFrom, updatedTo] = await Promise.all([getDocSafe(fromRef), getDocSafe(toRef)]);
       return {
         success: true,
         data: {
@@ -383,9 +380,9 @@ export class AccountsService extends BaseFirestoreService<Account> {
         lastUpdated: serverTimestamp(),
       };
 
-      await updateDoc(docRef, prepared);
+      await updateDocSafe(docRef, prepared);
 
-      const snapshot = await getDoc(docRef);
+      const snapshot = await getDocSafe(docRef);
       if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
       const data = snapshot.data();
       return {
@@ -403,7 +400,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         lastUpdated: serverTimestamp(),
@@ -423,7 +420,7 @@ export class AccountsService extends BaseFirestoreService<Account> {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.ACCOUNTS, accountId);
-      const snapshot = await getDoc(docRef);
+      const snapshot = await getDocSafe(docRef);
       if (!snapshot.exists()) return { success: false, error: 'Document not found', code: 'not-found' };
       const data = snapshot.data();
       const account = mapDocumentToAccount(snapshot.id, data);

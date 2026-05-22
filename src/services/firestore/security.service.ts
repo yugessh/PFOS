@@ -1,4 +1,5 @@
-import { collection, doc, getDocs, query, where, orderBy, limit, setDoc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, limit, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { getDocsSafe, updateDocSafe } from './safeFirestore';
 import { getFirestoreClient } from './firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { SecuritySession, SecurityAuditLog } from '@/src/types/firestore';
@@ -34,7 +35,7 @@ export class SecurityService {
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_SESSIONS(userId));
     const q = query(colRef, orderBy('updatedAt', 'desc'), limit(limitCount));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocsSafe(q as any);
 
     return snapshot.docs.map((docSnap) => mapSecuritySession({ id: docSnap.id, ...docSnap.data() }));
   }
@@ -45,10 +46,10 @@ export class SecurityService {
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_SESSIONS(userId));
     const q = query(colRef, where('sessionStatus', '==', 'active'));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocsSafe(q as any);
     const updates = snapshot.docs
       .filter((docSnap) => docSnap.id !== currentSessionId)
-      .map((docSnap) => updateDoc(docSnap.ref, {
+      .map((docSnap) => updateDocSafe(docSnap.ref, {
         sessionStatus: 'revoked',
         updatedAt: Timestamp.now(),
       }));
@@ -62,7 +63,7 @@ export class SecurityService {
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_AUDIT_LOGS(userId));
     const q = query(colRef, orderBy('createdAt', 'desc'), limit(limitCount));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocsSafe(q as any);
 
     return snapshot.docs.map((docSnap) => mapSecurityAuditLog({ id: docSnap.id, ...docSnap.data() }));
   }

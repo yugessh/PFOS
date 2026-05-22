@@ -72,49 +72,24 @@ service cloud.firestore {
       }
     }
 
-    // Top-level collection rules (fallback for compatibility)
-    match /accounts/{document=**} {
-      allow read, write: if hasUserProfile();
+    // Top-level collection rules: enforce owner-only access and safe creates
+    // These rules ensure any document in the listed collections is owned by
+    // the authenticated user. Queries must therefore be scoped by `userId`
+    // to succeed (the client code already uses `where('userId','==', uid)`).
+    function isOwnerField() {
+      return request.auth != null && (
+        // For reads/updates/deletes resource exists
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        // For creates use request.resource
+        (request.resource != null && request.resource.data.userId == request.auth.uid)
+      );
     }
 
-    match /transactions/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /recurringTransactions/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /categories/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /budgets/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /investments/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /goals/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /emi/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /reminders/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /settlements/{document=**} {
-      allow read, write: if hasUserProfile();
-    }
-
-    match /policies/{document=**} {
-      allow read, write: if hasUserProfile();
+    // Generic per-document rules for common collections
+    match /{collection}/{documentId=**} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
 }

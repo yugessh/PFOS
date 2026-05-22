@@ -1,13 +1,11 @@
 import {
-  addDoc,
   collection as firestoreCollection,
   doc,
-  getDocs,
   query,
   serverTimestamp,
-  updateDoc,
   where,
 } from 'firebase/firestore';
+import { addDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
 import { getFirestoreClient } from './firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import { usersService } from './users.service';
@@ -42,7 +40,7 @@ export class EMIService {
 
       const colRef = firestoreCollection(db, SUBCOLLECTIONS.USER_EMIS(userId)) as any;
       const q = query(colRef, where('deletedAt', '==', null));
-      const snap = await getDocs(q);
+      const snap = await getDocsSafe(q as any);
       const items = snap.docs.map((entry: any) => mapEMIDoc(entry));
       return { success: true, data: { data: items } } as any;
     } catch (error: any) {
@@ -72,7 +70,7 @@ export class EMIService {
 
       if (emiId) {
         const docRef = doc(db, `${colPath}/${emiId}`);
-        await updateDoc(docRef, {
+        await updateDocSafe(docRef, {
           ...payload,
           userId,
           updatedAt: serverTimestamp(),
@@ -93,7 +91,7 @@ export class EMIService {
       }
 
       const colRef = firestoreCollection(db, colPath) as any;
-      const docRef = await addDoc(colRef, {
+      const docRef = await addDocSafe(colRef, {
         ...payload,
         userId,
         createdAt: serverTimestamp(),
@@ -131,7 +129,7 @@ export class EMIService {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.EMI, emiId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         deletedAt: serverTimestamp(),
         isActive: false,
         updatedAt: serverTimestamp(),
@@ -150,10 +148,10 @@ export class EMIService {
 
       // Update EMI paid installments count
       const emiDocRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.EMI, emiId);
-      const emiSnap = await getDocs(query(firestoreCollection(db, SUBCOLLECTIONS.USER_EMIS(userId)), where('__name__', '==', emiId)));
+      const emiSnap = await getDocsSafe(query(firestoreCollection(db, SUBCOLLECTIONS.USER_EMIS(userId)), where('__name__', '==', emiId)) as any);
       if (!emiSnap.empty) {
         const emiData = emiSnap.docs[0].data() as EMIModel;
-        await updateDoc(emiDocRef, {
+        await updateDocSafe(emiDocRef, {
           paidInstallments: (emiData.paidInstallments || 0) + 1,
           updatedAt: serverTimestamp(),
         });
@@ -161,7 +159,7 @@ export class EMIService {
 
       // Record the payment
       const paymentRef = firestoreCollection(db, SUBCOLLECTIONS.USER_EMI_PAYMENTS(userId));
-      await addDoc(paymentRef, {
+      await addDocSafe(paymentRef, {
         emiId,
         installmentNumber,
         amount: 0, // Will be calculated from EMI data

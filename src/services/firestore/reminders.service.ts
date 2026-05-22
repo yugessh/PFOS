@@ -1,13 +1,11 @@
 import {
-  addDoc,
   collection as firestoreCollection,
   doc,
-  getDocs,
   query,
   serverTimestamp,
-  updateDoc,
   where,
 } from 'firebase/firestore';
+import { addDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
 import { getFirestoreClient } from './firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import { usersService } from './users.service';
@@ -42,7 +40,7 @@ export class RemindersService {
 
       const colRef = firestoreCollection(db, SUBCOLLECTIONS.USER_REMINDERS(userId)) as any;
       const q = query(colRef, where('deletedAt', '==', null));
-      const snap = await getDocs(q);
+      const snap = await getDocsSafe(q as any);
       const items = snap.docs.map((entry: any) => mapReminderDoc(entry));
       return { success: true, data: { data: items } } as any;
     } catch (error: any) {
@@ -72,7 +70,7 @@ export class RemindersService {
 
       if (reminderId) {
         const docRef = doc(db, `${colPath}/${reminderId}`);
-        await updateDoc(docRef, {
+        await updateDocSafe(docRef, {
           ...payload,
           userId,
           updatedAt: serverTimestamp(),
@@ -93,7 +91,7 @@ export class RemindersService {
       }
 
       const colRef = firestoreCollection(db, colPath) as any;
-      const docRef = await addDoc(colRef, {
+      const docRef = await addDocSafe(colRef, {
         ...payload,
         userId,
         createdAt: serverTimestamp(),
@@ -131,7 +129,7 @@ export class RemindersService {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.REMINDERS, reminderId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         deletedAt: serverTimestamp(),
         isActive: false,
         updatedAt: serverTimestamp(),
@@ -149,7 +147,7 @@ export class RemindersService {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.REMINDERS, reminderId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         isPaid: true,
         paidDate: new Date(),
         transactionId: transactionId || null,

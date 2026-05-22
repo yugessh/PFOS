@@ -1,7 +1,8 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { getFirestoreClient } from './firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { NotificationModel, NotificationType, NotificationPriority } from '@/src/lib/notifications';
+import { getDocsSafe, addDocSafe, updateDocSafe, deleteDocSafe } from './safeFirestore';
 
 export class NotificationsService {
   async getUserNotifications(userId: string, includeArchived = false): Promise<NotificationModel[]> {
@@ -17,7 +18,7 @@ export class NotificationsService {
         limit(100)
       );
 
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocsSafe(q);
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -45,7 +46,7 @@ export class NotificationsService {
         where('isArchived', '==', false)
       );
 
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocsSafe(q);
       return snapshot.size;
     } catch (error) {
       console.error('Error getting unread count:', error);
@@ -59,7 +60,7 @@ export class NotificationsService {
       if (!db) throw new Error('Firestore client not available');
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.NOTIFICATIONS, notificationId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         isRead: true,
         readAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -76,7 +77,7 @@ export class NotificationsService {
       if (!db) throw new Error('Firestore client not available');
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.NOTIFICATIONS, notificationId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         isArchived: true,
         archivedAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -99,18 +100,17 @@ export class NotificationsService {
         where('isArchived', '==', false)
       );
 
-      const snapshot = await getDocs(q);
-      const batch = [];
-
+      const snapshot = await getDocsSafe(q);
+      const ops: Promise<any>[] = [];
       for (const docSnap of snapshot.docs) {
-        batch.push(updateDoc(docSnap.ref, {
+        ops.push(updateDocSafe(docSnap.ref, {
           isRead: true,
           readAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         }));
       }
 
-      await Promise.all(batch);
+      await Promise.all(ops);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       throw error;
@@ -150,7 +150,7 @@ export class NotificationsService {
       };
 
       const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-      const docRef = await addDoc(colRef, {
+      const docRef = await addDocSafe(colRef, {
         ...notification,
         createdAt: Timestamp.fromDate(notification.createdAt),
         updatedAt: Timestamp.fromDate(notification.updatedAt),
@@ -176,14 +176,13 @@ export class NotificationsService {
         where('expiresAt', '<=', now)
       );
 
-      const snapshot = await getDocs(q);
-      const batch = [];
-
+      const snapshot = await getDocsSafe(q);
+      const ops: Promise<any>[] = [];
       for (const docSnap of snapshot.docs) {
-        batch.push(deleteDoc(docSnap.ref));
+        ops.push(deleteDocSafe(docSnap.ref));
       }
 
-      await Promise.all(batch);
+      await Promise.all(ops);
     } catch (error) {
       console.error('Error cleaning up expired notifications:', error);
     }

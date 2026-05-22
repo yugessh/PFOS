@@ -1,13 +1,11 @@
 import {
-  addDoc,
   collection as firestoreCollection,
   doc,
-  getDocs,
   query,
   serverTimestamp,
-  updateDoc,
   where,
 } from 'firebase/firestore';
+import { addDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
 import { getFirestoreClient } from './firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import { usersService } from './users.service';
@@ -51,7 +49,7 @@ export class EventsService {
 
       const colRef = firestoreCollection(db, SUBCOLLECTIONS.USER_EVENTS(userId)) as any;
       const q = query(colRef, where('deletedAt', '==', null));
-      const snap = await getDocs(q);
+      const snap = await getDocsSafe(q as any);
       const items = snap.docs.map((entry: any) => mapEventDoc(entry));
       return { success: true, data: { data: items } };
     } catch (error: any) {
@@ -75,7 +73,7 @@ export class EventsService {
 
       if (eventId) {
         const docRef = doc(db, `${SUBCOLLECTIONS.USER_EVENTS(userId)}/${eventId}`);
-        await updateDoc(docRef, {
+        await updateDocSafe(docRef, {
           ...payload,
           userId,
           updatedAt: serverTimestamp(),
@@ -86,7 +84,7 @@ export class EventsService {
       }
 
       const colRef = firestoreCollection(db, SUBCOLLECTIONS.USER_EVENTS(userId)) as any;
-      const docRef = await addDoc(colRef, {
+      const docRef = await addDocSafe(colRef, {
         ...payload,
         userId,
         createdAt: serverTimestamp(),
@@ -109,7 +107,7 @@ export class EventsService {
       const db = getFirestoreClient();
       if (!db) return { success: false, error: 'Firestore not initialized' };
       const docRef = doc(db, `${SUBCOLLECTIONS.USER_EVENTS(userId)}/${eventId}`);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

@@ -1,11 +1,6 @@
 import {
   collection as firestoreCollection,
   doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  getDocs,
   query,
   where,
   orderBy,
@@ -23,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { getFirestoreClient } from './firebaseClient';
 import { QueryOptions, PaginationOptions, ServiceResponse, ListResponse, BaseDocument } from '../../types/firestore';
+import { addDocSafe, getDocsSafe, getDocSafe, updateDocSafe, deleteDocSafe } from './safeFirestore';
 
 /**
  * Base Firestore service providing generic CRUD operations
@@ -98,10 +94,10 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
         return { success: false, error: 'Firestore not initialized' };
       }
       const preparedData = this.prepareData(data);
-      const docRef = await addDoc(this.collectionRef, preparedData);
+      const docRef = await addDocSafe(this.collectionRef, preparedData);
       
       // Get created document
-      const createdDoc = await getDoc(docRef);
+      const createdDoc = await getDocSafe(docRef);
       const createdData = this.convertDocument(createdDoc);
       
       return {
@@ -129,10 +125,10 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
       if (!_db) return { success: false, error: 'Firestore not initialized' };
       const docRef = doc(_db, this.collectionName, id);
       const preparedData = this.prepareData(data);
-      await updateDoc(docRef, preparedData);
+      await updateDocSafe(docRef, preparedData);
       
       // Get created document
-      const createdDoc = await getDoc(docRef);
+      const createdDoc = await getDocSafe(docRef);
       const createdData = this.convertDocument(createdDoc);
       
       return {
@@ -161,10 +157,10 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
       const docRef = doc(_db, this.collectionName, id);
       const preparedData = this.prepareData(data);
       
-      await updateDoc(docRef, preparedData);
+      await updateDocSafe(docRef, preparedData);
       
       // Get updated document
-      const updatedDoc = await getDoc(docRef);
+      const updatedDoc = await getDocSafe(docRef);
       const updatedData = this.convertDocument(updatedDoc);
       
       return {
@@ -188,7 +184,7 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
       const _db = getFirestoreClient();
       if (!_db) return { success: false, error: 'Firestore not initialized' };
       const docRef = doc(_db, this.collectionName, id);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       } as DocumentData);
@@ -213,7 +209,7 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
       const _db = getFirestoreClient();
       if (!_db) return { success: false, error: 'Firestore not initialized' };
       const docRef = doc(_db, this.collectionName, id);
-      await deleteDoc(docRef);
+      await deleteDocSafe(docRef);
       
       return {
         success: true,
@@ -295,7 +291,7 @@ export abstract class BaseFirestoreService<T extends Partial<BaseDocument>> {
       // Filter out soft-deleted documents by default
       q = query(q, where('deletedAt', '==', null));
       
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocsSafe(q as Query);
       const documents = querySnapshot.docs.map(doc => this.convertDocument(doc));
       
       const response: ListResponse<T> = {

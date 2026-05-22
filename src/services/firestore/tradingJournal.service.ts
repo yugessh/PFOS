@@ -2,15 +2,14 @@ import { getFirestoreClient } from './firebaseClient';
 import { SUBCOLLECTIONS, COLLECTIONS } from '@/src/constants/collections';
 import {
   collection as firestoreCollection,
-  addDoc,
   serverTimestamp,
   DocumentData,
-  getDocs,
   query,
   where,
   orderBy,
   doc,
-  updateDoc,
+} from 'firebase/firestore';
+import { addDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
 } from 'firebase/firestore';
 
 export interface TradeRecord {
@@ -69,7 +68,7 @@ export class TradingJournalService {
       deletedAt: null,
     };
 
-    const docRef = await addDoc(colRef, prepared);
+    const docRef = await addDocSafe(colRef, prepared);
     return { success: true, data: { id: docRef.id, ...data } };
   }
 
@@ -79,7 +78,7 @@ export class TradingJournalService {
 
     const colRef = firestoreCollection(db, SUBCOLLECTIONS.USER_TRADING_JOURNAL(userId)) as any;
     const q = query(colRef, where('deletedAt', '==', null), orderBy('date', 'desc'));
-    const snap = await getDocs(q);
+    const snap = await getDocsSafe(q as any);
     const docs = snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.() || new Date(), updatedAt: d.data().updatedAt?.toDate?.() || new Date(), date: d.data().date?.toDate?.() || new Date() }));
     return { success: true, data: docs };
   }
@@ -89,7 +88,7 @@ export class TradingJournalService {
     if (!db) return { success: false, error: 'Firestore not initialized' };
     const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.TRADING_JOURNAL, tradeId) as any;
     const prepared: DocumentData = { ...patch, updatedAt: serverTimestamp() };
-    await updateDoc(docRef, prepared);
+    await updateDocSafe(docRef, prepared);
     return { success: true };
   }
 
@@ -97,7 +96,7 @@ export class TradingJournalService {
     const db = getFirestoreClient();
     if (!db) return { success: false, error: 'Firestore not initialized' };
     const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.TRADING_JOURNAL, tradeId) as any;
-    await updateDoc(docRef, { deletedAt: serverTimestamp(), updatedAt: serverTimestamp() } as DocumentData);
+    await updateDocSafe(docRef, { deletedAt: serverTimestamp(), updatedAt: serverTimestamp() } as DocumentData);
     return { success: true };
   }
 }

@@ -1,14 +1,12 @@
 import {
-  addDoc,
   collection as firestoreCollection,
   DocumentData,
   doc,
-  getDocs,
   query,
   serverTimestamp,
-  updateDoc,
   where,
 } from 'firebase/firestore';
+import { addDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
 import { getFirestoreClient } from './firebaseClient';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import type { BudgetModel } from '@/src/lib/budgets';
@@ -41,7 +39,7 @@ export class BudgetsService {
         where('isActive', '==', true)
       );
 
-      const snap = await getDocs(q);
+      const snap = await getDocsSafe(q as any);
       const documents = snap.docs.map((entry: any) => {
         const data = entry.data();
         return {
@@ -84,7 +82,7 @@ export class BudgetsService {
         where('monthKey', '==', budget.monthKey),
         where('categoryId', '==', budget.categoryId)
       );
-      const existingSnap = await getDocs(existingQuery);
+      const existingSnap = await getDocsSafe(existingQuery as any);
 
       const payload: DocumentData = {
         ...budget,
@@ -95,7 +93,7 @@ export class BudgetsService {
 
       if (!existingSnap.empty) {
         const existing = existingSnap.docs[0];
-        await updateDoc(doc(db, `${colPath}/${existing.id}`), payload);
+        await updateDocSafe(doc(db, `${colPath}/${existing.id}`), payload);
 
         const existingData = existing.data() as DocumentData;
         const updated = {
@@ -117,7 +115,7 @@ export class BudgetsService {
         deletedAt: null,
       };
 
-      const docRef = await addDoc(colRef, createdPayload);
+      const docRef = await addDocSafe(colRef, createdPayload);
       const created = {
         id: docRef.id,
         ...budget,
@@ -149,7 +147,7 @@ export class BudgetsService {
       if (!db) return { success: false, error: 'Firestore not initialized' };
 
       const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.BUDGETS, budgetId);
-      await updateDoc(docRef, {
+      await updateDocSafe(docRef, {
         deletedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: false,

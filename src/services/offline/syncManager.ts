@@ -2,12 +2,11 @@ import { db } from '@/src/services/firestore/config';
 import {
   doc,
   setDoc,
-  updateDoc,
   deleteDoc,
-  getDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
+import { getDocSafe, updateDocSafe, deleteDocSafe } from '@/src/services/firestore/safeFirestore';
 
 type Op = 'add' | 'set' | 'update' | 'delete';
 
@@ -86,10 +85,10 @@ class SyncManager {
         const docRef = doc(db, collectionPath, id);
 
         if (item.op === 'delete') {
-          await deleteDoc(docRef);
+          await deleteDocSafe(docRef);
         } else if (item.op === 'update') {
           // conflict resolution based on updatedAt
-          const serverSnap = await getDoc(docRef);
+          const serverSnap = await getDocSafe(docRef);
           const serverUpdatedAt = serverSnap.exists() ? (serverSnap.data()?.updatedAt as any) : null;
           const serverTs = serverUpdatedAt ? this.parseTime(serverUpdatedAt) : 0;
           const localTs = item.updatedAt ? Date.parse(item.updatedAt) : Date.now();
@@ -100,7 +99,7 @@ class SyncManager {
             continue;
           }
           const payload = { ...item.data, updatedAt: serverTimestamp() };
-          await updateDoc(docRef, payload);
+          await updateDocSafe(docRef, payload as any);
         } else if (item.op === 'set' || item.op === 'add') {
           const payload = { ...item.data, updatedAt: serverTimestamp() };
           await setDoc(docRef, payload, { merge: true });

@@ -1,5 +1,7 @@
 import { BaseFirestoreService } from './base.service';
 import { COLLECTIONS } from '@/src/constants/collections';
+import { query, where, orderBy, limit } from 'firebase/firestore';
+import { getDocsSafe } from './safeFirestore';
 import type { NetWorthSnapshot } from '@/src/types/firestore';
 
 /**
@@ -128,15 +130,15 @@ export class NetWorthService extends BaseFirestoreService<NetWorthSnapshot> {
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - months);
 
-      const q = _db.query(
+      const q = query(
         this.collectionRef,
-        _db.where('userId', '==', userId),
-        _db.where('createdAt', '>=', startDate),
-        _db.orderBy('createdAt', 'desc'),
-        _db.limit(100)
+        where('userId', '==', userId),
+        where('createdAt', '>=', startDate),
+        orderBy('createdAt', 'desc'),
+        limit(100)
       );
 
-      const docs = await _db.getDocs(q);
+      const docs = await getDocsSafe(q as any);
       const history = docs.docs.map((doc: any) => this.convertDocument(doc));
 
       return {
