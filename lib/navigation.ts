@@ -13,6 +13,7 @@ import {
   PieChart,
   BookOpen,
   Settings,
+  Shield,
   Bell,
   CalendarDays,
   LucideIcon,
@@ -71,6 +72,7 @@ export const analyticsNavItems: NavItem[] = [
 
 export const settingsNavItems: NavItem[] = [
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, description: 'App settings' },
+  { href: '/dashboard/security', label: 'Security', icon: Shield, description: 'App lock and privacy' },
 ];
 
 export const allNavItems = [...mainNavItems, ...analyticsNavItems, ...settingsNavItems];

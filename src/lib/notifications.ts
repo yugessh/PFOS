@@ -7,7 +7,8 @@ export type NotificationType =
   | 'low_balance'
   | 'recurring_reminder'
   | 'bill_reminder'
-  | 'transaction_alert';
+  | 'transaction_alert'
+  | 'security';
 
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 

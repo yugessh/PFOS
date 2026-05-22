@@ -46,6 +46,35 @@ export interface PrivacyPreferences {
   shareAnalytics: boolean;
   shareData: boolean;
   publicProfile: boolean;
+  privacyModeEnabled?: boolean;
+  hideBalances?: boolean;
+  hideNetWorth?: boolean;
+  hideInvestments?: boolean;
+  hideTrading?: boolean;
+  hideGoals?: boolean;
+}
+
+export interface SecurityPreferences {
+  appLockEnabled?: boolean;
+  pinLength?: 4 | 6;
+  biometricEnabled?: boolean;
+  sessionTimeout?: '1' | '5' | '15' | '30' | 'never';
+}
+
+export interface SecuritySession extends BaseDocument {
+  userId: string;
+  securityType: 'app_lock' | 'session' | 'device' | 'biometric' | 'privacy';
+  enabled: boolean;
+  lastUpdated: Date;
+  deviceInfo: string;
+  sessionStatus: 'active' | 'signed_out' | 'revoked' | 'expired';
+}
+
+export interface SecurityAuditLog extends BaseDocument {
+  userId: string;
+  eventType: string;
+  summary: string;
+  details?: Record<string, any>;
 }
 
 // Account collection
