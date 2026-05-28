@@ -142,6 +142,7 @@ export function UniversalActionsSheet({
       category: 'planning',
     },
   ];
+  const visibleActions = actions.filter((action) => Boolean(action.onClick));
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -150,7 +151,7 @@ export function UniversalActionsSheet({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey) return; // Avoid conflicts with Shift+key
 
-      const action = actions.find(
+      const action = visibleActions.find(
         (a) => a.shortcut?.toUpperCase() === e.key.toUpperCase()
       );
 
@@ -167,7 +168,7 @@ export function UniversalActionsSheet({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, onOpenChange, actions]);
+  }, [open, onOpenChange, visibleActions]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -186,7 +187,7 @@ export function UniversalActionsSheet({
               Transactions
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {actions
+              {visibleActions
                 .filter((a) => a.category === 'transaction')
                 .map((action) => (
                   <ActionButton
@@ -207,7 +208,7 @@ export function UniversalActionsSheet({
               Accounts
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {actions
+              {visibleActions
                 .filter((a) => a.category === 'account')
                 .map((action) => (
                   <ActionButton
@@ -228,7 +229,7 @@ export function UniversalActionsSheet({
               Planning & Investing
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {actions
+              {visibleActions
                 .filter((a) => a.category === 'planning')
                 .map((action) => (
                   <ActionButton
@@ -249,7 +250,7 @@ export function UniversalActionsSheet({
               Reminders
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {actions
+              {visibleActions
                 .filter((a) => a.category === 'reminders')
                 .map((action) => (
                   <ActionButton

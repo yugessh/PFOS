@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import { Bell, Search, Settings, LogOut } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Bell, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import ConnectionStatusBar from '@/components/connection-status/ConnectionStatusBar';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/src/context/AuthContext';
-import { NotificationBadge } from '@/src/components/notifications/NotificationBadge';
+import { useNotifications } from '@/src/hooks/useNotifications';
+import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 import { GlobalSearchDialog } from '@/components/global-search-dialog';
 
 function formatTitle(pathname: string | null) {
@@ -20,9 +21,12 @@ function formatTitle(pathname: string | null) {
 
 export function TopNavbar() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { user, signOut } = useAuthContext();
   const pathname = usePathname();
+  const { unreadCount } = useNotifications();
   const pageTitle = formatTitle(pathname);
+  const isDashboardRoute = pathname?.startsWith('/dashboard');
 
   const handleLogout = async () => {
     if (window.confirm('Logout?')) {
@@ -30,13 +34,18 @@ export function TopNavbar() {
     }
   };
 
-  const initials = user?.displayName
-    ? user.displayName
+  const initials = useMemo(() => {
+    if (user?.displayName) {
+      return user.displayName
         .split(' ')
         .map((part) => part[0])
         .join('')
         .slice(0, 2)
-    : user?.email?.charAt(0).toUpperCase() || 'PF';
+        .toUpperCase();
+    }
+
+    return user?.email?.charAt(0).toUpperCase() || 'PF';
+  }, [user?.displayName, user?.email]);
 
   // Global keyboard shortcut for search (Cmd+K or Ctrl+K)
   useEffect(() => {
@@ -52,61 +61,59 @@ export function TopNavbar() {
   }, []);
 
   return (
-    <header className="hidden lg:flex items-center justify-between gap-4 rounded-[32px] border border-border bg-bg-main/90 backdrop-blur-xl p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] sticky top-4 z-20 mx-6">
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.35em] text-secondary">Neo Finance OS</p>
-        <h2 className="text-2xl font-semibold text-foreground">{pageTitle}</h2>
-      </div>
-
-      <div className="flex flex-1 items-center justify-end gap-3">
-        <button
-          onClick={() => setSearchOpen(true)}
-          className="relative hidden xl:flex items-center gap-2 min-w-[320px] px-4 py-2 rounded-[22px] border border-border bg-card-elevated hover:border-accent-mint/50 transition-colors"
-          aria-label="Search (Cmd+K)"
-        >
-          <Search size={18} className="text-secondary" />
-          <span className="flex-1 text-left text-sm text-secondary">
-            Search transactions, accounts...
-          </span>
-          <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-card border border-border">
-            ⌘K
-          </span>
-        </button>
-
-        <button className="button-ghost p-3 rounded-[22px] xl:hidden" aria-label="Search" onClick={() => setSearchOpen(true)}>
-          <Search size={18} className="text-secondary" />
-        </button>
-
-        <button className="button-ghost p-3 rounded-[22px]" aria-label="Notifications">
-          <Bell size={18} className="text-secondary" />
-        </button>
-        <button className="button-ghost p-3 rounded-[22px]" aria-label="Settings">
-          <Settings size={18} className="text-secondary" />
-        </button>
-
-        <button
-          type="button"
-          className="hidden xl:flex items-center gap-3 rounded-[26px] border border-border bg-bg-secondary px-4 py-3"
-          onClick={handleLogout}
-        >
-          <div className="h-11 w-11 rounded-full bg-[rgba(126,231,199,0.14)] grid place-items-center text-accent-mint font-semibold">{initials}</div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-foreground">{user?.displayName || 'User'}</p>
-            <p className="text-xs text-secondary">Sign out</p>
+    <>
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-[rgba(8,10,15,0.86)] backdrop-blur-2xl">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 py-3 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="grid size-11 shrink-0 place-items-center rounded-2xl border border-border bg-[rgba(0,245,196,0.10)] text-sm font-semibold text-[#00F5C4] shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
+              aria-label="Profile avatar"
+            >
+              {initials}
+            </button>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.38em] text-secondary">PFOS</p>
+              <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
+                {isDashboardRoute && pathname === '/dashboard' ? 'Dashboard' : pageTitle}
+              </h2>
+            </div>
           </div>
-          <LogOut size={16} className="text-secondary" />
-        </button>
 
-        <div className="hidden lg:flex items-center gap-3">
-          <ConnectionStatusBar />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-card text-secondary transition hover:border-[#00F5C4]/40 hover:text-foreground"
+              aria-label="Search"
+            >
+              <Search size={18} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setNotificationsOpen(true)}
+              className="relative inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-card text-secondary transition hover:border-[#38BDF8]/40 hover:text-foreground"
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 ? (
+                <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-[#00F5C4] px-1 text-[10px] font-semibold text-[#071a0d]">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              ) : null}
+            </button>
+
+            <div className="hidden sm:block">
+              <ConnectionStatusBar />
+            </div>
+          </div>
         </div>
 
-        <div className="xl:hidden p-2 rounded-[20px] border border-border bg-card">
-          <NotificationBadge />
-        </div>
-      </div>
+        <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      </header>
 
-      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
-    </header>
+      <NotificationCenter isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+    </>
   );
 }

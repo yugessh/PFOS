@@ -347,8 +347,16 @@ export default function FinancialCalendarPage() {
             {activeView === 'month' && (
               <div className="rounded-[32px] border border-border bg-card p-5 shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
                 <div className="grid grid-cols-7 gap-2 text-center text-xs uppercase tracking-[0.28em] text-secondary">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <span key={day}>{day}</span>
+                  {[
+                    { short: 'Sun', full: 'Sunday' },
+                    { short: 'Mon', full: 'Monday' },
+                    { short: 'Tue', full: 'Tuesday' },
+                    { short: 'Wed', full: 'Wednesday' },
+                    { short: 'Thu', full: 'Thursday' },
+                    { short: 'Fri', full: 'Friday' },
+                    { short: 'Sat', full: 'Saturday' },
+                  ].map(({ short, full }) => (
+                    <span key={full}>{short}</span>
                   ))}
                 </div>
                 <div className="mt-3 grid grid-cols-7 gap-2 text-sm">

@@ -45,10 +45,10 @@ export const mainNavItems: NavItem[] = [
 ];
 
 export const bottomNavItems: NavItem[] = [
-  { href: '/dashboard', label: 'Home', icon: Home, description: 'Lightweight financial summary' },
+  { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'Executive financial overview' },
   { href: '/dashboard/transactions', label: 'Transactions', icon: List, description: 'Daily transaction feed' },
-  { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
-  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart financial alerts' },
+  { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Portfolio snapshot' },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Advanced analytics' },
 ];
 
 export const sidebarNavItems: NavItem[] = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { TransactionType, TransactionFormData } from './types';
 import { TransactionTypeToggle } from './TransactionTypeToggle';
@@ -18,11 +18,12 @@ interface AddTransactionModalProps {
   // onSave is optional to avoid crashes when parent doesn't provide a handler.
   // When provided it will be called with TransactionFormData.
   onSave?: (transaction: TransactionFormData) => Promise<void> | void;
+  defaultType?: TransactionType;
 }
 
-export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransactionModalProps) {
+export function AddTransactionModal({ open, onOpenChange, onSave, defaultType = 'expense' }: AddTransactionModalProps) {
   const [formData, setFormData] = useState<TransactionFormData>({
-    type: 'expense',
+    type: defaultType,
     amount: 0,
     category: '',
     account: '',
@@ -36,6 +37,17 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
   const [error, setError] = useState<string | null>(null);
 
   const categories = getCategoriesByType(formData.type);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setFormData((previous) => ({
+      ...previous,
+      type: defaultType,
+      category: defaultType === 'transfer' ? '' : previous.category,
+    }));
+    setToAccount('');
+  }, [open, defaultType]);
 
   const selectorAccounts = (accounts || []).map((acc: any) => ({
     id: acc.id,
@@ -91,7 +103,7 @@ export function AddTransactionModal({ open, onOpenChange, onSave }: AddTransacti
     
     // Reset form
     setFormData({
-      type: 'expense',
+      type: defaultType,
       amount: 0,
       category: '',
       account: '',
