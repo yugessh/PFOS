@@ -54,7 +54,7 @@ import { calculateGoalProgress } from '@/src/lib/goals';
 import { calculateInvestmentReturn, getInvestmentTypeLabel } from '@/src/lib/investments';
 import { StatCard } from '@/components/stat-card/StatCard';
 import { ChartCard } from '@/components/charts/ChartCard';
-import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
+import { UnifiedTransactionFeed } from '@/src/components/transactions/UnifiedTransactionFeed';
 import { ReminderCard } from '@/components/reminder-card';
 import { NotificationCard } from '@/src/components/notifications/NotificationCard';
 import { LoadingState } from '@/components/states/LoadingState';
@@ -814,7 +814,7 @@ export function DashboardExecutive() {
 
           <div className="space-y-4">
             <ChartCard title="Recent transactions" description="Latest activity across your accounts" className="border-border/80 bg-card/90">
-              <CompactTransactionFeed transactions={recentTransactions as Transaction[]} />
+              <UnifiedTransactionFeed transactions={recentTransactions as Transaction[]} />
             </ChartCard>
 
             <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
@@ -953,7 +953,7 @@ export function DashboardExecutive() {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <SnapshotRow label="Urgent" value={String(notificationsByPriority.urgent.length)} accent="#F87171" />
+                <SnapshotRow label="Critical" value={String(notificationsByPriority.critical.length)} accent="#F87171" />
                 <SnapshotRow label="High" value={String(notificationsByPriority.high.length)} accent="#F59E0B" />
                 <SnapshotRow label="Medium" value={String(notificationsByPriority.medium.length)} accent="#38BDF8" />
                 <SnapshotRow label="Low" value={String(notificationsByPriority.low.length)} accent="#00F5C4" />

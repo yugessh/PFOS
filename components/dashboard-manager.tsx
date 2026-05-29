@@ -11,7 +11,7 @@ import { CurrentNetWorthCard, NetWorthCard } from '@/components/net-worth-card';
 import { BudgetSummaryCard as BudgetCard } from '@/components/budget-card';
 import { GoalCard } from '@/components/goal-card';
 import { InvestmentCard } from '@/components/investment-card';
-import { CompactTransactionFeed } from '@/components/compact-transaction-feed';
+import { UnifiedTransactionFeed } from '@/src/components/transactions/UnifiedTransactionFeed';
 import { WidgetSettings } from '@/components/widget-settings';
 import { useNetWorth } from '@/src/hooks/useNetWorth';
 import { useTransactions } from '@/src/hooks/useTransactions';
@@ -155,7 +155,7 @@ export function DashboardManager() {
           />
         );
       case 'transactions':
-        return <CompactTransactionFeed transactions={transactions || []} />;
+        return <UnifiedTransactionFeed transactions={transactions || []} />;
       case 'budgets':
         return (
           <BudgetCard

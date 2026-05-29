@@ -1,6 +1,6 @@
 import { getAuthSafe } from '@/src/firebase/firebase';
 import { CollectionReference, DocumentReference, Query, DocumentData, QuerySnapshot, DocumentSnapshot } from 'firebase/firestore';
-import { addDoc, getDocs, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addDoc, getDocs, getDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 
 /**
  * Set of Firestore error codes that indicate auth/permission issues
@@ -135,6 +135,17 @@ export async function deleteDocSafe(docRef: DocumentReference<DocumentData>) {
     return await deleteDoc(docRef);
   } catch (error) {
     if (handleFirestoreError('deleteDoc', (docRef as any)?.path, error)) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+export async function setDocSafe(docRef: DocumentReference<DocumentData>, data: DocumentData, options?: { merge?: boolean }) {
+  try {
+    return await setDoc(docRef, data, options);
+  } catch (error) {
+    if (handleFirestoreError('setDoc', (docRef as any)?.path, error)) {
       return undefined;
     }
     throw error;

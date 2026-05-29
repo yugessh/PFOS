@@ -8,11 +8,11 @@ import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { transactionsService } from '@/src/services/firestore/transactions.service';
-import { groupTransactionsByDate, getMonthRange, getMonthLabel, computeTotals } from '@/src/lib/finance';
+import { getMonthRange, getMonthLabel, computeTotals } from '@/src/lib/finance';
 import { formatCurrency } from '@/src/lib/currency';
 import { formatDate } from '@/lib/date';
 import { CompactSummaryHeader } from '@/src/components/mobile/CompactSummaryHeader';
-import { CompactTransactionFeed } from '@/src/components/mobile/CompactTransactionFeed';
+import { UnifiedTransactionFeed } from '@/src/components/transactions/UnifiedTransactionFeed';
 import { FilterBottomSheet } from '@/src/components/mobile/FilterBottomSheet';
 import { CompactFAB } from '@/src/components/mobile/CompactFAB';
 import type { TransactionFormData } from '@/src/components/transactions/types';
@@ -90,8 +90,6 @@ export default function MobileTransactionsPage() {
   }, [loadTransactions]);
 
   const monthLabel = useMemo(() => getMonthLabel(displayMonth), [displayMonth]);
-  const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
-  const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);
   const { income, expenses } = useMemo(() => computeTotals(transactions), [transactions]);
 
   const categories = useMemo(
@@ -140,21 +138,15 @@ export default function MobileTransactionsPage() {
 
       {/* Transaction Feed */}
       <div className="lg:max-w-2xl">
-        {filterLoading ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Loading transactions...
-          </div>
-        ) : filterError ? (
-          <div className="text-center py-8 text-sm text-destructive">
-            {filterError}
-          </div>
-        ) : (
-          <CompactTransactionFeed
-            transactions={transactions}
-            grouped={grouped}
-            sortedDates={sortedDates}
-          />
-        )}
+        <UnifiedTransactionFeed
+          transactions={transactions}
+          loading={filterLoading}
+          error={filterError}
+          onRetry={() => void loadTransactions()}
+          emptyTitle="No transactions found"
+          emptyDescription="Add your first transaction to start building your feed."
+          className="mt-4"
+        />
       </div>
 
       {/* Filter Bottom Sheet */}

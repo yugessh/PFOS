@@ -40,6 +40,19 @@ export interface NotificationPreferences {
   goals: boolean;
   reminders: boolean;
   emi: boolean;
+  budgets?: boolean;
+  investments?: boolean;
+  trading?: boolean;
+  bills?: boolean;
+  subscriptions?: boolean;
+  calendar?: boolean;
+  automation?: boolean;
+  security?: boolean;
+  ai?: boolean;
+  lending?: boolean;
+  reports?: boolean;
+  sound?: boolean;
+  priorityOverride?: Record<string, 'critical' | 'high' | 'medium' | 'low'>;
 }
 
 export interface PrivacyPreferences {

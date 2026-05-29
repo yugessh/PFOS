@@ -1,5 +1,6 @@
 import type { Transaction } from '@/src/types/transaction';
 import type { Account as UIAccount } from '@/src/components/transactions/types';
+export { groupTransactionsByDate } from './transaction-feed';
 
 export function computeAccountBalances(accounts: UIAccount[], transactions: Transaction[]) {
   // Treat account.balance as starting balance
@@ -91,12 +92,3 @@ export function getMonthLabel(date: Date) {
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
-export function groupTransactionsByDate(transactions: Transaction[]) {
-  const groups: Record<string, Transaction[]> = {};
-  transactions.forEach((t) => {
-    const key = new Date(t.date).toISOString().split('T')[0];
-    groups[key] = groups[key] || [];
-    groups[key].push(t);
-  });
-  return groups;
-}

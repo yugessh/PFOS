@@ -8,16 +8,12 @@ import { useTransactions } from '@/src/hooks/useTransactions';
 import { useAccounts } from '@/src/hooks/useAccounts';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { transactionsService } from '@/src/services/firestore/transactions.service';
-import { TransactionsFilterBar } from '@/src/components/transactions/TransactionsFilterBar';
-import { groupTransactionsByDate, getDayRange, getMonthRange, getMonthLabel, getWeekRange, computeTotals } from '@/src/lib/finance';
+import { getDayRange, getMonthRange, getMonthLabel, getWeekRange, computeTotals } from '@/src/lib/finance';
 import { formatCurrency, formatCurrencyCompact } from '@/src/lib/currency';
 import { formatDate } from '@/lib/date';
 import { CompactSummaryHeader } from '@/src/components/mobile/CompactSummaryHeader';
-import { CompactTransactionFeed } from '@/src/components/mobile/CompactTransactionFeed';
+import { UnifiedTransactionFeed } from '@/src/components/transactions/UnifiedTransactionFeed';
 import { FilterBottomSheet } from '@/src/components/mobile/FilterBottomSheet';
-import { ErrorState } from '@/components/states/ErrorState';
-import { EmptyState } from '@/components/states/EmptyState';
-import { LoadingState } from '@/components/states/LoadingState';
 import type { TransactionFormData } from '@/src/components/transactions/types';
 import type { Transaction } from '@/src/types/transaction';
 
@@ -154,9 +150,6 @@ export default function TransactionsPage() {
     [transactions]
   );
 
-  const grouped = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
-  const sortedDates = useMemo(() => Object.keys(grouped).sort((a, b) => (a > b ? -1 : 1)), [grouped]);
-
   const filteredTransactions = useMemo(() => {
     if (viewMode === 'calendar') return transactions;
     if (timeFilter === 'daily') {
@@ -178,97 +171,6 @@ export default function TransactionsPage() {
     () => accounts.reduce((s, a) => s + (a.balance || 0), 0),
     [accounts]
   );
-
-  const selectedDayTransactions = useMemo(
-    () => grouped[selectedDate] || [],
-    [grouped, selectedDate]
-  );
-
-  const selectedDaySummary = useMemo(() => {
-    return selectedDayTransactions.reduce(
-      (sum, tx) => {
-        if (tx.type === 'income') sum.income += tx.amount;
-        if (tx.type === 'expense') sum.expenses += tx.amount;
-        return sum;
-      },
-      { income: 0, expenses: 0 }
-    );
-  }, [selectedDayTransactions]);
-
-  if (filterLoading) {
-    return (
-      <div className="min-h-screen bg-main px-4 py-10 text-white">
-        <LoadingState type="table" className="mx-auto max-w-5xl" />
-      </div>
-    );
-  }
-
-  if (filterError) {
-    return (
-      <div className="min-h-screen bg-main px-4 py-10 text-white">
-        <ErrorState
-          title="Unable to load transactions"
-          description={filterError || 'Please refresh or check your connection.'}
-          retryAction={
-            <button
-              type="button"
-              onClick={() => void loadTransactions()}
-              className="rounded-full bg-accent-mint px-5 py-3 text-sm font-semibold text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)] transition hover:brightness-95"
-            >
-              Retry
-            </button>
-          }
-        />
-      </div>
-    );
-  }
-
-  if (transactions.length === 0) {
-    return (
-      <div className="min-h-screen bg-main px-4 py-10 text-white">
-        <EmptyState
-          title="No transactions yet"
-          description="Your spending and income will appear here when you add your first entry."
-          icon={<Filter className="size-6 text-accent-mint" />}
-          action={
-            <Button onClick={() => setAddOpen(true)} size="sm" className="rounded-full bg-accent-mint px-5 py-3 text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)]">
-              Add transaction
-            </Button>
-          }
-          className="max-w-xl mx-auto"
-        />
-        <FilterBottomSheet
-          open={filterOpen}
-          onOpenChange={setFilterOpen}
-          onReset={() => {
-            setCategoryFilter('all');
-            setAccountFilter('all');
-          }}
-          onApply={() => {
-            // Filters auto-apply
-          }}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium block mb-2">Category</label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm border rounded-md bg-background"
-              >
-                <option value="all">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </FilterBottomSheet>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-28 animate-in fade-in duration-300">
@@ -295,21 +197,18 @@ export default function TransactionsPage() {
           </button>
         </div>
 
-        {filterLoading ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Loading transactions...
-          </div>
-        ) : filterError ? (
-          <div className="text-center py-8 text-sm text-destructive">
-            {filterError}
-          </div>
-        ) : (
-          <CompactTransactionFeed
-            transactions={transactions}
-            grouped={grouped}
-            sortedDates={sortedDates}
-          />
-        )}
+        <UnifiedTransactionFeed
+          transactions={filteredTransactions}
+          loading={filterLoading}
+          error={filterError}
+          onRetry={() => void loadTransactions()}
+          emptyAction={
+            <Button onClick={() => setAddOpen(true)} size="sm" className="rounded-full bg-accent-mint px-5 py-3 text-[#071a0d] shadow-[0_14px_36px_rgba(126,231,199,0.24)]">
+              Add transaction
+            </Button>
+          }
+          className="mt-4"
+        />
       </div>
 
       <FilterBottomSheet

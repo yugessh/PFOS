@@ -8,8 +8,10 @@ import { useAuthContext } from '@/src/context/AuthContext';
 import { useNotifications } from '@/src/hooks/useNotifications';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 import { GlobalSearchDialog } from '@/components/global-search-dialog';
+import { AppHeader } from '@/src/components/layout/AppHeader';
 
 function formatTitle(pathname: string | null) {
+  // Function to format the title based on the pathname
   if (!pathname) return 'Dashboard';
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length === 0) return 'Dashboard';
@@ -62,9 +64,10 @@ export function TopNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-[rgba(8,10,15,0.86)] backdrop-blur-2xl">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-4 py-3 lg:px-6">
-          <div className="flex min-w-0 items-center gap-3">
+      <AppHeader
+        className="sticky top-0 z-30 border-b border-border/70 bg-[rgba(8,10,15,0.86)] backdrop-blur-2xl"
+        start={
+          <>
             <button
               type="button"
               onClick={handleLogout}
@@ -79,9 +82,10 @@ export function TopNavbar() {
                 {isDashboardRoute && pathname === '/dashboard' ? 'Dashboard' : pageTitle}
               </h2>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
+          </>
+        }
+        end={
+          <>
             <button
               onClick={() => setSearchOpen(true)}
               className="inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-card text-secondary transition hover:border-[#00F5C4]/40 hover:text-foreground"
@@ -107,12 +111,11 @@ export function TopNavbar() {
             <div className="hidden sm:block">
               <ConnectionStatusBar />
             </div>
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
-      </header>
-
+      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       <NotificationCenter isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
   );
