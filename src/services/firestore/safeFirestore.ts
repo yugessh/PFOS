@@ -143,7 +143,7 @@ export async function deleteDocSafe(docRef: DocumentReference<DocumentData>) {
 
 export async function setDocSafe(docRef: DocumentReference<DocumentData>, data: DocumentData, options?: { merge?: boolean }) {
   try {
-    return await setDoc(docRef, data, options);
+    return options ? await setDoc(docRef, data, options) : await setDoc(docRef, data);
   } catch (error) {
     if (handleFirestoreError('setDoc', (docRef as any)?.path, error)) {
       return undefined;

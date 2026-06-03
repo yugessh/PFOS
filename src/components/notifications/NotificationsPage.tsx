@@ -26,7 +26,7 @@ import { useInvestments } from '@/src/hooks/useInvestments';
 import { useTradingJournal } from '@/src/hooks/useTradingJournal';
 import { useEvents } from '@/src/hooks/useEvents';
 import { useReminders } from '@/src/hooks/useReminders';
-import { getActivityFeedTone, getNotificationGroupKey, getNotificationGroupLabel, getNotificationModuleLabel, normalizeNotificationPriority, type ActivityFeedItem, type NotificationGroup, type NotificationModel } from '@/src/lib/notifications';
+import { getActivityFeedTone, getNotificationGroupKey, getNotificationGroupLabel, getNotificationModuleLabel, normalizeNotificationPriority, type ActivityFeedItem, type NotificationGroup, type NotificationModel, type NotificationPriority } from '@/src/lib/notifications';
 import { cn } from '@/lib/utils';
 
 const FILTERS = [
@@ -127,7 +127,7 @@ function buildActivityFeed(
       priority: notification.priority,
       createdAt: notification.createdAt,
       url: notification.actionUrl,
-      tone: getActivityFeedTone(notification.priority),
+      tone: getActivityFeedTone(notification.priority) as ActivityFeedItem['tone'],
       metadata: notification.metadata,
     })),
     ...transactions.slice(0, 8).map((transaction) => ({
@@ -135,10 +135,10 @@ function buildActivityFeed(
       title: transaction.type === 'income' ? 'Income received' : 'Expense logged',
       subtitle: transaction.description || transaction.category || 'Transaction update',
       module: 'transactions',
-      priority: transaction.amount && Math.abs(transaction.amount) > 50000 ? 'high' : 'medium',
+      priority: (transaction.amount && Math.abs(transaction.amount) > 50000 ? 'high' : 'medium') as NotificationPriority,
       createdAt: new Date(transaction.date || transaction.createdAt || Date.now()),
       url: '/dashboard/transactions',
-      tone: transaction.type === 'income' ? 'medium' : 'high',
+      tone: (transaction.type === 'income' ? 'medium' : 'high') as ActivityFeedItem['tone'],
       metadata: transaction,
     })),
     ...goals.slice(0, 6).map((goal) => ({
@@ -146,10 +146,10 @@ function buildActivityFeed(
       title: `Goal progress: ${goal.title}`,
       subtitle: `${goal.savedAmount || goal.currentAmount || 0} saved toward ${goal.targetAmount || goal.goalAmount || 0}`,
       module: 'goals',
-      priority: goal.savedAmount >= goal.targetAmount ? 'medium' : 'low',
+      priority: (goal.savedAmount >= goal.targetAmount ? 'medium' : 'low') as NotificationPriority,
       createdAt: new Date(goal.updatedAt || goal.createdAt || Date.now()),
       url: '/dashboard/goals',
-      tone: goal.savedAmount >= goal.targetAmount ? 'medium' : 'low',
+      tone: (goal.savedAmount >= goal.targetAmount ? 'medium' : 'low') as ActivityFeedItem['tone'],
       metadata: goal,
     })),
     ...investments.slice(0, 6).map((investment) => ({
@@ -157,10 +157,10 @@ function buildActivityFeed(
       title: `Investment update: ${investment.name}`,
       subtitle: `Current value ${investment.currentValue ?? investment.value ?? 0}`,
       module: 'investments',
-      priority: 'medium',
+      priority: 'medium' as NotificationPriority,
       createdAt: new Date(investment.updatedAt || investment.createdAt || Date.now()),
       url: '/dashboard/investments',
-      tone: 'medium',
+      tone: 'medium' as ActivityFeedItem['tone'],
       metadata: investment,
     })),
     ...trades.slice(0, 6).map((trade) => ({
@@ -168,10 +168,10 @@ function buildActivityFeed(
       title: trade.pnl && trade.pnl >= 0 ? 'Trade closed in profit' : 'Trade activity recorded',
       subtitle: trade.pair || trade.notes || 'Trading journal entry',
       module: 'trading',
-      priority: trade.pnl && trade.pnl < 0 ? 'high' : 'medium',
+      priority: (trade.pnl && trade.pnl < 0 ? 'high' : 'medium') as NotificationPriority,
       createdAt: new Date(trade.date || trade.createdAt || Date.now()),
       url: '/dashboard/trading-journal',
-      tone: trade.pnl && trade.pnl < 0 ? 'high' : 'medium',
+      tone: (trade.pnl && trade.pnl < 0 ? 'high' : 'medium') as ActivityFeedItem['tone'],
       metadata: trade,
     })),
     ...events.slice(0, 6).map((event) => ({
@@ -179,10 +179,10 @@ function buildActivityFeed(
       title: event.title || 'Automation event',
       subtitle: event.eventType || event.notes || 'System activity',
       module: event.linkedModule || 'automation',
-      priority: event.priority || 'low',
+      priority: (event.priority || 'low') as NotificationPriority,
       createdAt: new Date(event.date || event.createdAt || Date.now()),
       url: event.linkedModule ? `/dashboard/${event.linkedModule}` : undefined,
-      tone: normalizeNotificationPriority(event.priority || 'low'),
+      tone: normalizeNotificationPriority(event.priority || 'low') as ActivityFeedItem['tone'],
       metadata: event,
     })),
     ...reminders.slice(0, 6).map((reminder) => ({
@@ -190,10 +190,10 @@ function buildActivityFeed(
       title: reminder.title || 'Reminder',
       subtitle: reminder.description || reminder.notes || 'Upcoming task',
       module: 'calendar',
-      priority: reminder.priority || 'medium',
+      priority: (reminder.priority || 'medium') as NotificationPriority,
       createdAt: new Date(reminder.reminderDate || reminder.dueDate || reminder.createdAt || Date.now()),
       url: '/dashboard/calendar',
-      tone: normalizeNotificationPriority(reminder.priority || 'medium'),
+      tone: normalizeNotificationPriority(reminder.priority || 'medium') as ActivityFeedItem['tone'],
       metadata: reminder,
     })),
   ];

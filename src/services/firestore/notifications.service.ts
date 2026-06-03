@@ -1,67 +1,116 @@
-import { collection, doc, query, where, orderBy, limit, Timestamp, onSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, doc, limit, orderBy, onSnapshot, query, Timestamp, where, type DocumentData, type QueryDocumentSnapshot } from 'firebase/firestore';
+import { SUBCOLLECTIONS } from '@/src/constants/collections';
 import { getFirestoreClient } from './firebaseClient';
-import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
-import type { NotificationModel, NotificationType, NotificationPriority } from '@/src/lib/notifications';
-import { getDocsSafe, getDocSafe, addDocSafe, updateDocSafe, deleteDocSafe, setDocSafe } from './safeFirestore';
+import { addDocSafe, deleteDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
+import type { NotificationModel, NotificationPriority, NotificationType } from '@/src/lib/notifications';
 
-export interface NotificationSettingsModel {
-  userId: string;
-  modules: Record<string, {
-    enabled: boolean;
-    sound: boolean;
-    push: boolean;
-    priorityOverride?: NotificationPriority;
-  }>;
-  soundEnabled: boolean;
-  pushEnabled: boolean;
-  priorityOverride: Partial<Record<string, NotificationPriority>>;
-  updatedAt: Date;
-  syncedAt: Date | null;
+export type { NotificationSettingsModel } from './notification-settings.service';
+
+function toDateValue(value: unknown, fallback: Date | null = null): Date | null {
+  if (value == null) {
+    return fallback;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
+  if (typeof value === 'number' || typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+  }
+
+  return fallback;
 }
 
-function normalizeNotificationDoc(docSnap: { id: string; data: () => DocumentData }): NotificationModel {
+function normalizeNotificationDoc(docSnap: QueryDocumentSnapshot<DocumentData>): NotificationModel {
   const data = docSnap.data() || {};
 
   return {
     id: docSnap.id,
-    ...data,
-    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
-    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt || Date.now()),
-    readAt: data.readAt?.toDate ? data.readAt.toDate() : data.readAt ?? null,
-    archivedAt: data.archivedAt?.toDate ? data.archivedAt.toDate() : data.archivedAt ?? null,
-    expiresAt: data.expiresAt?.toDate ? data.expiresAt.toDate() : data.expiresAt ?? null,
+    userId: String(data.userId || ''),
+    type: (data.type || 'transaction_alert') as NotificationType,
+    title: String(data.title || ''),
+    message: String(data.message || ''),
+    priority: (data.priority || 'medium') as NotificationPriority,
+    isRead: Boolean(data.isRead),
+    isArchived: Boolean(data.isArchived),
     isPinned: Boolean(data.isPinned),
     isDismissed: Boolean(data.isDismissed),
+    module: data.module,
+    groupKey: data.groupKey,
+    groupLabel: data.groupLabel,
+    sourceModule: data.sourceModule,
+    sourceId: data.sourceId,
+    priorityScore: data.priorityScore,
+    priorityReason: data.priorityReason,
     syncStatus: data.syncStatus || 'synced',
-  } as NotificationModel;
+    action: data.action,
+    metadata: data.metadata,
+    actionUrl: data.actionUrl,
+    createdAt: toDateValue(data.createdAt, new Date()) || new Date(),
+    updatedAt: toDateValue(data.updatedAt, new Date()) || new Date(),
+    readAt: toDateValue(data.readAt, null),
+    archivedAt: toDateValue(data.archivedAt, null),
+    expiresAt: toDateValue(data.expiresAt, null),
+  };
+}
+
+function getNotificationCollectionRef(userId: string) {
+  const db = getFirestoreClient();
+  if (!db) {
+    throw new Error('Firestore client not available');
+  }
+
+  return collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
 }
 
 function getNotificationDocRef(userId: string, notificationId: string) {
-    const snapshot = await getDocsSafe(q);
-    return snapshot.docs.map((docSnap) => normalizeNotificationDoc(docSnap));
-  } catch (error) {
-    console.error('Error getting user notifications:', error);
-    throw error;
+  const db = getFirestoreClient();
+  if (!db) {
+    throw new Error('Firestore client not available');
   }
+
+  return doc(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId), notificationId);
+}
+
+function toFirestoreTimestamp(value: Date | null | undefined): Timestamp | null {
+  if (!value) {
+    return null;
+  }
+
+  return value instanceof Timestamp ? value : Timestamp.fromDate(value);
+}
+
+function normalizeNotificationUpdatePayload(updates: Partial<NotificationModel>): Record<string, unknown> {
+  const payload: Record<string, unknown> = { ...updates };
+
+  if ('createdAt' in payload) payload.createdAt = toFirestoreTimestamp(payload.createdAt as Date | null | undefined);
+  if ('updatedAt' in payload) payload.updatedAt = toFirestoreTimestamp(payload.updatedAt as Date | null | undefined) ?? Timestamp.now();
+  if ('readAt' in payload) payload.readAt = toFirestoreTimestamp(payload.readAt as Date | null | undefined);
+  if ('archivedAt' in payload) payload.archivedAt = toFirestoreTimestamp(payload.archivedAt as Date | null | undefined);
+  if ('expiresAt' in payload) payload.expiresAt = toFirestoreTimestamp(payload.expiresAt as Date | null | undefined);
+
+  return payload;
+}
 
 export class NotificationsService {
   async getUserNotifications(userId: string, includeArchived = false): Promise<NotificationModel[]> {
     try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
+      const colRef = getNotificationCollectionRef(userId);
+      const constraints = includeArchived
+        ? [orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'), limit(100)]
+        : [where('isArchived', '==', false), orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'), limit(100)];
 
-      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-      const q = query(
-        colRef,
-        where('isArchived', '==', includeArchived),
-        orderBy('createdAt', 'desc'),
-        limit(100)
-      );
-
-      const snapshot = await getDocsSafe(q);
+      const snapshot = await getDocsSafe(query(colRef, ...constraints));
       return snapshot.docs.map((docSnap) => normalizeNotificationDoc(docSnap));
     } catch (error) {
-      throw error;
+      console.error('Error getting user notifications:', error);
+      return [];
     }
   }
 
@@ -71,46 +120,33 @@ export class NotificationsService {
     callback: (notifications: NotificationModel[]) => void,
     onError?: (error: unknown) => void,
   ): () => void {
-    const db = getFirestoreClient();
-    if (!db) {
+    try {
+      const colRef = getNotificationCollectionRef(userId);
+      const constraints = includeArchived
+        ? [orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'), limit(100)]
+        : [where('isArchived', '==', false), orderBy('isPinned', 'desc'), orderBy('createdAt', 'desc'), limit(100)];
+
+      return onSnapshot(
+        query(colRef, ...constraints),
+        (snapshot) => {
+          callback(snapshot.docs.map((docSnap) => normalizeNotificationDoc(docSnap)));
+        },
+        (error) => {
+          console.error('Error subscribing to notifications:', error);
+          onError?.(error);
+        }
+      );
+    } catch (error) {
+      console.error('Error starting notifications subscription:', error);
       callback([]);
       return () => undefined;
     }
-
-    const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-    const q = query(
-      colRef,
-      where('isArchived', '==', includeArchived),
-      orderBy('isPinned', 'desc'),
-      orderBy('createdAt', 'desc'),
-      limit(100)
-    );
-
-    return onSnapshot(
-      q,
-      (snapshot) => {
-        callback(snapshot.docs.map((docSnap) => normalizeNotificationDoc(docSnap)));
-      },
-      (error) => {
-        console.error('Error subscribing to notifications:', error);
-        onError?.(error);
-      }
-    );
   }
 
   async getUnreadCount(userId: string): Promise<number> {
     try {
-      const db = getFirestoreClient();
-      if (!db) return 0;
-
-      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-      const q = query(
-        colRef,
-        where('isRead', '==', false),
-        where('isArchived', '==', false)
-      );
-
-      const snapshot = await getDocsSafe(q);
+      const colRef = getNotificationCollectionRef(userId);
+      const snapshot = await getDocsSafe(query(colRef, where('isRead', '==', false), where('isArchived', '==', false)));
       return snapshot.size;
     } catch (error) {
       console.error('Error getting unread count:', error);
@@ -118,122 +154,83 @@ export class NotificationsService {
     }
   }
 
-  async markAsRead(notificationId: string, userId: string): Promise<void> {
+  async updateNotification(userId: string, notificationId: string, updates: Partial<NotificationModel>): Promise<void> {
     try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
       const docRef = getNotificationDocRef(userId, notificationId);
-      await updateDocSafe(docRef, {
-        isRead: true,
-        readAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        syncStatus: 'synced',
-      });
+      await updateDocSafe(docRef, normalizeNotificationUpdatePayload({ ...updates, updatedAt: updates.updatedAt ?? new Date() }));
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error updating notification:', error);
       throw error;
     }
+  }
+
+  async deleteNotification(userId: string, notificationId: string): Promise<void> {
+    try {
+      const docRef = getNotificationDocRef(userId, notificationId);
+      await deleteDocSafe(docRef);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  }
+
+  async markAsRead(notificationId: string, userId: string): Promise<void> {
+    await this.updateNotification(userId, notificationId, {
+      isRead: true,
+      readAt: new Date(),
+      syncStatus: 'synced',
+    });
   }
 
   async markAsArchived(notificationId: string, userId: string): Promise<void> {
-    try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
-      const docRef = getNotificationDocRef(userId, notificationId);
-      await updateDocSafe(docRef, {
-        isArchived: true,
-        archivedAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        syncStatus: 'synced',
-      });
-    } catch (error) {
-      console.error('Error archiving notification:', error);
-      throw error;
-    }
+    await this.updateNotification(userId, notificationId, {
+      isArchived: true,
+      archivedAt: new Date(),
+      syncStatus: 'synced',
+    });
   }
 
   async pinNotification(notificationId: string, userId: string, isPinned = true): Promise<void> {
-    try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
-      const docRef = getNotificationDocRef(userId, notificationId);
-      await updateDocSafe(docRef, {
-        isPinned,
-        updatedAt: Timestamp.now(),
-        syncStatus: 'synced',
-      });
-    } catch (error) {
-      console.error('Error updating notification pin state:', error);
-      throw error;
-    }
+    await this.updateNotification(userId, notificationId, {
+      isPinned,
+      syncStatus: 'synced',
+    });
   }
 
   async dismissNotification(notificationId: string, userId: string): Promise<void> {
-    try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
-      const docRef = getNotificationDocRef(userId, notificationId);
-      await updateDocSafe(docRef, {
-        isDismissed: true,
-        isArchived: true,
-        dismissedAt: Timestamp.now(),
-        archivedAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        syncStatus: 'synced',
-      });
-    } catch (error) {
-      console.error('Error dismissing notification:', error);
-      throw error;
-    }
+    await this.updateNotification(userId, notificationId, {
+      isDismissed: true,
+      isArchived: true,
+      archivedAt: new Date(),
+      updatedAt: new Date(),
+      syncStatus: 'synced',
+    });
   }
 
   async restoreNotification(notificationId: string, userId: string): Promise<void> {
-    try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
-      const docRef = getNotificationDocRef(userId, notificationId);
-      await updateDocSafe(docRef, {
-        isDismissed: false,
-        isArchived: false,
-        archivedAt: null,
-        dismissedAt: null,
-        updatedAt: Timestamp.now(),
-        syncStatus: 'synced',
-      });
-    } catch (error) {
-      console.error('Error restoring notification:', error);
-      throw error;
-    }
+    await this.updateNotification(userId, notificationId, {
+      isDismissed: false,
+      isArchived: false,
+      archivedAt: null,
+      syncStatus: 'synced',
+    });
   }
 
   async markAllAsRead(userId: string): Promise<void> {
     try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
+      const colRef = getNotificationCollectionRef(userId);
+      const snapshot = await getDocsSafe(query(colRef, where('isRead', '==', false), where('isArchived', '==', false)));
 
-      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-      const q = query(
-        colRef,
-        where('isRead', '==', false),
-        where('isArchived', '==', false)
+      await Promise.all(
+        snapshot.docs.map((docSnap) =>
+          updateDocSafe(docSnap.ref, {
+            isRead: true,
+            readAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+            syncStatus: 'synced',
+          })
+        )
       );
-
-      const snapshot = await getDocsSafe(q);
-      const ops: Promise<any>[] = [];
-      for (const docSnap of snapshot.docs) {
-        ops.push(updateDocSafe(docSnap.ref, {
-          isRead: true,
-          readAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-        }));
-      }
-
-      await Promise.all(ops);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       throw error;
@@ -252,11 +249,10 @@ export class NotificationsService {
     overrides: Partial<NotificationModel> = {}
   ): Promise<string> {
     try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
+      const colRef = getNotificationCollectionRef(userId);
       const now = new Date();
-      const notification: Omit<NotificationModel, 'id'> = {
+
+      const payload = {
         userId,
         type,
         title,
@@ -277,28 +273,18 @@ export class NotificationsService {
         action: overrides.action,
         metadata,
         actionUrl,
-        createdAt: now,
-        updatedAt: now,
-        readAt: null,
-        archivedAt: null,
-        dismissedAt: null,
-        expiresAt: expiresAt || null,
+        createdAt: Timestamp.fromDate(overrides.createdAt ?? now),
+        updatedAt: Timestamp.fromDate(overrides.updatedAt ?? now),
+        readAt: toFirestoreTimestamp(overrides.readAt ?? null),
+        archivedAt: toFirestoreTimestamp(overrides.archivedAt ?? null),
+        dismissedAt: toFirestoreTimestamp((overrides as Record<string, Date | null | undefined>).dismissedAt ?? null),
+        expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : toFirestoreTimestamp(overrides.expiresAt ?? null),
       };
 
-      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-      const docRef = await addDocSafe(colRef, {
-        ...notification,
-        createdAt: Timestamp.fromDate(notification.createdAt),
-        updatedAt: Timestamp.fromDate(notification.updatedAt),
-        expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : null,
-        readAt: null,
-        archivedAt: null,
-        dismissedAt: null,
-      });
+      const docRef = await addDocSafe(colRef, payload);
       if (!docRef) {
-        throw new Error('Failed to create notification document');
+        throw new Error('Failed to create notification');
       }
-
       return docRef.id;
     } catch (error) {
       console.error('Error creating notification:', error);
@@ -308,70 +294,21 @@ export class NotificationsService {
 
   async cleanupExpiredNotifications(userId: string): Promise<void> {
     try {
-      const db = getFirestoreClient();
-      if (!db) return;
+      const colRef = getNotificationCollectionRef(userId);
+      const snapshot = await getDocsSafe(query(colRef, where('isArchived', '==', false), where('expiresAt', '<=', Timestamp.now())));
 
-      const colRef = collection(db, SUBCOLLECTIONS.USER_NOTIFICATIONS(userId));
-      const now = Timestamp.now();
-      const q = query(
-        colRef,
-    const snapshot = await getDocSafe(settingsRef);
-
-    if (!snapshot.exists()) {
-      const ops: Promise<any>[] = [];
-      for (const docSnap of snapshot.docs) {
-        ops.push(deleteDocSafe(docSnap.ref));
-      const data = snapshot.data() || {};
-    try {
-      return {
-        userId,
-        modules: data.modules || {},
-        soundEnabled: Boolean(data.soundEnabled),
-        pushEnabled: Boolean(data.pushEnabled),
-        priorityOverride: data.priorityOverride || {},
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-        syncedAt: data.syncedAt?.toDate ? data.syncedAt.toDate() : null,
-      };
-      const db = getFirestoreClient();
-      if (!db) return null;
-
-      const settingsRef = getNotificationSettingsDocRef(userId);
-      const snapshot = await getDocsSafe(query(collection(db, COLLECTIONS.USERS, userId, 'notificationSettings'), limit(1)));
-      const data = snapshot.docs[0]?.data?.() || null;
-
-      if (!data) {
-        return null;
-      }
-
-      return {
-        userId,
-        modules: data.modules || {},
-        soundEnabled: Boolean(data.soundEnabled),
-        pushEnabled: Boolean(data.pushEnabled),
-        priorityOverride: data.priorityOverride || {},
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-        syncedAt: data.syncedAt?.toDate ? data.syncedAt.toDate() : null,
-      };
+      await Promise.all(
+        snapshot.docs.map((docSnap) =>
+          updateDocSafe(docSnap.ref, {
+            isArchived: true,
+            archivedAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+            syncStatus: 'synced',
+          })
+        )
+      );
     } catch (error) {
-      console.error('Error getting notification settings:', error);
-      return null;
-    }
-  }
-
-  async saveUserNotificationSettings(userId: string, settings: Partial<NotificationSettingsModel>): Promise<void> {
-    try {
-      const db = getFirestoreClient();
-      if (!db) throw new Error('Firestore client not available');
-
-      const settingsRef = getNotificationSettingsDocRef(userId);
-      await setDocSafe(settingsRef, {
-        userId,
-        ...settings,
-        updatedAt: Timestamp.now(),
-        syncedAt: Timestamp.now(),
-      }, { merge: true });
-    } catch (error) {
-      console.error('Error saving notification settings:', error);
+      console.error('Error cleaning up expired notifications:', error);
       throw error;
     }
   }

@@ -533,7 +533,9 @@ export function DashboardExecutive() {
           open={addTransactionOpen}
           onOpenChange={setAddTransactionOpen}
           defaultType={transactionType}
-          onSave={(transaction: TransactionFormData) => addTransaction(transaction)}
+          onSave={async (transaction: TransactionFormData) => {
+            await addTransaction(transaction);
+          }}
         />
         <AddAccountModal
           open={addAccountOpen}
@@ -902,12 +904,12 @@ export function DashboardExecutive() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-foreground">{emi.title}</p>
-                        <p className="mt-1 text-xs text-secondary">{emi.remaining} installments left</p>
+                          <p className="mt-1 text-xs text-secondary">{emi.progress.remaining} installments left</p>
                       </div>
-                      <span className="text-sm font-semibold text-[#38BDF8]">{emi.progress.toFixed(0)}%</span>
+                        <span className="text-sm font-semibold text-[#38BDF8]">{emi.progress.progress.toFixed(0)}%</span>
                     </div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
-                      <div className="h-full rounded-full bg-[linear-gradient(90deg,#00F5C4,#38BDF8)]" style={{ width: `${Math.min(emi.progress, 100)}%` }} />
+                      <div className="h-full rounded-full bg-[linear-gradient(90deg,#00F5C4,#38BDF8)]" style={{ width: `${Math.min(emi.progress.progress, 100)}%` }} />
                     </div>
                   </div>
                 ))}

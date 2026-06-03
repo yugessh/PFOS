@@ -16,6 +16,7 @@ import {
   Shield,
   Bell,
   CalendarDays,
+  Sparkles,
   LucideIcon,
   FileText,
 } from 'lucide-react';
@@ -38,6 +39,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: Home, description: 'Lightweight financial summary' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
+  { href: '/dashboard/goal-planner', label: 'Goal Planner', icon: Sparkles, description: 'Forecast goals and scenarios' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
   { href: '/dashboard/documents', label: 'Documents', icon: FileText, description: 'Bills, policies & vault' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
@@ -60,6 +62,7 @@ export const sidebarNavItems: NavItem[] = [
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart alerts' },
   { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
+  { href: '/dashboard/goal-planner', label: 'Goal Planner', icon: Sparkles, description: 'Financial scenario simulator' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
   { href: '/dashboard/documents', label: 'Document Vault', icon: FileText, description: 'Bills & policies' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },

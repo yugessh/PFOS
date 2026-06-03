@@ -269,4 +269,3 @@ export function NotificationCard({
 
   return content;
 }
-*** End Patch
