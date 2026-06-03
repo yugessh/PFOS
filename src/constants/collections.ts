@@ -37,6 +37,12 @@ export const COLLECTIONS = {
   AI_INSIGHTS: 'ai_insights',
   TRADING_JOURNAL: 'tradingJournal',
   NET_WORTH_SNAPSHOTS: 'netWorthSnapshots',
+  TAX_PROFILES: 'taxProfiles',
+  TAX_REPORTS: 'taxReports',
+  DEDUCTIONS: 'deductions',
+  CAPITAL_GAINS: 'capitalGains',
+  FINANCIAL_YEARS: 'financialYears',
+  TAX_DOCUMENTS: 'taxDocuments',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
