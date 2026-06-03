@@ -1,5 +1,6 @@
 import { collection, doc, orderBy, query, limit, where, Timestamp } from 'firebase/firestore';
 import { COLLECTIONS } from '@/src/constants/collections';
+import { getAuthSafe } from '@/src/firebase/firebase';
 import { getFirestoreClient } from './firebaseClient';
 import { addDocSafe, getDocsSafe, setDocSafe } from './safeFirestore';
 import type { AssetRecord, LiabilityRecord } from '@/src/lib/asset-register';
@@ -65,10 +66,79 @@ export class AssetService {
     return addDocSafe(ref as any, { assetId, value: valuation.value, date: valuation.date ? Timestamp.fromDate(valuation.date) : Timestamp.fromDate(now), source: valuation.source || null, createdAt: Timestamp.fromDate(now) } as any);
   }
 
+  async getValuationHistory(assetId: string) {
+    try {
+      const ref = getCollection(COLLECTIONS.VALUATION_HISTORY);
+      const snap = await getDocsSafe(query(ref, where('assetId', '==', assetId), orderBy('date', 'desc'), limit(100)) as any);
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.error('AssetService.getValuationHistory', e);
+      return [];
+    }
+  }
+
+  async addAttachmentToAsset(assetId: string, attachmentUrl: string) {
+    try {
+      const ref = getCollection(COLLECTIONS.ASSETS);
+      const docRef = doc(ref, assetId);
+      // merge append
+      await setDocSafe(docRef as any, { attachments: (await this.getAssetAttachments(assetId)).concat([attachmentUrl]) } as any, { merge: true });
+      return true;
+    } catch (e) {
+      console.error('AssetService.addAttachmentToAsset', e);
+      return false;
+    }
+  }
+
+  async getAssetAttachments(assetId: string) {
+    try {
+      const ref = getCollection(COLLECTIONS.ASSETS);
+      const d = await getDocsSafe(query(ref, where('id', '==', assetId), limit(1)) as any);
+      // fallback to direct doc read
+      const snap = d.docs[0];
+      if (!snap) return [];
+      const data = snap.data();
+      return (data.attachments || []) as string[];
+    } catch (e) {
+      try {
+        const ref = getCollection(COLLECTIONS.ASSETS);
+        const docRef = doc(ref, assetId);
+        const docSnap = await getDocsSafe(query(ref, where('id', '==', assetId), limit(1)) as any);
+        return [];
+      } catch (_) {
+        return [];
+      }
+    }
+  }
+
   async snapshotAllocation(userId: string, snapshot: any) {
     const ref = getCollection(COLLECTIONS.ALLOCATION_SNAPSHOTS);
     const now = new Date();
-    return addDocSafe(ref as any, { userId, snapshot, createdAt: Timestamp.fromDate(now) } as any);
+    const r = await addDocSafe(ref as any, { userId, snapshot, createdAt: Timestamp.fromDate(now) } as any);
+    // also create a net worth snapshot in NET_WORTH_SNAPSHOTS
+    try {
+      const assets = await this.getAssets(userId);
+      const liabilities = await this.getLiabilities(userId);
+      const totals = { assets: assets.map((a: any) => ({ id: a.id, currentValue: a.currentValue })), liabilities: liabilities.map((l: any) => ({ id: l.id, outstandingAmount: l.outstandingAmount })) };
+      const nwRef = getCollection(COLLECTIONS.NET_WORTH_SNAPSHOTS);
+      await addDocSafe(nwRef as any, { userId, totals, snapshot, createdAt: Timestamp.fromDate(now) } as any);
+    } catch (e) {
+      // non-fatal
+      // eslint-disable-next-line no-console
+      console.warn('Failed to write net worth snapshot:', e);
+    }
+    return r;
+  }
+
+  async getSharedAccounts(groupId: string) {
+    try {
+      const ref = getCollection(COLLECTIONS.FAMILY_ACCOUNTS);
+      const snap = await getDocsSafe(query(ref, where('groupId', '==', groupId), where('deletedAt', '==', null), orderBy('createdAt', 'desc'), limit(100)) as any);
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.error('AssetService.getSharedAccounts', e);
+      return [];
+    }
   }
 }
 

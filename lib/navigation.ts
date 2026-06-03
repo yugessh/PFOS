@@ -67,6 +67,7 @@ export const sidebarNavItems: NavItem[] = [
   { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },
   { href: '/dashboard/goals', label: 'Goals', icon: Target, description: 'Savings goals' },
   { href: '/dashboard/goal-planner', label: 'Goal Planner', icon: Sparkles, description: 'Financial scenario simulator' },
+  { href: '/dashboard/ai-coach', label: 'AI Coach', icon: Sparkles, description: 'Personalized financial coaching' },
   { href: '/dashboard/wealth-planner', label: 'Wealth Planner', icon: Sparkles, description: 'Retirement, FIRE and long-term planning' },
   { href: '/dashboard/tax-center', label: 'Tax Center', icon: FileText, description: 'Tax planning and reports' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
@@ -77,6 +78,7 @@ export const sidebarNavItems: NavItem[] = [
 
 export const analyticsNavItems: NavItem[] = [
   { href: '/dashboard/reports', label: 'Reports', icon: PieChart, description: 'Generate reports' },
+  { href: '/dashboard/ai-coach', label: 'AI Coach', icon: Sparkles, description: 'Financial copilot and coaching' },
 ];
 
 export const settingsNavItems: NavItem[] = [

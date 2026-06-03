@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { familyService } from '@/src/services/firestore/family.service';
+import { assetService } from '@/src/services/firestore/asset.service';
 import type { FamilyGroup } from '@/src/lib/family-finance';
 import { useAuthContext } from '@/src/context/AuthContext';
 
@@ -12,6 +13,7 @@ export default function FamilyDashboard() {
   const [name, setName] = useState('My Family');
   const [creating, setCreating] = useState(false);
   const [groups, setGroups] = useState<FamilyGroup[]>([] as any);
+  const [sharedAccountsMap, setSharedAccountsMap] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     if (!uid) return;
@@ -26,6 +28,15 @@ export default function FamilyDashboard() {
     })();
     return () => { mounted = false; };
   }, [uid]);
+
+  async function loadSharedAccountsForGroup(groupId: string) {
+    try {
+      const accounts = await assetService.getSharedAccounts(groupId);
+      setSharedAccountsMap((prev) => ({ ...prev, [groupId]: accounts }));
+    } catch (e) {
+      console.error('loadSharedAccountsForGroup', e);
+    }
+  }
 
   async function createGroup() {
     if (!uid) return;
@@ -105,6 +116,15 @@ export default function FamilyDashboard() {
                   <input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Account name" className="mt-1 p-1 rounded w-full" />
                   <input value={accountBalance} onChange={(e) => setAccountBalance(Number(e.target.value))} placeholder="Balance" className="mt-1 p-1 rounded w-full" />
                   <button onClick={() => addSharedAccount(g.id)} className="mt-2 px-3 py-1 bg-[#7EE7C7] text-black rounded">Add Account</button>
+                </div>
+
+                <div className="mt-3">
+                  <button onClick={() => loadSharedAccountsForGroup(g.id)} className="px-2 py-1 bg-[#7EE7C7] text-black rounded">Load Shared Accounts</button>
+                  <div className="mt-2">
+                    {(sharedAccountsMap[g.id] || []).map((acc: any) => (
+                      <div key={acc.id} className="mt-2 p-2 bg-[#0b0d10] rounded">{acc.name} — ₹{Math.round(acc.balance).toLocaleString()}</div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="mt-3">

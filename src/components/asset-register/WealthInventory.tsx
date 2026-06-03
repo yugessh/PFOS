@@ -5,6 +5,9 @@ import { useAuthContext } from '@/src/context/AuthContext';
 import { assetService } from '@/src/services/firestore/asset.service';
 import type { AssetRecord, LiabilityRecord } from '@/src/lib/asset-register';
 import { aggregateNetWorth, allocationBreakdown } from '@/src/lib/asset-register';
+import AssetAllocationChart from './AssetAllocationChart';
+import WealthReports from './WealthReports';
+import { objectsToCSV } from '@/src/lib/export';
 
 export default function WealthInventory() {
   const { user } = useAuthContext();
@@ -12,6 +15,8 @@ export default function WealthInventory() {
 
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [liabilities, setLiabilities] = useState<LiabilityRecord[]>([]);
+  const [selectedAssetValuations, setSelectedAssetValuations] = useState<any[]>([]);
+  const [attachmentUrl, setAttachmentUrl] = useState('');
 
   const [newAssetName, setNewAssetName] = useState('Savings Account');
   const [newAssetValue, setNewAssetValue] = useState(100000);
@@ -35,6 +40,27 @@ export default function WealthInventory() {
     const res = await assetService.saveAsset(uid, null, { name: newAssetName, category: 'bank', currentValue: newAssetValue });
     const a = await assetService.getAssets(uid);
     setAssets(a as any);
+    await assetService.snapshotAllocation(uid, allocationBreakdown(a as any));
+  }
+
+  async function showValuationHistory(assetId: string) {
+    const v = await assetService.getValuationHistory(assetId);
+    setSelectedAssetValuations(v || []);
+  }
+
+  async function addAttachment(assetId: string) {
+    if (!attachmentUrl) return;
+    await assetService.addAttachmentToAsset(assetId, attachmentUrl);
+    setAttachmentUrl('');
+    const a = await assetService.getAssets(uid!);
+    setAssets(a as any);
+  }
+
+  async function takeSnapshot() {
+    if (!uid) return;
+    const alloc = allocationBreakdown(assets);
+    await assetService.snapshotAllocation(uid, alloc);
+    alert('Snapshot recorded');
   }
 
   const net = useMemo(() => aggregateNetWorth(assets, liabilities), [assets, liabilities]);
@@ -63,12 +89,40 @@ export default function WealthInventory() {
 
         <section className="mb-6 p-4 rounded-[28px] bg-[#151A20] text-white">
           <h2 className="text-lg font-medium">Assets</h2>
+          <div className="md:flex md:gap-4">
+            <div className="md:flex-1">
+              <ul className="mt-3">
+                {assets.map((a) => (
+                  <li key={a.id} className="mb-2 p-2 bg-[#080A0F] rounded flex justify-between items-center">
+                    <div>{a.name} — ₹{Math.round(a.currentValue).toLocaleString()}</div>
+                    <div className="space-x-2">
+                      <button onClick={() => showValuationHistory(a.id || '')} className="px-2 py-1 bg-[#7EE7C7] text-black rounded">Valuations</button>
+                      <input placeholder="Attachment URL" value={attachmentUrl} onChange={(e) => setAttachmentUrl(e.target.value)} className="p-1 rounded" />
+                      <button onClick={() => addAttachment(a.id || '')} className="px-2 py-1 bg-[#7EE7C7] text-black rounded">Add Attachment</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="md:w-1/3">
+              <AssetAllocationChart data={allocation.breakdown as any} />
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-6 p-4 rounded-[28px] bg-[#151A20] text-white">
+          <h2 className="text-lg font-medium">Valuation History</h2>
           <ul className="mt-3">
-            {assets.map((a) => (
-              <li key={a.id} className="mb-2 p-2 bg-[#080A0F] rounded">{a.name} — ₹{Math.round(a.currentValue).toLocaleString()}</li>
+            {selectedAssetValuations.map((v) => (
+              <li key={v.id} className="mb-2 p-2 bg-[#080A0F] rounded">{new Date(v.date?.toDate ? v.date.toDate() : v.date).toLocaleDateString()} — ₹{Math.round(v.value).toLocaleString()}</li>
             ))}
           </ul>
         </section>
+
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button onClick={takeSnapshot} className="p-4 rounded-[28px] bg-[#7EE7C7] text-black">Take Net Worth Snapshot</button>
+          <WealthReports assets={assets as any} liabilities={liabilities as any} />
+        </div>
 
         <section className="mb-6 p-4 rounded-[28px] bg-[#151A20] text-white">
           <h2 className="text-lg font-medium">Liabilities</h2>
@@ -77,6 +131,11 @@ export default function WealthInventory() {
               <li key={l.id} className="mb-2 p-2 bg-[#080A0F] rounded">{l.name} — ₹{Math.round(l.outstandingAmount).toLocaleString()}</li>
             ))}
           </ul>
+        </section>
+
+        <section className="mb-6 p-4 rounded-[28px] bg-[#151A20] text-white">
+          <h2 className="text-lg font-medium">Net Worth Integration</h2>
+          <p className="mt-2">Snapshots are recorded after asset updates and written to allocation history and net worth snapshots for planner modules.</p>
         </section>
       </div>
     </div>
