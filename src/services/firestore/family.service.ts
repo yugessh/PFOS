@@ -13,7 +13,8 @@ function getCollection(name: string) {
 export class FamilyService {
   async createGroup(userId: string, group: FamilyGroup) {
     const now = new Date();
-    const payload = { ...group, ownerId: userId, createdAt: Timestamp.fromDate(now), deletedAt: null } as any;
+    const memberIds = (group.members || []).map((m) => m.id);
+    const payload = { ...group, ownerId: userId, membersIds: memberIds, createdAt: Timestamp.fromDate(now), deletedAt: null } as any;
     const ref = getCollection(COLLECTIONS.FAMILY_GROUPS);
     const docRef = await addDocSafe(ref as any, payload as any);
     return { id: docRef?.id || '', ...payload };
@@ -22,8 +23,13 @@ export class FamilyService {
   async getUserGroups(userId: string) {
     try {
       const ref = getCollection(COLLECTIONS.FAMILY_GROUPS);
-      const snap = await getDocsSafe(query(ref, where('members', 'array-contains', userId), where('deletedAt', '==', null), orderBy('updatedAt', 'desc'), limit(50)) as any);
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const ownerSnap = await getDocsSafe(query(ref, where('ownerId', '==', userId), where('deletedAt', '==', null), orderBy('updatedAt', 'desc'), limit(50)) as any);
+      const memberSnap = await getDocsSafe(query(ref, where('membersIds', 'array-contains', userId), where('deletedAt', '==', null), orderBy('updatedAt', 'desc'), limit(50)) as any);
+      const docs = [...ownerSnap.docs, ...memberSnap.docs];
+      // de-dup by id
+      const unique = new Map<string, any>();
+      for (const d of docs) unique.set(d.id, { id: d.id, ...d.data() });
+      return Array.from(unique.values());
     } catch (e) {
       console.error('FamilyService.getUserGroups', e);
       return [];

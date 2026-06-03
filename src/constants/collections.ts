@@ -51,6 +51,11 @@ export const COLLECTIONS = {
   FAMILY_ACTIVITY_LOGS: 'familyActivityLogs',
   FAMILY_PERMISSIONS: 'familyPermissions',
   FAMILY_INVITES: 'familyInvites',
+  ASSETS: 'assets',
+  LIABILITIES: 'liabilities',
+  VALUATION_HISTORY: 'valuationHistory',
+  OWNERSHIPS: 'ownerships',
+  ALLOCATION_SNAPSHOTS: 'allocationSnapshots',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
