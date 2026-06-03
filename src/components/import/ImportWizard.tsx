@@ -19,13 +19,14 @@ import {
   FileJson,
   UploadCloud,
   CheckCircle2,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { useAccounts } from '@/src/hooks/useAccounts';
 import { useTransactions } from '@/src/hooks/useTransactions';
 import { useBackupRestore } from '@/src/hooks/useBackupRestore';
-import { parseBankStatementRows, type ParsedRow, type BankTemplateKey } from '@/src/utils/import/BankStatementMapper';
+import { parseBankStatementRows, BANK_TEMPLATES, type ParsedRow, type BankTemplateKey } from '@/src/utils/import/BankStatementMapper';
 import { findDuplicates, type DuplicateMatch } from '@/src/utils/import/DuplicateDetector';
 import { importService } from '@/src/services/firestore/import.service';
 import { transactionsService } from '@/src/services/firestore/transactions.service';
@@ -34,6 +35,7 @@ import { tradingJournalService } from '@/src/services/firestore/tradingJournal.s
 import { useFinancialCoach } from '@/src/hooks/useFinancialCoach';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { getFirestoreClient } from '@/src/services/firestore/firebaseClient';
+import { accountsService } from '@/src/services/firestore/accounts.service';
 import { toCanonicalAccountType } from '@/src/lib/account-types';
 
 interface ImportWizardProps {
@@ -121,7 +123,7 @@ export default function ImportWizard({ parsedFile, onReset }: ImportWizardProps)
   useEffect(() => {
     if (parsedFile && parsedFile.fileName.endsWith('.json')) {
       // Look if JSON has transactions or accounts keys (meaning it is a backup file)
-      const data = parsedFile.rows;
+      const data = parsedFile.rows as any;
       const isBackup = data && !Array.isArray(data) && (data.transactions || data.accounts || data.metadata);
       if (isBackup) {
         setImportMode('backup');
@@ -323,7 +325,7 @@ export default function ImportWizard({ parsedFile, onReset }: ImportWizardProps)
           if (acc) {
             const currentBal = Number(acc.balance || acc.currentBalance || 0);
             const nextBal = currentBal + adjustment;
-            await accountsService.updateBalance(userId, accountId, nextBal);
+            await accountsService.updateBalance(user.uid, accountId, nextBal);
           }
         }
       }
@@ -377,11 +379,11 @@ export default function ImportWizard({ parsedFile, onReset }: ImportWizardProps)
     setIngesting(true);
     setIngestProgress(50);
     try {
-      const res = await importFromBackup(parsedFile.rows);
+      const res = await importFromBackup(parsedFile.rows as any);
       setIngestProgress(100);
       if (res) {
         setIngestResult({
-          successCount: parsedFile.rows.transactions?.length || 0,
+          successCount: (parsedFile.rows as any).transactions?.length || 0,
           skippedCount: 0,
           errorCount: 0,
           totalAmount: 0,

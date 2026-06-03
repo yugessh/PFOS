@@ -247,7 +247,7 @@ export function useSubscriptions() {
 
     // B. Cost Utilization Score
     // Average of usage rating: High=100, Medium=75, Low=35, Unused=0
-    const usageValues = active.map(s => {
+    const usageValues: number[] = active.map(s => {
       if (s.usageFrequency === 'high') return 100;
       if (s.usageFrequency === 'medium') return 75;
       if (s.usageFrequency === 'low') return 35;
