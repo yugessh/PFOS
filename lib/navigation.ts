@@ -42,6 +42,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/goal-planner', label: 'Goal Planner', icon: Sparkles, description: 'Forecast goals and scenarios' },
   { href: '/dashboard/wealth-planner', label: 'Wealth Planner', icon: Sparkles, description: 'Retirement, FIRE and long-term planning' },
   { href: '/dashboard/tax-center', label: 'Tax Center', icon: FileText, description: 'Tax planning and reports' },
+  { href: '/dashboard/family', label: 'Family', icon: Handshake, description: 'Family & shared accounts' },
   { href: '/dashboard/emi', label: 'EMI', icon: DollarSign, description: 'Track EMIs' },
   { href: '/dashboard/documents', label: 'Documents', icon: FileText, description: 'Bills, policies & vault' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },

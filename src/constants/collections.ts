@@ -43,6 +43,14 @@ export const COLLECTIONS = {
   CAPITAL_GAINS: 'capitalGains',
   FINANCIAL_YEARS: 'financialYears',
   TAX_DOCUMENTS: 'taxDocuments',
+  FAMILY_GROUPS: 'familyGroups',
+  FAMILY_MEMBERS: 'familyMembers',
+  FAMILY_ACCOUNTS: 'familyAccounts',
+  FAMILY_BUDGETS: 'familyBudgets',
+  FAMILY_GOALS: 'familyGoals',
+  FAMILY_ACTIVITY_LOGS: 'familyActivityLogs',
+  FAMILY_PERMISSIONS: 'familyPermissions',
+  FAMILY_INVITES: 'familyInvites',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
