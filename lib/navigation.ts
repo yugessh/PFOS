@@ -19,6 +19,7 @@ import {
   Sparkles,
   LucideIcon,
   FileText,
+  Upload,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -48,6 +49,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/documents', label: 'Documents', icon: FileText, description: 'Bills, policies & vault' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
   { href: '/dashboard/settlements', label: 'Settlements', icon: Handshake, description: 'View settlements' },
+  { href: '/dashboard/import', label: 'Import Hub', icon: Upload, description: 'Ingest bank statements & CSVs' },
 ];
 
 export const bottomNavItems: NavItem[] = [
@@ -74,6 +76,7 @@ export const sidebarNavItems: NavItem[] = [
   { href: '/dashboard/documents', label: 'Document Vault', icon: FileText, description: 'Bills & policies' },
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
   { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Advanced analytics' },
+  { href: '/dashboard/import', label: 'Import Hub', icon: Upload, description: 'Ingest statements & spreadsheets' },
 ];
 
 export const analyticsNavItems: NavItem[] = [
