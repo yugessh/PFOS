@@ -20,6 +20,7 @@ import {
   LucideIcon,
   FileText,
   Upload,
+  CreditCard,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -34,6 +35,7 @@ export const mainNavItems: NavItem[] = [
   { href: '/dashboard/analytics?tab=stats', label: 'Stats', icon: BarChart3, description: 'Monthly spending analytics' },
   { href: '/dashboard/budgets', label: 'Budgets', icon: PiggyBank, description: 'Track monthly budgets' },
   { href: '/dashboard/recurring', label: 'Recurring', icon: Repeat, description: 'Automate recurring finances' },
+  { href: '/dashboard/subscriptions', label: 'Subscriptions', icon: CreditCard, description: 'Optimize subscriptions & costs' },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart financial alerts' },
   { href: '/dashboard/calendar', label: 'Calendar', icon: CalendarDays, description: 'Financial calendar & timeline' },
   { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Manage your accounts' },
@@ -64,6 +66,7 @@ export const sidebarNavItems: NavItem[] = [
   { href: '/dashboard/accounts', label: 'Accounts', icon: Wallet, description: 'Account overview' },
   { href: '/dashboard/transactions', label: 'Transactions', icon: List, description: 'Daily transaction feed' },
   { href: '/dashboard/recurring', label: 'Recurring', icon: Repeat, description: 'Automate recurring finances' },
+  { href: '/dashboard/subscriptions', label: 'Subscriptions', icon: CreditCard, description: 'Optimize subscriptions & costs' },
   { href: '/dashboard/investments', label: 'Investments', icon: TrendingUp, description: 'Manage investments' },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, description: 'Smart alerts' },
   { href: '/dashboard/trading-journal', label: 'Trading Journal', icon: BookOpen, description: 'Trading records' },

@@ -61,6 +61,8 @@ export const COLLECTIONS = {
   VALUATION_HISTORY: 'valuationHistory',
   OWNERSHIPS: 'ownerships',
   ALLOCATION_SNAPSHOTS: 'allocationSnapshots',
+  SUBSCRIPTIONS: 'subscriptions',
+  SUBSCRIPTION_OPTIMIZATIONS: 'subscriptionOptimizations',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];

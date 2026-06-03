@@ -19,6 +19,7 @@ import { useGoals } from '@/src/hooks/useGoals';
 import { useInvestments } from '@/src/hooks/useInvestments';
 import { useTradingJournal } from '@/src/hooks/useTradingJournal';
 import { useTransactions } from '@/src/hooks/useTransactions';
+import { useSubscriptions } from '@/src/hooks/useSubscriptions';
 import { AddEventModal } from '@/src/components/events/AddEventModal';
 import { FinancialEventCard } from '@/src/components/events/FinancialEventCard';
 import type { FinancialEvent } from '@/src/types/firestore';
@@ -97,6 +98,7 @@ export default function FinancialCalendarPage() {
   const { investments } = useInvestments();
   const { trades } = useTradingJournal();
   const { transactions } = useTransactions();
+  const { subscriptions } = useSubscriptions();
 
   const today = new Date();
 
@@ -226,9 +228,30 @@ export default function FinancialCalendarPage() {
         deletedAt: null,
       });
     });
+    subscriptions.forEach((sub) => {
+      if (sub.status !== 'active') return;
+      const renewalDate = new Date(sub.nextRenewalDate);
+      signature.push({
+        id: `sub_${sub.id}`,
+        userId: sub.userId,
+        title: `Renewal: ${sub.name}`,
+        eventType: 'subscription_renewal',
+        amount: sub.amount,
+        date: renewalDate,
+        status: renewalDate < today ? 'missed' : 'upcoming',
+        linkedModule: 'subscriptions',
+        linkedId: sub.id,
+        priority: sub.amount > 1000 ? 'high' : 'medium',
+        notes: `${sub.category} subscription via ${sub.paymentMethod}`,
+        metadata: { category: sub.category, frequency: sub.frequency, autoRenew: sub.autoRenew },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      });
+    });
 
     return signature;
-  }, [reminders, emis, goals, investments, trades, transactions, today]);
+  }, [reminders, emis, goals, investments, trades, transactions, subscriptions, today]);
 
   const allEvents = useMemo(() => {
     const combined = [...events, ...syntheticEvents];
