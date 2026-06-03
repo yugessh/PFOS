@@ -1,15 +1,38 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
+import { Search } from 'lucide-react';
 import { useActiveRoute } from '@/hooks/use-active-route';
 import { bottomNavItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
+import { openGlobalSearch } from '@/src/lib/global-search-events';
 
 export function BottomNav() {
   const { isActive } = useActiveRoute();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/70 bg-[rgba(8,10,15,0.92)] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-2xl shadow-[0_-16px_40px_rgba(0,0,0,0.45)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/70 bg-[rgba(8,10,15,0.92)] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_40px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:hidden">
+      <div className="mx-auto mb-3 max-w-4xl">
+        <button
+          type="button"
+          onClick={openGlobalSearch}
+          className="flex w-full items-center justify-between rounded-[24px] border border-border bg-card px-4 py-3 text-left text-sm text-secondary shadow-[0_14px_28px_rgba(0,0,0,0.24)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-2xl bg-[#0D141B] text-[#7EE7C7]">
+              <Search size={18} />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Global Search</p>
+              <p className="text-xs text-secondary">Search anything or run a command</p>
+            </div>
+          </div>
+          <span className="rounded-full border border-border bg-[#0D141B] px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-secondary">
+            Ctrl K
+          </span>
+        </button>
+      </div>
+
       <div className="mx-auto grid h-full max-w-4xl grid-cols-4 gap-2">
         {bottomNavItems.map((item) => {
           const Icon = item.icon;

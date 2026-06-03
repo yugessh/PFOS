@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { Bell, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ConnectionStatusBar from '@/components/connection-status/ConnectionStatusBar';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/src/context/AuthContext';
@@ -9,6 +9,7 @@ import { useNotifications } from '@/src/hooks/useNotifications';
 import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 import { GlobalSearchDialog } from '@/components/global-search-dialog';
 import { AppHeader } from '@/src/components/layout/AppHeader';
+import { GLOBAL_SEARCH_OPEN_EVENT } from '@/src/lib/global-search-events';
 
 function formatTitle(pathname: string | null) {
   // Function to format the title based on the pathname
@@ -36,18 +37,14 @@ export function TopNavbar() {
     }
   };
 
-  const initials = useMemo(() => {
-    if (user?.displayName) {
-      return user.displayName
+  const initials = user?.displayName
+    ? user.displayName
         .split(' ')
         .map((part) => part[0])
         .join('')
         .slice(0, 2)
-        .toUpperCase();
-    }
-
-    return user?.email?.charAt(0).toUpperCase() || 'PF';
-  }, [user?.displayName, user?.email]);
+        .toUpperCase()
+    : user?.email?.charAt(0).toUpperCase() || 'PF';
 
   // Global keyboard shortcut for search (Cmd+K or Ctrl+K)
   useEffect(() => {
@@ -58,8 +55,13 @@ export function TopNavbar() {
       }
     };
 
+    const handleOpenSearch = () => setSearchOpen(true);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener(GLOBAL_SEARCH_OPEN_EVENT, handleOpenSearch as EventListener);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener(GLOBAL_SEARCH_OPEN_EVENT, handleOpenSearch as EventListener);
+    };
   }, []);
 
   return (
@@ -88,10 +90,11 @@ export function TopNavbar() {
           <>
             <button
               onClick={() => setSearchOpen(true)}
-              className="inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-card text-secondary transition hover:border-[#00F5C4]/40 hover:text-foreground"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[24px] border border-border bg-card px-4 text-secondary transition hover:border-[#00F5C4]/40 hover:text-foreground"
               aria-label="Search"
             >
               <Search size={18} />
+              <span className="hidden text-sm font-medium sm:inline">Search</span>
             </button>
 
             <button
