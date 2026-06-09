@@ -4,6 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { tradingJournalService, type TradeRecord } from '@/src/services/firestore/tradingJournal.service';
 
+function toTradeArray(value: any): TradeRecord[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
+}
+
 export function useTradingJournal() {
   const auth = useAuthContext();
   const userId = auth?.user?.uid;
@@ -15,7 +21,7 @@ export function useTradingJournal() {
     setLoading(true);
     try {
       const res: any = await tradingJournalService.getUserTrades(userId);
-      const items = res.success ? res.data || [] : [];
+      const items = res.success ? toTradeArray(res.data) : [];
       setTrades(items);
     } catch (err) {
       console.error(err);

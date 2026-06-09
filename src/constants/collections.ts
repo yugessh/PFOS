@@ -63,6 +63,11 @@ export const COLLECTIONS = {
   ALLOCATION_SNAPSHOTS: 'allocationSnapshots',
   SUBSCRIPTIONS: 'subscriptions',
   SUBSCRIPTION_OPTIMIZATIONS: 'subscriptionOptimizations',
+  AUDIT_LOGS: 'auditLogs',
+  SYSTEM_DIAGNOSTICS: 'systemDiagnostics',
+  HEALTH_SNAPSHOTS: 'healthSnapshots',
+  ERROR_HISTORY: 'errorHistory',
+  REPAIR_HISTORY: 'repairHistory',
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
@@ -102,6 +107,12 @@ export const SUBCOLLECTIONS = {
   USER_TRADING_JOURNAL: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.TRADING_JOURNAL}`,
   USER_SMART_ALERTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/smartAlerts`,
   USER_NOTIFICATION_SETTINGS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/notificationSettings`,
+  USER_DASHBOARD_WIDGETS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/dashboardWidgets`,
+  USER_SCHEDULED_REPORTS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/scheduledReports`,
+  USER_AUDIT_LOGS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.AUDIT_LOGS}`,
+  USER_ERROR_HISTORY: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.ERROR_HISTORY}`,
+  USER_REPAIR_HISTORY: (userId: string) => `${COLLECTIONS.USERS}/${userId}/${COLLECTIONS.REPAIR_HISTORY}`,
+  USER_DIAGNOSTICS: (userId: string) => `${COLLECTIONS.USERS}/${userId}/diagnostics`,
   
   // Account subcollections
   ACCOUNT_TRANSACTIONS: (userId: string, accountId: string) => 

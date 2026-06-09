@@ -12,6 +12,7 @@ import { accountsService } from '@/src/services/firestore/accounts.service';
 import { queueAdd, queueUpdate } from '@/src/services/offline/api';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/src/constants/collections';
 import { runRecurringAutomationForUser } from '@/src/services/recurring/automation';
+import { auditService } from '@/src/services/firestore/audit.service';
 
 interface TransactionContextValue {
   transactions: Transaction[];
@@ -250,6 +251,16 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         }
 
         await refreshAccounts();
+        
+        void auditService.logEvent(auth.user.uid, {
+          user: auth.user.email || 'user@email.com',
+          module: 'Transactions',
+          action: 'Transaction created (Offline Queue)',
+          status: 'success',
+          severity: 'info',
+          metadata: { id: tempId, amount: optimistic.amount, type: optimistic.type, category: optimistic.category, offline: true },
+        });
+
         return optimistic;
       }
 
@@ -279,6 +290,16 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         }
 
         await refreshAccounts();
+
+        void auditService.logEvent(auth.user.uid, {
+          user: auth.user.email || 'user@email.com',
+          module: 'Transactions',
+          action: 'Transaction created',
+          status: 'success',
+          severity: 'info',
+          metadata: { id: created.id, amount: created.amount, type: created.type, category: created.category },
+        });
+
         return created;
       }
 
@@ -376,8 +397,24 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
 
       try {
         await transactionsService.update(id, payload);
+        void auditService.logEvent(auth.user.uid, {
+          user: auth.user.email || 'user@email.com',
+          module: 'Transactions',
+          action: 'Transaction edited',
+          status: 'success',
+          severity: 'info',
+          metadata: { id, ...patch },
+        });
       } catch (err: any) {
         setError(err?.message || String(err));
+        void auditService.logEvent(auth.user.uid, {
+          user: auth.user.email || 'user@email.com',
+          module: 'Transactions',
+          action: 'Transaction edit failed',
+          status: 'failure',
+          severity: 'warning',
+          metadata: { id, error: err?.message || String(err) },
+        });
         // on failure, refresh from server to reconcile
         await refresh();
       }
@@ -408,8 +445,24 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
 
       try {
         await transactionsService.softDelete(id);
+        void auditService.logEvent(auth.user.uid, {
+          user: auth.user.email || 'user@email.com',
+          module: 'Transactions',
+          action: 'Transaction deleted',
+          status: 'success',
+          severity: 'info',
+          metadata: { id },
+        });
       } catch (err: any) {
         setError(err?.message || String(err));
+        void auditService.logEvent(auth.user.uid, {
+          user: auth.user.email || 'user@email.com',
+          module: 'Transactions',
+          action: 'Transaction deletion failed',
+          status: 'failure',
+          severity: 'warning',
+          metadata: { id, error: err?.message || String(err) },
+        });
         // rollback
         setTransactions(previous);
       }

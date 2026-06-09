@@ -1,5 +1,6 @@
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { getFirestoreSafe } from '@/src/firebase/firebase';
+import { SUBCOLLECTIONS } from '@/src/constants/collections';
 import {
   addDocSafe,
   getDocsSafe,
@@ -23,7 +24,7 @@ export interface DashboardWidgetRecord {
   createdAt?: any;
 }
 
-const collectionPathFor = (uid: string) => `users/${uid}/dashboardWidgets`;
+const collectionPathFor = (uid: string) => SUBCOLLECTIONS.USER_DASHBOARD_WIDGETS(uid);
 
 export async function getWidgets(uid: string) {
   const db = getFirestoreSafe();

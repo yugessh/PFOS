@@ -1,5 +1,6 @@
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { getFirestoreSafe } from '@/src/firebase/firebase';
+import { SUBCOLLECTIONS } from '@/src/constants/collections';
 import { addDocSafe, getDocsSafe, updateDocSafe, deleteDocSafe } from '@/src/services/firestore/safeFirestore';
 
 export interface ScheduledReport {
@@ -14,7 +15,7 @@ export interface ScheduledReport {
   createdAt?: any;
 }
 
-const collectionPath = (uid: string) => `users/${uid}/scheduledReports`;
+const collectionPath = (uid: string) => SUBCOLLECTIONS.USER_SCHEDULED_REPORTS(uid);
 
 export async function addScheduledReport(uid: string, payload: Partial<ScheduledReport>) {
   const db = getFirestoreSafe();

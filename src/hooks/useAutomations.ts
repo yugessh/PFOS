@@ -5,6 +5,12 @@ import { useAuthContext } from '@/src/context/AuthContext';
 import { automationsService } from '@/src/services/firestore/automation.service';
 import type { AutomationModel } from '@/src/lib/automation';
 
+function toAutomationArray(value: any): AutomationModel[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
+}
+
 export function useAutomations() {
   const auth = useAuthContext();
   const userId = auth?.user?.uid;
@@ -16,7 +22,7 @@ export function useAutomations() {
     setLoading(true);
     try {
       const res: any = await automationsService.getUserAutomations(userId);
-      const items = res.success ? res.data || [] : [];
+      const items = res.success ? toAutomationArray(res.data) : [];
       setAutomations(items);
     } catch (err) {
       console.error(err);

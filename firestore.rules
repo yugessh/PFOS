@@ -63,6 +63,38 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      match /dashboardWidgets/{widgetId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /scheduledReports/{reportId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /auditLogs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /errorHistory/{errorId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /repairHistory/{repairId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /diagnostics/{diagnosticId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /retirementPlans/{planId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /taxProfiles/{profileId} {
+        allow read, write: if isOwner(userId);
+      }
+
       match /smartAlerts/{smartAlertId} {
         allow read, write: if isOwner(userId);
       }

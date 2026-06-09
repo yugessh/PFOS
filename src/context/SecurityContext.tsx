@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useAuthContext } from '@/src/context/AuthContext';
 import { securityService } from '@/src/services/firestore/security.service';
 import { notificationsService } from '@/src/services/firestore/notifications.service';
+import { auditService } from '@/src/services/firestore/audit.service';
 import { SecurityLockScreen } from '@/src/components/security/LockScreen';
 import { hashPin, getDeviceFingerprint, getDeviceInfo, getSecurityStorageKey } from '@/src/lib/security';
 import type { SecuritySession, SecurityAuditLog } from '@/src/types/firestore';
@@ -133,12 +134,23 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
           details,
         });
         setAuditLogs((prev) => [event, ...prev].slice(0, 20));
+
+        // Propagate to centralized Audit Logs
+        const isFailure = eventType.toLowerCase().includes('failed') || eventType.toLowerCase().includes('lockout');
+        void auditService.logEvent(userId, {
+          user: auth.user?.email || 'user@email.com',
+          module: 'Security',
+          action: summary,
+          status: isFailure ? 'failure' : 'success',
+          severity: 'security',
+          metadata: { eventType, ...details },
+        });
       } catch (error) {
         // Non-critical — don't crash the app for audit log failures
         console.warn('Failed to write audit event', error);
       }
     },
-    [auth.initialized, userId]
+    [auth.initialized, userId, auth.user?.email]
   );
 
   const sendSecurityNotification = useCallback(

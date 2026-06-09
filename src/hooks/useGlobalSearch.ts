@@ -107,6 +107,12 @@ function mapAmount(value: any) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
+function ensureArray<T = any>(value: T[] | { data?: T[] } | null | undefined): T[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray((value as any)?.data)) return (value as any).data;
+  return [];
+}
+
 function buildCommands(): CommandItem[] {
   return [
     { id: 'go-dashboard', label: 'Go to Dashboard', subtitle: 'Jump to PFOS home', href: '/dashboard', keywords: ['dashboard home summary'], icon: '⌘' },
@@ -257,7 +263,7 @@ export function useGlobalSearch() {
       score: commandUsage[command.id] || 0,
     }));
 
-    const transactionResults: SearchResult[] = (transactions || []).map((tx: any) => ({
+    const transactionResults: SearchResult[] = ensureArray(transactions).map((tx: any) => ({
       type: 'transaction',
       id: tx.id,
       title: tx.description || tx.category || 'Transaction',
@@ -271,7 +277,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const accountResults: SearchResult[] = (accounts || []).map((account: any) => ({
+    const accountResults: SearchResult[] = ensureArray(accounts).map((account: any) => ({
       type: 'account',
       id: account.id,
       title: account.name || account.accountName || 'Account',
@@ -285,7 +291,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const budgetResults: SearchResult[] = (budgetItems || []).map((budget: any) => ({
+    const budgetResults: SearchResult[] = ensureArray(budgetItems).map((budget: any) => ({
       type: 'budget',
       id: budget.id,
       title: budget.categoryName,
@@ -299,7 +305,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const goalResults: SearchResult[] = (goals || []).map((goal: any) => ({
+    const goalResults: SearchResult[] = ensureArray(goals).map((goal: any) => ({
       type: 'goal',
       id: goal.id,
       title: goal.title,
@@ -313,7 +319,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const investmentResults: SearchResult[] = (investments || []).map((investment: any) => ({
+    const investmentResults: SearchResult[] = ensureArray(investments).map((investment: any) => ({
       type: 'investment',
       id: investment.id,
       title: investment.name,
@@ -327,7 +333,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const tradingResults: SearchResult[] = (trades || []).map((trade: any) => ({
+    const tradingResults: SearchResult[] = ensureArray(trades).map((trade: any) => ({
       type: 'trading',
       id: trade.id,
       title: trade.asset || trade.symbol || trade.setup || 'Trade',
@@ -341,7 +347,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const notificationResults: SearchResult[] = (notifications || []).map((notification: any) => ({
+    const notificationResults: SearchResult[] = ensureArray(notifications).map((notification: any) => ({
       type: 'notification',
       id: notification.id,
       title: notification.title,
@@ -354,7 +360,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const eventResults: SearchResult[] = (events || []).map((event: any) => ({
+    const eventResults: SearchResult[] = ensureArray(events).map((event: any) => ({
       type: 'calendar',
       id: event.id,
       title: event.title,
@@ -367,7 +373,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const documentResults: SearchResult[] = (documents || []).map((document: any) => ({
+    const documentResults: SearchResult[] = ensureArray(documents).map((document: any) => ({
       type: 'document',
       id: document.id,
       title: document.title,
@@ -380,7 +386,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const reportResults: SearchResult[] = (reports || []).map((report: any) => ({
+    const reportResults: SearchResult[] = ensureArray(reports).map((report: any) => ({
       type: 'report',
       id: report.id,
       title: report.name || 'Scheduled Report',
@@ -393,7 +399,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const assetResults: SearchResult[] = (assets || []).map((asset: any) => ({
+    const assetResults: SearchResult[] = ensureArray(assets).map((asset: any) => ({
       type: 'asset',
       id: asset.id,
       title: asset.name || 'Asset',
@@ -407,7 +413,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const liabilityResults: SearchResult[] = (liabilities || []).map((liability: any) => ({
+    const liabilityResults: SearchResult[] = ensureArray(liabilities).map((liability: any) => ({
       type: 'liability',
       id: liability.id,
       title: liability.name || 'Liability',
@@ -421,7 +427,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const automationResults: SearchResult[] = (automations || []).map((automation: any) => ({
+    const automationResults: SearchResult[] = ensureArray(automations).map((automation: any) => ({
       type: 'automation',
       id: automation.id,
       title: automation.name || automation.title || 'Automation',
@@ -434,7 +440,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const familyResults: SearchResult[] = (familyGroups || []).map((group: any) => ({
+    const familyResults: SearchResult[] = ensureArray(familyGroups).map((group: any) => ({
       type: 'family',
       id: group.id,
       title: group.name || 'Family Group',
@@ -447,7 +453,7 @@ export function useGlobalSearch() {
       score: 0,
     }));
 
-    const insightResults: SearchResult[] = (insights || []).map((insight: any) => ({
+    const insightResults: SearchResult[] = ensureArray(insights).map((insight: any) => ({
       type: 'insight',
       id: insight.id,
       title: insight.title,

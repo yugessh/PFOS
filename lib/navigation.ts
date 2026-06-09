@@ -21,6 +21,7 @@ import {
   FileText,
   Upload,
   CreditCard,
+  Activity,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -80,11 +81,13 @@ export const sidebarNavItems: NavItem[] = [
   { href: '/dashboard/policies', label: 'Policies', icon: FileCheck, description: 'Insurance policies' },
   { href: '/dashboard/analytics', label: 'Analytics', icon: PieChart, description: 'Advanced analytics' },
   { href: '/dashboard/import', label: 'Import Hub', icon: Upload, description: 'Ingest statements & spreadsheets' },
+  { href: '/dashboard/audit', label: 'Audit Center', icon: Activity, description: 'System logs & diagnostics' },
 ];
 
 export const analyticsNavItems: NavItem[] = [
   { href: '/dashboard/reports', label: 'Reports', icon: PieChart, description: 'Generate reports' },
   { href: '/dashboard/ai-coach', label: 'AI Coach', icon: Sparkles, description: 'Financial copilot and coaching' },
+  { href: '/dashboard/audit', label: 'Audit Center', icon: Activity, description: 'System logs & diagnostics' },
 ];
 
 export const settingsNavItems: NavItem[] = [

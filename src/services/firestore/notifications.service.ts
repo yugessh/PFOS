@@ -1,7 +1,7 @@
 import { collection, doc, limit, orderBy, onSnapshot, query, Timestamp, where, type DocumentData, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { SUBCOLLECTIONS } from '@/src/constants/collections';
 import { getFirestoreClient } from './firebaseClient';
-import { addDocSafe, deleteDocSafe, getDocsSafe, updateDocSafe } from './safeFirestore';
+import { addDocSafe, deleteDocSafe, getDocsSafe, sanitizeFirestoreData, updateDocSafe } from './safeFirestore';
 import type { NotificationModel, NotificationPriority, NotificationType } from '@/src/lib/notifications';
 
 export type { NotificationSettingsModel } from './notification-settings.service';
@@ -95,7 +95,7 @@ function normalizeNotificationUpdatePayload(updates: Partial<NotificationModel>)
   if ('archivedAt' in payload) payload.archivedAt = toFirestoreTimestamp(payload.archivedAt as Date | null | undefined);
   if ('expiresAt' in payload) payload.expiresAt = toFirestoreTimestamp(payload.expiresAt as Date | null | undefined);
 
-  return payload;
+  return sanitizeFirestoreData(payload);
 }
 
 export class NotificationsService {
@@ -252,7 +252,7 @@ export class NotificationsService {
       const colRef = getNotificationCollectionRef(userId);
       const now = new Date();
 
-      const payload = {
+      const payload = sanitizeFirestoreData({
         userId,
         type,
         title,
@@ -279,7 +279,7 @@ export class NotificationsService {
         archivedAt: toFirestoreTimestamp(overrides.archivedAt ?? null),
         dismissedAt: toFirestoreTimestamp((overrides as Record<string, Date | null | undefined>).dismissedAt ?? null),
         expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : toFirestoreTimestamp(overrides.expiresAt ?? null),
-      };
+      });
 
       const docRef = await addDocSafe(colRef, payload);
       if (!docRef) {

@@ -2,9 +2,10 @@ import React from 'react';
 import PortfolioDetailsClient from '@/src/components/investments/portfolio-details-page';
 
 interface Props {
-  params: { assetId: string };
+  params: Promise<{ assetId: string }>;
 }
 
 export default function Page({ params }: Props) {
-  return <PortfolioDetailsClient assetId={params.assetId} />;
+  const resolved = React.use(params);
+  return <PortfolioDetailsClient assetId={resolved.assetId} />;
 }

@@ -19,6 +19,7 @@ const PERMISSION_ERROR_CODES = new Set([
  * rapid re-renders or polling).
  */
 const _loggedErrors = new Set<string>();
+const _errorBackoffUntil = new Map<string, number>();
 
 function getCurrentUid() {
   try {
@@ -27,6 +28,23 @@ function getCurrentUid() {
   } catch {
     return null;
   }
+}
+
+export function sanitizeFirestoreData<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => sanitizeFirestoreData(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    const sanitizedEntries = Object.entries(value as Record<string, unknown>)
+      .map(([key, entryValue]) => [key, sanitizeFirestoreData(entryValue)] as const)
+      .filter(([, entryValue]) => entryValue !== undefined);
+    return Object.fromEntries(sanitizedEntries) as T;
+  }
+
+  return (value === undefined ? undefined : value) as T;
 }
 
 /**
@@ -42,6 +60,24 @@ function isPermissionError(error: any): boolean {
   return msg.includes('permission') || msg.includes('unauthenticated') || msg.includes('missing or insufficient');
 }
 
+function isMissingIndexError(error: any): boolean {
+  const code = error?.code as string | undefined;
+  const msg = (error?.message || String(error)).toLowerCase();
+  return code === 'failed-precondition' && msg.includes('index');
+}
+
+function isInvalidArgumentError(error: any): boolean {
+  const code = error?.code as string | undefined;
+  const msg = (error?.message || String(error)).toLowerCase();
+  return code === 'invalid-argument' || msg.includes('invalid argument') || msg.includes('unsupported field value');
+}
+
+function isOfflineError(error: any): boolean {
+  const code = error?.code as string | undefined;
+  const msg = (error?.message || String(error)).toLowerCase();
+  return code === 'unavailable' || code === 'deadline-exceeded' || msg.includes('offline') || msg.includes('network');
+}
+
 /**
  * Log a Firestore error once per operation+path combo per session.
  * Returns `true` if the error is a permission error that was handled
@@ -51,18 +87,26 @@ function isPermissionError(error: any): boolean {
 function handleFirestoreError(operation: string, path: string | undefined, error: any): boolean {
   const key = `${operation}:${path ?? 'unknown'}:${error?.code ?? 'unknown'}`;
   const isPermErr = isPermissionError(error);
+  const isExpected =
+    isPermErr ||
+    isMissingIndexError(error) ||
+    isInvalidArgumentError(error) ||
+    isOfflineError(error);
+  const now = Date.now();
+  const nextAllowedLog = _errorBackoffUntil.get(key) ?? 0;
 
-  if (!_loggedErrors.has(key)) {
+  if (!isExpected && !_loggedErrors.has(key)) {
     _loggedErrors.add(key);
     const uid = getCurrentUid();
-    // eslint-disable-next-line no-console
     console.warn(
-      `[Firestore][${isPermErr ? 'Permission' : 'Error'}]`,
+      '[Firestore][Error]',
       { operation, path, uid, code: error?.code, message: error?.message || String(error) }
     );
+  } else if (!isExpected && now >= nextAllowedLog) {
+    _errorBackoffUntil.set(key, now + 30000);
   }
 
-  return isPermErr;
+  return isExpected;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -80,7 +124,7 @@ const EMPTY_QUERY_SNAPSHOT = {
 
 export async function addDocSafe(colRef: CollectionReference<DocumentData>, data: DocumentData) {
   try {
-    return await addDoc(colRef, data);
+    return await addDoc(colRef, sanitizeFirestoreData(data));
   } catch (error) {
     if (handleFirestoreError('addDoc', (colRef as any)?.path, error)) {
       return undefined;
@@ -121,7 +165,7 @@ export async function getDocSafe(docRef: DocumentReference<DocumentData>): Promi
 
 export async function updateDocSafe(docRef: DocumentReference<DocumentData>, data: Partial<DocumentData>) {
   try {
-    return await updateDoc(docRef, data as DocumentData);
+    return await updateDoc(docRef, sanitizeFirestoreData(data as DocumentData));
   } catch (error) {
     if (handleFirestoreError('updateDoc', (docRef as any)?.path, error)) {
       return undefined;
@@ -143,7 +187,8 @@ export async function deleteDocSafe(docRef: DocumentReference<DocumentData>) {
 
 export async function setDocSafe(docRef: DocumentReference<DocumentData>, data: DocumentData, options?: { merge?: boolean }) {
   try {
-    return options ? await setDoc(docRef, data, options) : await setDoc(docRef, data);
+    const sanitized = sanitizeFirestoreData(data);
+    return options ? await setDoc(docRef, sanitized, options) : await setDoc(docRef, sanitized);
   } catch (error) {
     if (handleFirestoreError('setDoc', (docRef as any)?.path, error)) {
       return undefined;
