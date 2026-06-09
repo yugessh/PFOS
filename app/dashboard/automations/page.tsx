@@ -1,9 +1,20 @@
+'use client';
+
 import React from 'react';
 import AutomationDashboard from '@/src/components/automation/automation-dashboard';
 import RemindersTimeline from '@/src/components/automation/reminders-timeline';
+import { useReminders } from '@/src/hooks/useReminders';
 
 export default function Page() {
-  const sampleReminders: any[] = [];
+  const { reminders } = useReminders();
+  const timelineItems = reminders.slice(0, 12).map((reminder) => ({
+    id: reminder.id,
+    title: reminder.title,
+    date: reminder.reminderDate,
+    priority: reminder.priority,
+    source: reminder.category || 'Reminder',
+  }));
+
   return (
     <div className="space-y-6 p-4">
       <div className="flex items-center justify-between">
@@ -18,7 +29,7 @@ export default function Page() {
           <AutomationDashboard />
         </div>
         <aside>
-          <RemindersTimeline items={sampleReminders} />
+          <RemindersTimeline items={timelineItems} />
         </aside>
       </div>
     </div>

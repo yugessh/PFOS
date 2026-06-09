@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertCircle, Loader2, Terminal } from 'lucide-react';
 import { useAuthContext } from '@/src/context/AuthContext';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { getFirestoreClient } from '@/src/services/firestore/firebaseClient';
 
 interface ChecklistItem {
   id: string;
@@ -87,28 +89,65 @@ export default function ReleaseChecklistPage() {
       prev.map((item) => ({ ...item, status: 'checking' }))
     );
 
-    // Simulate checks
-    const delays = [800, 600, 1200, 900, 700, 500, 400, 600, 1000, 800];
-    const results: ChecklistItem[] = [];
+    const evaluateCheck = async (item: ChecklistItem): Promise<ChecklistItem> => {
+      try {
+        if (item.id === 'auth') {
+          const passed = Boolean(user?.uid);
+          return { ...item, status: passed ? 'passed' : 'failed', message: passed ? 'Authenticated user detected' : 'No authenticated user session' };
+        }
 
-    for (let i = 0; i < checklist.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, delays[i]));
+        if (item.id === 'firestore') {
+          const db = getFirestoreClient();
+          if (!db || !user?.uid) {
+            return { ...item, status: 'failed', message: 'Firestore client not initialized' };
+          }
+          const probeRef = collection(db, `users/${user.uid}/notifications`);
+          await getDocs(query(probeRef, limit(1)));
+          return { ...item, status: 'passed', message: 'Firestore query succeeded' };
+        }
 
-      const item = checklist[i];
-      const passed = Math.random() > 0.1; // 90% pass rate for demo
+        if (item.id === 'offline') {
+          const passed = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'indexedDB' in window;
+          return { ...item, status: passed ? 'passed' : 'failed', message: passed ? 'Offline primitives available' : 'Offline primitives unavailable' };
+        }
 
-      results.push({
-        ...item,
-        status: passed ? 'passed' : 'failed',
-        message: passed ? 'Ready' : 'Review required',
-      });
+        if (item.id === 'notifications') {
+          const passed = typeof window !== 'undefined' && 'Notification' in window;
+          const permission = passed ? Notification.permission : 'unsupported';
+          return { ...item, status: passed ? 'passed' : 'failed', message: passed ? `Browser notification API available (${permission})` : 'Notification API unavailable' };
+        }
 
-      setChecklist((prev) => {
-        const updated = [...prev];
-        updated[i] = results[results.length - 1];
-        return updated;
-      });
-    }
+        if (item.id === 'backup') {
+          const passed = typeof window !== 'undefined' && 'Blob' in window && 'URL' in window;
+          return { ...item, status: passed ? 'passed' : 'failed', message: passed ? 'Export APIs available' : 'Export APIs unavailable' };
+        }
+
+        if (item.id === 'storage') {
+          const passed = typeof window !== 'undefined' && 'localStorage' in window && 'indexedDB' in window;
+          return { ...item, status: passed ? 'passed' : 'failed', message: passed ? 'Storage APIs available' : 'Storage APIs unavailable' };
+        }
+
+        if (item.id === 'capacitor') {
+          const hasCapacitor = typeof window !== 'undefined' && typeof (window as any).Capacitor !== 'undefined';
+          return { ...item, status: hasCapacitor ? 'passed' : 'failed', message: hasCapacitor ? 'Capacitor bridge detected' : 'Capacitor bridge not detected in this runtime' };
+        }
+
+        return {
+          ...item,
+          status: 'failed',
+          message: 'Validate via CI command pipeline (lint/tsc/build)',
+        };
+      } catch (error: any) {
+        return {
+          ...item,
+          status: 'failed',
+          message: error?.message || 'Check failed',
+        };
+      }
+    };
+
+    const results = await Promise.all(checklist.map((item) => evaluateCheck(item)));
+    setChecklist(results);
   };
 
   useEffect(() => {

@@ -1,2 +1,2 @@
-/** @deprecated Import from `@/data` instead. */
-export * from '@/data';
+/** @deprecated Static demo data has been removed for production readiness. */
+export {};

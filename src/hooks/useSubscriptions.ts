@@ -268,10 +268,13 @@ export function useSubscriptions() {
     // Relative to monthly income (estimate from transaction income)
     const monthlyIncome = transactions
       .filter(tx => tx.type === 'income' && new Date(tx.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
-      .reduce((sum, tx) => sum + tx.amount, 0) || 75000; // fallback to ₹75k if no transactions
+      .reduce((sum, tx) => sum + tx.amount, 0);
 
-    const burdenRatio = totalMonthlyCost / monthlyIncome;
-    const monthlyBurdenScore = Math.max(0, Math.min(100, 100 - (burdenRatio * 200)));
+    let monthlyBurdenScore = 100;
+    if (monthlyIncome > 0) {
+      const burdenRatio = totalMonthlyCost / monthlyIncome;
+      monthlyBurdenScore = Math.max(0, Math.min(100, 100 - (burdenRatio * 200)));
+    }
 
     const overall = Math.round((efficiencyScore + utilizationScore + recurringExpenseScore + monthlyBurdenScore) / 4);
 

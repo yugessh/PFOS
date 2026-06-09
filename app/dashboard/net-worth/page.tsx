@@ -33,6 +33,14 @@ export default function NetWorthDashboard() {
   const filteredHistory = getFilteredHistory();
   const monthlyChange = history.length > 1 ? history[0].gainLoss : 0;
   const monthlyChangePercent = history.length > 1 ? history[0].gainLossPercent : 0;
+  const assetsChange = history.length > 1 ? history[0].assets - history[1].assets : 0;
+  const liabilitiesChange = history.length > 1 ? history[0].liabilities - history[1].liabilities : 0;
+  const assetsChangePercent = history.length > 1 && Math.abs(history[1].assets) > 0
+    ? (assetsChange / Math.abs(history[1].assets)) * 100
+    : 0;
+  const liabilitiesChangePercent = history.length > 1 && Math.abs(history[1].liabilities) > 0
+    ? (liabilitiesChange / Math.abs(history[1].liabilities)) * 100
+    : 0;
 
   return (
     <div className="min-h-screen bg-[#080A0F]">
@@ -96,16 +104,16 @@ export default function NetWorthDashboard() {
           <NetWorthCard
             title="Total Assets"
             value={netWorthData.totalAssets}
-            trend="up"
-            change={netWorthData.totalAssets * 0.05}
-            changePercent={5.2}
+            trend={assetsChange > 0 ? 'up' : assetsChange < 0 ? 'down' : 'neutral'}
+            change={assetsChange}
+            changePercent={assetsChangePercent}
           />
           <NetWorthCard
             title="Total Liabilities"
             value={netWorthData.totalLiabilities}
-            trend={netWorthData.totalLiabilities > 0 ? 'down' : 'neutral'}
-            change={-netWorthData.totalLiabilities * 0.02}
-            changePercent={-2.1}
+            trend={liabilitiesChange > 0 ? 'up' : liabilitiesChange < 0 ? 'down' : 'neutral'}
+            change={liabilitiesChange}
+            changePercent={liabilitiesChangePercent}
           />
           <NetWorthCard
             title="Monthly Change"
@@ -163,7 +171,7 @@ export default function NetWorthDashboard() {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
-                  }).format(netWorthData.totalAssets * 0.4)}
+                  }).format(netWorthData.assetBreakdown?.accounts || 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -173,17 +181,17 @@ export default function NetWorthDashboard() {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
-                  }).format(netWorthData.totalAssets * 0.35)}
+                  }).format(netWorthData.assetBreakdown?.investments || 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#9CA3AF] text-sm">Savings</span>
+                <span className="text-[#9CA3AF] text-sm">Lending</span>
                 <span className="text-white font-medium">
                   {new Intl.NumberFormat('en-IN', {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
-                  }).format(netWorthData.totalAssets * 0.25)}
+                  }).format(netWorthData.assetBreakdown?.lending || 0)}
                 </span>
               </div>
             </div>
@@ -193,33 +201,23 @@ export default function NetWorthDashboard() {
             <h3 className="text-white font-semibold mb-4">Liability Breakdown</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[#9CA3AF] text-sm">EMI</span>
+                <span className="text-[#9CA3AF] text-sm">Borrowed Settlements</span>
                 <span className="text-white font-medium">
                   {new Intl.NumberFormat('en-IN', {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
-                  }).format(netWorthData.totalLiabilities * 0.5)}
+                  }).format(netWorthData.liabilityBreakdown?.borrowed || 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#9CA3AF] text-sm">Loans</span>
+                <span className="text-[#9CA3AF] text-sm">Negative Account Balances</span>
                 <span className="text-white font-medium">
                   {new Intl.NumberFormat('en-IN', {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
-                  }).format(netWorthData.totalLiabilities * 0.3)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#9CA3AF] text-sm">Credit Card Balance</span>
-                <span className="text-white font-medium">
-                  {new Intl.NumberFormat('en-IN', {
-                    style: 'currency',
-                    currency: 'INR',
-                    maximumFractionDigits: 0,
-                  }).format(netWorthData.totalLiabilities * 0.2)}
+                  }).format(netWorthData.liabilityBreakdown?.negativeAccountBalances || 0)}
                 </span>
               </div>
             </div>

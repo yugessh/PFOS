@@ -98,6 +98,8 @@ export default function AuditCenterPage({ defaultTab = 'overview' }: { defaultTa
   const [simSeverity, setSimSeverity] = useState<'info' | 'warning' | 'critical' | 'security'>('info');
   const [simStatus, setSimStatus] = useState<'success' | 'failure' | 'warning' | 'info'>('success');
 
+  const isDev = process.env.NODE_ENV !== 'production';
+
   // Load basic audit data
   const loadAuditLogs = async () => {
     if (!user?.uid) return;
@@ -370,6 +372,7 @@ export default function AuditCenterPage({ defaultTab = 'overview' }: { defaultTa
 
   // Seeding routine
   const triggerSeeding = async () => {
+    if (!isDev) return;
     if (!user?.uid) return;
     setSeeding(true);
     try {
@@ -404,6 +407,7 @@ export default function AuditCenterPage({ defaultTab = 'overview' }: { defaultTa
 
   // Trigger individual mock event
   const triggerMockEvent = async () => {
+    if (!isDev) return;
     if (!user?.uid) return;
     try {
       await auditService.logEvent(user.uid, {
@@ -423,6 +427,7 @@ export default function AuditCenterPage({ defaultTab = 'overview' }: { defaultTa
 
   // Trigger system error simulation
   const triggerMockError = async () => {
+    if (!isDev) return;
     if (!user?.uid) return;
     try {
       await auditService.logError(user.uid, {
@@ -737,8 +742,10 @@ export default function AuditCenterPage({ defaultTab = 'overview' }: { defaultTa
                       </div>
                     </div>
                     
-                    {/* Simulator Dashboard Controls */}
-                    <div className="border-t border-border mt-6 pt-4 grid gap-4 md:grid-cols-2">
+                    {isDev && (
+                      <>
+                        {/* Simulator Dashboard Controls */}
+                        <div className="border-t border-border mt-6 pt-4 grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Simulator Trigger</label>
                         <div className="flex flex-col gap-2">
@@ -806,7 +813,9 @@ export default function AuditCenterPage({ defaultTab = 'overview' }: { defaultTa
                           {clearing ? 'Clearing...' : 'Wipe Audit Trail'}
                         </Button>
                       </div>
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

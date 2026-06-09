@@ -7,6 +7,7 @@ import { TransactionProvider } from '@/src/context/TransactionContext';
 import { AccountProvider } from '@/src/context/AccountContext';
 import AppShell from './mobile/AppShell';
 import { Toaster } from '@/components/ui/toaster';
+import { RealtimeNotificationStack } from '@/src/components/notifications/RealtimeNotificationStack';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // Network online/offline toasts intentionally removed to preserve Neo Finance OS appearance.
@@ -17,6 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <AccountProvider>
         <TransactionProvider>
           <AppShell>{children}</AppShell>
+          <RealtimeNotificationStack />
           <Toaster />
         </TransactionProvider>
       </AccountProvider>

@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useId, useState } from 'react';
+import { useTransactions } from '@/src/hooks/useTransactions';
+import type { TransactionFormData } from '@/src/components/transactions/types';
 import { AppModal } from './AppModal';
 
 const ADD_TX_FORM_ID = 'add-transaction-form';
@@ -25,13 +27,14 @@ export interface AddTransactionModalProps {
 export function AddTransactionModal({ open, onOpenChange }: AddTransactionModalProps) {
   const [loading, setLoading] = useState(false);
   const typeFieldId = useId();
+  const { addTransaction } = useTransactions();
 
   return (
     <AppModal
       open={open}
       onOpenChange={onOpenChange}
       title="Add transaction"
-      description="Placeholder layout — connect validation, APIs, and persistence when ready."
+      description="Create a transaction in your account. Fields are persisted to your data store."
       size="lg"
       footer={
         <FormActions
@@ -46,10 +49,30 @@ export function AddTransactionModal({ open, onOpenChange }: AddTransactionModalP
       <form
         id={ADD_TX_FORM_ID}
         className="space-y-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           setLoading(true);
-          window.setTimeout(() => setLoading(false), 450);
+          try {
+            const fd = new FormData(e.currentTarget as HTMLFormElement);
+            const payload: TransactionFormData = {
+              type: (fd.get('type') as TransactionFormData['type']) || 'expense',
+              amount: Number(fd.get('amount') || 0),
+              category: (fd.get('category') as string) || '',
+              account: (fd.get('account') as string) || '',
+              notes: (fd.get('description') as string) || '',
+              date: fd.get('date') ? new Date(fd.get('date') as string) : new Date(),
+            };
+
+            if (addTransaction) {
+              await addTransaction(payload);
+            }
+            onOpenChange(false);
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to add transaction:', err);
+          } finally {
+            setLoading(false);
+          }
         }}
       >
         <FormSection

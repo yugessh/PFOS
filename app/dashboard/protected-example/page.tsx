@@ -2,6 +2,10 @@
 
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { useAuthContext } from '@/src/context/AuthContext';
+import { useAccounts } from '@/src/hooks/useAccounts';
+import { useTransactions } from '@/src/hooks/useTransactions';
+import { useInvestments } from '@/src/hooks/useInvestments';
+import { formatCurrencyCompact } from '@/src/lib/currency';
 
 export default function ProtectedDashboardExample() {
   return (
@@ -13,6 +17,15 @@ export default function ProtectedDashboardExample() {
 
 function DashboardContent() {
   const { user } = useAuthContext();
+  const { getTotalBalance, loading: accountsLoading } = useAccounts();
+  const { getTotals, loading: transactionsLoading } = useTransactions();
+  const { getTotalStats, loading: investmentsLoading } = useInvestments();
+
+  const totalBalance = getTotalBalance ? getTotalBalance() : 0;
+  const totals = getTotals ? getTotals() : { income: 0, expenses: 0 };
+  const investmentStats = getTotalStats ? getTotalStats() : { totalValue: 0, totalInvested: 0, totalReturn: 0 };
+
+  const savings = Math.max((totals.income || 0) - (totals.expenses || 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -23,7 +36,7 @@ function DashboardContent() {
             Welcome back, {user?.displayName || user?.email || 'User'}!
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            This is a protected dashboard page. Only authenticated users can see this.
+            This is a protected dashboard page showing live account data.
           </p>
         </div>
 
@@ -73,10 +86,10 @@ function DashboardContent() {
               Account Balance
             </h3>
             <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              $12,450.00
+              {accountsLoading ? 'Loading…' : formatCurrencyCompact(totalBalance)}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              +2.5% from last month
+              {accountsLoading ? '' : 'Live balance across accounts'}
             </p>
           </div>
 
@@ -85,10 +98,10 @@ function DashboardContent() {
               Monthly Savings
             </h3>
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              $1,250.00
+              {transactionsLoading ? 'Loading…' : formatCurrencyCompact(savings)}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              On track for goals
+              {transactionsLoading ? '' : 'Income minus expenses (current month)'}
             </p>
           </div>
 
@@ -97,10 +110,10 @@ function DashboardContent() {
               Investment Returns
             </h3>
             <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-              +8.2%
+              {investmentsLoading ? 'Loading…' : `${formatCurrencyCompact(investmentStats.totalReturn)} (${investmentStats.totalInvested ? ((investmentStats.totalReturn / investmentStats.totalInvested) * 100).toFixed(1) + '%' : '—'})`}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Year to date
+              {investmentsLoading ? '' : 'Net return across investments'}
             </p>
           </div>
         </div>

@@ -9,8 +9,8 @@ import { CategorySelector } from './CategorySelector';
 import { AccountSelector } from './AccountSelector';
 import { NotesInput } from './NotesInput';
 import { DatePicker } from './DatePicker';
-import { getCategoriesByType } from './mock-data';
 import { useAccounts } from '@/src/hooks/useAccounts';
+import { useCategories } from '@/src/hooks/useCategories';
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -33,10 +33,19 @@ export function AddTransactionModal({ open, onOpenChange, onSave, defaultType = 
 
   const [toAccount, setToAccount] = useState<string>('');
   const { accounts } = useAccounts();
+  const { byType, loading: categoriesLoading } = useCategories();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const categories = getCategoriesByType(formData.type);
+  const categories = formData.type === 'expense' || formData.type === 'income'
+    ? byType[formData.type].map((category) => ({
+        id: category.id,
+        name: category.name,
+        icon: category.icon || '🏷️',
+        color: category.color || '#7EE7C7',
+        type: category.type,
+      }))
+    : [];
 
   useEffect(() => {
     if (!open) return;
@@ -146,11 +155,23 @@ export function AddTransactionModal({ open, onOpenChange, onSave, defaultType = 
 
           {/* Category Selector */}
           {formData.type !== 'transfer' && (
-            <CategorySelector
-              categories={categories}
-              selectedCategory={formData.category}
-              onSelect={(categoryId) => setFormData({ ...formData, category: categoryId })}
-            />
+            <>
+              {categoriesLoading ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  Loading categories...
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                  No categories available. Add categories in the Categories page.
+                </div>
+              ) : (
+                <CategorySelector
+                  categories={categories}
+                  selectedCategory={formData.category}
+                  onSelect={(categoryId) => setFormData({ ...formData, category: categoryId })}
+                />
+              )}
+            </>
           )}
 
           {/* Account Selector */}

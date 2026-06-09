@@ -4,15 +4,14 @@ import React, { useState } from 'react';
 import CategoryGrid from '../../components/category/CategoryGrid';
 import CategorySelectorSheet from '../../components/category/CategorySelectorSheet';
 import AddCategoryModal from '../../components/category/AddCategoryModal';
-import { mockCategories, type Category } from '../../lib/categories';
+import { type Category } from '../../lib/categories';
+import { useCategories } from '@/src/hooks/useCategories';
 
 export default function CategoriesPage() {
+  const { categories, loading, error, addCategory, saving } = useCategories();
   const [selected, setSelected] = useState<Category | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [categories, setCategories] = useState(mockCategories);
-
-  const handleAdd = (c: Category) => setCategories((s) => [c, ...s]);
 
   return (
     <div className="min-h-screen bg-main px-4 py-6 lg:px-8">
@@ -42,12 +41,45 @@ export default function CategoriesPage() {
         </section>
 
         <main className="grid gap-5">
+          {error ? (
+            <div className="rounded-[24px] border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {error}
+            </div>
+          ) : null}
+
+          {loading ? (
+            <div className="rounded-[28px] border border-border bg-card p-5 text-sm text-secondary">Loading categories...</div>
+          ) : null}
+
           <CategoryGrid categories={categories} onSelect={(c) => setSelected(c)} onEdit={(c) => { setSelected(c); setAddOpen(true); }} />
         </main>
       </div>
 
-      <CategorySelectorSheet open={selectorOpen} onClose={() => setSelectorOpen(false)} onSelect={(c) => setSelected(c)} />
-      <AddCategoryModal open={addOpen} onClose={() => setAddOpen(false)} onAdd={(c) => { handleAdd(c); }} />
+      <CategorySelectorSheet
+        open={selectorOpen}
+        onClose={() => setSelectorOpen(false)}
+        onSelect={(c) => setSelected(c)}
+        categories={categories}
+      />
+      <AddCategoryModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdd={(c) => {
+          void addCategory({
+            name: c.name,
+            type: c.type,
+            color: c.color,
+            icon: c.icon,
+            parentId: c.parentId,
+          });
+        }}
+      />
+
+      {saving ? (
+        <div className="fixed bottom-6 right-6 rounded-2xl border border-border bg-card px-3 py-2 text-xs text-secondary shadow-[0_18px_45px_rgba(0,0,0,0.25)]">
+          Saving category...
+        </div>
+      ) : null}
 
       {selected ? (
         <div className="fixed left-4 right-4 bottom-6 z-40 rounded-[28px] border border-border bg-card p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">

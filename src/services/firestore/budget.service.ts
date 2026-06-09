@@ -99,13 +99,21 @@ export class BudgetTrackingService extends BaseFirestoreService<BudgetTracking> 
     alertThreshold: number = 80
   ) {
     try {
-      const remaining = Math.max(0, 0); // Will be calculated from limit - spent
-      const isExceeded = spentAmount > 0; // Placeholder logic
+      const current = await this.getById(budgetId);
+      if (!current.success || !current.data) {
+        return { success: false, error: current.error || 'Budget not found' };
+      }
+
+      const currentLimit = Number((current.data as any).limit || 0);
+      const remaining = Math.max(0, currentLimit - spentAmount);
+      const isExceeded = spentAmount >= currentLimit;
+      const percentUsed = currentLimit > 0 ? (spentAmount / currentLimit) * 100 : 0;
 
       const update: Partial<BudgetTracking> = {
         spent: spentAmount,
         remaining,
         isExceeded,
+        alertsSent: percentUsed >= alertThreshold ? [alertThreshold] : [],
       };
 
       return this.update(budgetId, update);
@@ -121,11 +129,22 @@ export class BudgetTrackingService extends BaseFirestoreService<BudgetTracking> 
     try {
       const targetMonth = month || new Date().toISOString().slice(0, 7);
 
-      // In real implementation, would query by userId and month
-      // For now, return empty as structure placeholder
+      const result = await this.list({
+        where: [
+          { field: 'userId', operator: '==', value: userId },
+          { field: 'month', operator: '==', value: targetMonth },
+        ],
+        orderBy: { field: 'updatedAt', direction: 'desc' },
+        limit: 200,
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
       return {
         success: true,
-        data: [],
+        data: result.data?.data || [],
       };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -205,10 +224,22 @@ export class BudgetAlertService extends BaseFirestoreService<BudgetAlert> {
    */
   async getPendingAlerts(userId: string) {
     try {
-      // Query for pending alerts - placeholder structure
+      const result = await this.list({
+        where: [
+          { field: 'userId', operator: '==', value: userId },
+          { field: 'status', operator: '==', value: 'pending' },
+        ],
+        orderBy: { field: 'sentAt', direction: 'desc' },
+        limit: 100,
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
       return {
         success: true,
-        data: [],
+        data: result.data?.data || [],
       };
     } catch (error: any) {
       return { success: false, error: error.message };

@@ -415,6 +415,12 @@ export class AuditService {
    * Seeds 50+ rich and realistic historical activity logs for Neo Finance OS.
    */
   async seedAuditLogs(userId: string, userEmail: string): Promise<boolean> {
+    // Only allow seeding in non-production environments
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('seedAuditLogs called in production; operation disabled');
+      return false;
+    }
+
     try {
       assertAuthenticatedUser(userId);
       // 1. Clear old logs first

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import type { Category } from '../../lib/categories';
-import { mockCategories } from '../../lib/categories';
 import CategoryCard from './CategoryCard';
 import AddCategoryModal from './AddCategoryModal';
 
@@ -10,9 +9,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSelect: (c: Category) => void;
+  categories: Category[];
 }
 
-export default function CategorySelectorSheet({ open, onClose, onSelect }: Props) {
+export default function CategorySelectorSheet({ open, onClose, onSelect, categories }: Props) {
   const [showAdd, setShowAdd] = useState(false);
 
   if (!open) return null;
@@ -26,11 +26,17 @@ export default function CategorySelectorSheet({ open, onClose, onSelect }: Props
         </div>
 
         <div className="mt-3">
-          <div className="grid grid-cols-3 gap-3">
-            {mockCategories.slice(0, 9).map((c) => (
-              <CategoryCard key={c.id} category={c} onSelect={(cat) => { onSelect(cat); onClose(); }} selectable />
-            ))}
-          </div>
+          {categories.length === 0 ? (
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-center text-sm text-zinc-500">
+              No categories found. Add your first category.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {categories.slice(0, 12).map((c) => (
+                <CategoryCard key={c.id} category={c} onSelect={(cat) => { onSelect(cat); onClose(); }} selectable />
+              ))}
+            </div>
+          )}
 
           <div className="mt-4 flex gap-3">
             <button onClick={() => setShowAdd(true)} className="flex-1 py-2 rounded-lg bg-indigo-600 text-white">Quick Add</button>
@@ -40,7 +46,6 @@ export default function CategorySelectorSheet({ open, onClose, onSelect }: Props
       </div>
 
       <AddCategoryModal open={showAdd} onClose={() => setShowAdd(false)} onAdd={(c) => {
-        // For now, just select the new category
         onSelect(c);
         setShowAdd(false);
         onClose();

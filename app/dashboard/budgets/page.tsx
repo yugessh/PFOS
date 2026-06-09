@@ -9,10 +9,34 @@ import {
   BudgetAlertCard,
 } from '@/components/budget-card';
 import { useBudget } from '@/src/hooks/useBudget';
+import { useCategories } from '@/src/hooks/useCategories';
 
 export default function DashboardBudgetsPage() {
   const { budgets, alerts, summary, loading, error, createBudget, dismissAlert, refresh } = useBudget();
+  const { byType } = useCategories();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [newLimit, setNewLimit] = useState('');
+  const [newThreshold, setNewThreshold] = useState('80');
+
+  const expenseCategories = byType.expense;
+
+  const handleCreateBudget = async () => {
+    const limit = Number(newLimit);
+    const threshold = Number(newThreshold);
+
+    if (!newCategory || !Number.isFinite(limit) || limit <= 0) {
+      return;
+    }
+
+    const result = await createBudget(newCategory, limit, Number.isFinite(threshold) ? threshold : 80);
+    if (result.success) {
+      setShowCreateModal(false);
+      setNewLimit('');
+      setNewThreshold('80');
+      await refresh();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#080A0F]">
@@ -257,13 +281,15 @@ export default function DashboardBudgetsPage() {
                   <label className="text-[#9CA3AF] text-sm font-medium block mb-2">
                     Category
                   </label>
-                  <select className="w-full bg-[#0D1015] border border-[#1F2937] rounded-lg px-4 py-2 text-white">
-                    <option>Food & Dining</option>
-                    <option>Transportation</option>
-                    <option>Entertainment</option>
-                    <option>Shopping</option>
-                    <option>Utilities</option>
-                    <option>Healthcare</option>
+                  <select
+                    value={newCategory}
+                    onChange={(event) => setNewCategory(event.target.value)}
+                    className="w-full bg-[#0D1015] border border-[#1F2937] rounded-lg px-4 py-2 text-white"
+                  >
+                    <option value="">Select a category</option>
+                    {expenseCategories.map((category) => (
+                      <option key={category.id} value={category.name}>{category.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -274,6 +300,8 @@ export default function DashboardBudgetsPage() {
                   <input
                     type="number"
                     placeholder="Enter amount"
+                    value={newLimit}
+                    onChange={(event) => setNewLimit(event.target.value)}
                     className="w-full bg-[#0D1015] border border-[#1F2937] rounded-lg px-4 py-2 text-white placeholder-[#9CA3AF]"
                   />
                 </div>
@@ -285,6 +313,8 @@ export default function DashboardBudgetsPage() {
                   <input
                     type="number"
                     placeholder="80"
+                    value={newThreshold}
+                    onChange={(event) => setNewThreshold(event.target.value)}
                     className="w-full bg-[#0D1015] border border-[#1F2937] rounded-lg px-4 py-2 text-white placeholder-[#9CA3AF]"
                   />
                 </div>
@@ -292,7 +322,7 @@ export default function DashboardBudgetsPage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => void handleCreateBudget()}
                   className="w-full mt-6 px-6 py-3 bg-[#7EE7C7] text-[#080A0F] rounded-lg font-medium hover:bg-[#5DD9B9] transition-colors"
                 >
                   Create Budget

@@ -82,18 +82,58 @@ export function isCapacitorAndroidSync(): boolean {
 }
 
 export async function requestPushPermission() {
-  // implement later with Capacitor Push Notifications plugin
-  return false;
+  try {
+    const isNative = await isNativePlatform();
+    if (isNative) {
+      const cap = (window as any).Capacitor;
+      const plugin = cap?.Plugins?.PushNotifications;
+      if (!plugin?.requestPermissions) return false;
+      const permission = await plugin.requestPermissions();
+      return permission.receive === 'granted';
+    }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const result = await Notification.requestPermission();
+      return result === 'granted';
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export async function biometricAvailable() {
-  // implement later
-  return false;
+  try {
+    const { isBiometricAvailable } = await import('./biometrics');
+    return await isBiometricAvailable();
+  } catch {
+    return false;
+  }
 }
 
 export async function takePhoto() {
-  // implement later
-  return null;
+  try {
+    const isNative = await isNativePlatform();
+    if (!isNative) {
+      return null;
+    }
+
+    const cap = (window as any).Capacitor;
+    const plugin = cap?.Plugins?.Camera;
+    if (!plugin?.getPhoto) return null;
+
+    const result = await plugin.getPhoto({
+      quality: 80,
+      allowEditing: false,
+      resultType: 'dataUrl',
+      source: 'PROMPT',
+    });
+
+    return result.dataUrl || null;
+  } catch {
+    return null;
+  }
 }
 
 export * from './biometrics';

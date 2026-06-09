@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Users, Info, Plus, Share2, Trash2 } from 'lucide-react';
 import { type SubscriptionModel } from '@/src/services/firestore/subscriptions.service';
 import { formatCurrency } from '@/src/lib/currency';
+import { useAuthContext } from '@/src/context/AuthContext';
+import { familyService } from '@/src/services/firestore/family.service';
 
 interface FamilySubscriptionsProps {
   subscriptions: SubscriptionModel[];
@@ -11,11 +13,36 @@ interface FamilySubscriptionsProps {
 }
 
 export function FamilySubscriptions({ subscriptions, onUpdateSplit }: FamilySubscriptionsProps) {
-  // Let's create mock family members since we want a realistic operational state.
-  // We can fetch this from the user's family settings in production.
-  const defaultFamilyMembers = ['Self', 'Sarah (Wife)', 'Alex (Son)', 'Emily (Sister)'];
-  const [members, setMembers] = useState<string[]>(defaultFamilyMembers);
+  const { user } = useAuthContext();
+  const [members, setMembers] = useState<string[]>(['Self']);
   const [newMember, setNewMember] = useState('');
+
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid) {
+      setMembers(['Self']);
+      return;
+    }
+
+    const loadMembers = async () => {
+      const groups = await familyService.getUserGroups(uid);
+      const names = new Set<string>(['Self']);
+
+      groups.forEach((group: any) => {
+        const groupMembers = Array.isArray(group?.members) ? group.members : [];
+        groupMembers.forEach((member: any) => {
+          const displayName = String(member?.displayName || '').trim();
+          if (displayName) {
+            names.add(displayName);
+          }
+        });
+      });
+
+      setMembers(Array.from(names));
+    };
+
+    void loadMembers();
+  }, [user?.uid]);
 
   // Active subscriptions
   const activeSubs = useMemo(() => subscriptions.filter(s => s.status === 'active'), [subscriptions]);

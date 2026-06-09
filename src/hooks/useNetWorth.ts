@@ -13,6 +13,15 @@ interface NetWorthData {
   netWorth: number;
   monthlyChange?: number;
   monthlyChangePercent?: number;
+  assetBreakdown?: {
+    accounts: number;
+    investments: number;
+    lending: number;
+  };
+  liabilityBreakdown?: {
+    borrowed: number;
+    negativeAccountBalances: number;
+  };
 }
 
 interface NetWorthHistory {
@@ -71,10 +80,44 @@ export function useNetWorth() {
         settlementList
       );
 
+      const accountsAsset = accountList.reduce((sum, account: any) => {
+        const balance = Number(account?.currentBalance ?? account?.balance ?? 0);
+        return sum + Math.max(0, balance);
+      }, 0);
+
+      const negativeAccountBalances = accountList.reduce((sum, account: any) => {
+        const balance = Number(account?.currentBalance ?? account?.balance ?? 0);
+        return sum + Math.abs(Math.min(0, balance));
+      }, 0);
+
+      const investmentsAsset = investmentList.reduce((sum, investment: any) => {
+        const value = Number(investment?.currentValue ?? investment?.investedAmount ?? 0);
+        return sum + Math.max(0, value);
+      }, 0);
+
+      const lendingAsset = settlementList.reduce((sum, settlement: any) => {
+        if (settlement?.type !== 'lent') return sum;
+        return sum + Number(settlement?.remainingAmount ?? 0);
+      }, 0);
+
+      const borrowedLiability = settlementList.reduce((sum, settlement: any) => {
+        if (settlement?.type !== 'borrowed') return sum;
+        return sum + Number(settlement?.remainingAmount ?? 0);
+      }, 0);
+
       setNetWorthData({
         totalAssets: result.assets,
         totalLiabilities: result.liabilities,
         netWorth: result.netWorth,
+        assetBreakdown: {
+          accounts: accountsAsset,
+          investments: investmentsAsset,
+          lending: lendingAsset,
+        },
+        liabilityBreakdown: {
+          borrowed: borrowedLiability,
+          negativeAccountBalances,
+        },
       });
 
       // Get historical data
@@ -88,7 +131,7 @@ export function useNetWorth() {
     } finally {
       setLoading(false);
     }
-  }, [user?.uid, accounts, investments]);
+  }, [user?.uid, accounts, investments, settlements]);
 
   useEffect(() => {
     calculateNetWorth();
