@@ -24,12 +24,8 @@ export async function ensureDevAuditSignedIn(page: Page) {
     // possibly redirected to sign-in; try registration flow
   }
 
-  // If on sign-in page, navigate to register
-  if ((await page.locator('text=Create account').count()) > 0) {
-    await page.click('text=Create account');
-  } else {
-    await page.goto('/auth/register');
-  }
+  // Ensure we're on the register page
+  await page.goto('/auth/register');
 
   const email = `playwright+${Date.now()}@example.com`;
   const password = 'Test1234!';
@@ -39,7 +35,8 @@ export async function ensureDevAuditSignedIn(page: Page) {
   await page.fill('#email', email);
   await page.fill('#password', password);
   await page.fill('#confirmPassword', password);
-  await page.click('text=Create account');
+  // click the submit button explicitly (avoid heading/link collisions)
+  await page.click('button:has-text("Create account")');
 
   // wait for successful redirect/back to dashboard
   await page.waitForURL('**/dashboard/**', { timeout: 20000 });

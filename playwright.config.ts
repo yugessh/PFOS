@@ -20,8 +20,8 @@ export default defineConfig({
     { name: 'iPhone_12', use: { ...devices['iPhone 12'] } },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: 'node ./scripts/dev-with-clean.mjs',
     port: 3000,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
 });
