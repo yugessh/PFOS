@@ -13,79 +13,99 @@ import { eventsService } from './firestore/events.service';
 const DevAuditService = {
   async seedForUser(userId: string) {
     const results: Record<string, any> = {};
+    const steps: Array<{ step: number; name: string; success: boolean; detail?: any }> = [];
+    let stepCounter = 0;
+
+    async function runStep(name: string, fn: () => Promise<any>) {
+      stepCounter += 1;
+      const stepNum = stepCounter;
+      console.log(`[DevAudit][STEP ${stepNum}] START: ${name}`, { userId });
+      try {
+        const res = await fn();
+        const ok = !(res && res.success === false);
+        steps.push({ step: stepNum, name, success: ok, detail: res });
+        console.log(`[DevAudit][STEP ${stepNum}] ${ok ? 'PASS' : 'FAIL'}: ${name}`, { result: res });
+        return res;
+      } catch (err: any) {
+        steps.push({ step: stepNum, name, success: false, detail: { error: err?.message || String(err) } });
+        console.error(`[DevAudit][STEP ${stepNum}] FAIL: ${name}`, { error: err?.message || String(err) });
+        throw err;
+      }
+    }
+
     try {
       // create a main account
-      const accResp = await accountsService.createAccount(userId, {
+      const accResp = await runStep('create account', () => accountsService.createAccount(userId, {
         name: 'KVB savings_account',
         accountType: 'savings' as any,
         currentBalance: 60055.25,
         currency: 'INR',
-      });
+      }));
       results.account = accResp;
 
       const accountId = accResp.success && accResp.data ? accResp.data.id : undefined;
 
       // create a couple of transactions
       if (accountId) {
-        const t1 = await transactionsService.createTransaction(userId, {
+        const t1 = await runStep('create transaction 1', () => transactionsService.createTransaction(userId, {
           accountId,
           amount: 499.5,
           type: 'expense' as any,
           category: 'groceries',
           description: 'Test grocery purchase',
           date: new Date(),
-        });
-        const t2 = await transactionsService.createTransaction(userId, {
+        }));
+        const t2 = await runStep('create transaction 2', () => transactionsService.createTransaction(userId, {
           accountId,
           amount: 2500,
           type: 'income' as any,
           category: 'salary',
           description: 'Test salary credit',
           date: new Date(),
-        });
+        }));
         results.transactions = { t1, t2 };
       }
 
       // add a budget
       const monthKey = new Date().toISOString().slice(0, 7).replace('-', '-');
-      const b = await budgetsService.upsertBudget(userId, {
+      const b = await runStep('upsert budget', () => budgetsService.upsertBudget(userId, {
         monthKey: monthKey,
         categoryId: 'cat_groceries',
         categoryName: 'Groceries',
         categoryIcon: '🍎',
         monthlyLimit: 5000,
         currency: 'INR',
-      } as any);
+      } as any));
       results.budget = b;
 
       // create a goal
-      const g = await goalsService.createGoal(userId, {
+      const g = await runStep('create goal', () => goalsService.createGoal(userId, {
         title: 'New Laptop',
         targetAmount: 90000,
         savedAmount: 15000,
         currency: 'INR',
         description: 'Save for a dev laptop',
-      } as any);
+      } as any));
       results.goal = g;
 
       // create an investment entry
-      const inv = await investmentsService.createInvestment(userId, {
+      const inv = await runStep('create investment', () => investmentsService.createInvestment(userId, {
         name: 'Test SIP',
         amount: 10000,
         currency: 'INR',
-      } as any).catch((e) => ({ success: false, error: e?.message || String(e) }));
+      } as any)).catch((e) => ({ success: false, error: e?.message || String(e) }));
       results.investment = inv;
 
       // create an asset
-      const asset = await assetService.saveAsset(userId, null, {
+      const asset = await runStep('save asset', () => assetService.saveAsset(userId, null, {
         name: 'Fixed Deposit',
         currentValue: 50000,
         currency: 'INR',
-      } as any).catch((e) => ({ success: false, error: e?.message || String(e) }));
+      } as any)).catch((e) => ({ success: false, error: e?.message || String(e) }));
       results.asset = asset;
 
       // add a subscription
-      const sub = await subscriptionsService.upsertSubscription(userId, {
+      const sub = await runStep('upsert subscription', () => subscriptionsService.upsertSubscription(userId, {
         name: 'Netflix',
         amount: 499,
         currency: 'INR',
@@ -98,19 +118,19 @@ const DevAuditService = {
         priceHistory: [],
         autoRenew: true,
         isDetected: false,
-      } as any).catch((e) => ({ success: false, error: e?.message || String(e) }));
+      } as any)).catch((e) => ({ success: false, error: e?.message || String(e) }));
       results.subscription = sub;
 
       // create sample events
-      const ev = await eventsService.upsertEvent(userId, {
+      const ev = await runStep('upsert event', () => eventsService.upsertEvent(userId, {
         title: 'Test reminder',
         date: new Date(),
         notes: 'Follow up',
-      } as any).catch((e) => ({ success: false, error: e?.message || String(e) }));
+      } as any)).catch((e) => ({ success: false, error: e?.message || String(e) }));
       results.event = ev;
 
       // import record
-      const im = await importService.createImportHistory(userId, {
+      const im = await runStep('create import history', () => importService.createImportHistory(userId, {
         fileName: 'bank.csv',
         fileSize: 1024,
         templateUsed: 'default',
@@ -120,16 +140,16 @@ const DevAuditService = {
         status: 'completed',
         accountId: accountId || '',
         accountName: 'KVB savings_account',
-      } as any).catch((e) => ({ success: false, error: e?.message || String(e) }));
+      } as any)).catch((e) => ({ success: false, error: e?.message || String(e) }));
       results.import = im;
 
       // create EMI entry
-      const eResp = await emiService.upsertEMI(userId, {
+      const eResp = await runStep('upsert emi', () => emiService.upsertEMI(userId, {
         lender: 'Test Bank',
         monthlyInstallment: 5000,
         title: 'Test EMI',
         dueDate: new Date().getDate(),
-      } as any).catch((e) => ({ success: false, error: e?.message || String(e) }));
+      } as any)).catch((e) => ({ success: false, error: e?.message || String(e) }));
       results.emi = eResp;
 
       // create notifications for many types
@@ -149,7 +169,7 @@ const DevAuditService = {
       const notifResults: any[] = [];
       for (const n of notifTypes) {
         try {
-          const id = await notificationsService.createNotification(userId, n.type as any, n.title, n.message, 'medium', { seededBy: 'dev-audit' });
+          const id = await runStep(`create notification: ${n.type}`, () => notificationsService.createNotification(userId, n.type as any, n.title, n.message, 'medium', { seededBy: 'dev-audit' }));
           notifResults.push({ id, success: true });
         } catch (e: any) {
           notifResults.push({ success: false, error: e?.message || String(e) });
@@ -157,9 +177,12 @@ const DevAuditService = {
       }
       results.notifications = notifResults;
 
+      // attach steps trace to results for easier auditing
+      (results as any)._seedTrace = steps;
       return results;
     } catch (error: any) {
-      return { success: false, error: error?.message || String(error) };
+      console.error('[DevAudit] seedForUser FAILED', { userId, error: error?.message || String(error), steps });
+      return { success: false, error: error?.message || String(error), _seedTrace: steps };
     }
   },
 };

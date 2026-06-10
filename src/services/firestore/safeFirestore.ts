@@ -123,10 +123,16 @@ const EMPTY_QUERY_SNAPSHOT = {
 } as unknown as QuerySnapshot<DocumentData>;
 
 export async function addDocSafe(colRef: CollectionReference<DocumentData>, data: DocumentData) {
+  const operation = 'addDoc';
+  const path = (colRef as any)?.path;
+  const uid = getCurrentUid();
+  const payload = sanitizeFirestoreData(data);
+  console.log('[Firestore][Write][Start]', { operation, collection: path, uid, payload });
   try {
-    return await addDoc(colRef, sanitizeFirestoreData(data));
+    return await addDoc(colRef, payload);
   } catch (error) {
-    if (handleFirestoreError('addDoc', (colRef as any)?.path, error)) {
+    console.error('[Firestore][Write][Error]', { operation, collection: path, uid, payload, code: error?.code, message: error?.message || String(error) });
+    if (handleFirestoreError(operation, path, error)) {
       return undefined;
     }
     throw error;
@@ -164,10 +170,16 @@ export async function getDocSafe(docRef: DocumentReference<DocumentData>): Promi
 }
 
 export async function updateDocSafe(docRef: DocumentReference<DocumentData>, data: Partial<DocumentData>) {
+  const operation = 'updateDoc';
+  const path = (docRef as any)?.path;
+  const uid = getCurrentUid();
+  const payload = sanitizeFirestoreData(data as DocumentData);
+  console.log('[Firestore][Write][Start]', { operation, docPath: path, uid, payload });
   try {
-    return await updateDoc(docRef, sanitizeFirestoreData(data as DocumentData));
+    return await updateDoc(docRef, payload);
   } catch (error) {
-    if (handleFirestoreError('updateDoc', (docRef as any)?.path, error)) {
+    console.error('[Firestore][Write][Error]', { operation, docPath: path, uid, payload, code: error?.code, message: error?.message || String(error) });
+    if (handleFirestoreError(operation, path, error)) {
       return undefined;
     }
     throw error;
@@ -175,10 +187,15 @@ export async function updateDocSafe(docRef: DocumentReference<DocumentData>, dat
 }
 
 export async function deleteDocSafe(docRef: DocumentReference<DocumentData>) {
+  const operation = 'deleteDoc';
+  const path = (docRef as any)?.path;
+  const uid = getCurrentUid();
+  console.log('[Firestore][Write][Start]', { operation, docPath: path, uid });
   try {
     return await deleteDoc(docRef);
   } catch (error) {
-    if (handleFirestoreError('deleteDoc', (docRef as any)?.path, error)) {
+    console.error('[Firestore][Write][Error]', { operation, docPath: path, uid, code: error?.code, message: error?.message || String(error) });
+    if (handleFirestoreError(operation, path, error)) {
       return undefined;
     }
     throw error;
@@ -186,11 +203,16 @@ export async function deleteDocSafe(docRef: DocumentReference<DocumentData>) {
 }
 
 export async function setDocSafe(docRef: DocumentReference<DocumentData>, data: DocumentData, options?: { merge?: boolean }) {
+  const operation = 'setDoc';
+  const path = (docRef as any)?.path;
+  const uid = getCurrentUid();
+  const sanitized = sanitizeFirestoreData(data);
+  console.log('[Firestore][Write][Start]', { operation, docPath: path, uid, payload: sanitized, options });
   try {
-    const sanitized = sanitizeFirestoreData(data);
     return options ? await setDoc(docRef, sanitized, options) : await setDoc(docRef, sanitized);
   } catch (error) {
-    if (handleFirestoreError('setDoc', (docRef as any)?.path, error)) {
+    console.error('[Firestore][Write][Error]', { operation, docPath: path, uid, payload: sanitized, options, code: error?.code, message: error?.message || String(error) });
+    if (handleFirestoreError(operation, path, error)) {
       return undefined;
     }
     throw error;
