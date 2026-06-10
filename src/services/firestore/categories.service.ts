@@ -6,6 +6,7 @@ export interface Category {
   userId: string;
   name: string;
   type: 'income' | 'expense' | 'transfer';
+  parentId?: string | null;
   color: string;
   icon: string;
   isActive: boolean;

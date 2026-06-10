@@ -37,12 +37,16 @@ export function useNotifications() {
   useEffect(() => {
     const userId = auth?.user?.uid;
     if (!userId) {
-      setNotifications([]);
-      setLoading(false);
+      // Avoid synchronous setState inside effect body to prevent cascading renders
+      Promise.resolve().then(() => {
+        setNotifications([]);
+        setLoading(false);
+      });
       return;
     }
 
-    setLoading(true);
+    // Schedule loading state update to avoid synchronous setState in effect
+    Promise.resolve().then(() => setLoading(true));
     const unsubscribe = notificationsService.subscribeToUserNotifications(
       userId,
       false,
@@ -323,17 +327,18 @@ export function useNotifications() {
 
   // Load notifications on mount and when user changes
   useEffect(() => {
-    loadNotifications();
+    // Call async loader in a microtask to avoid synchronous state updates inside effect
+    Promise.resolve().then(() => void loadNotifications());
   }, [loadNotifications]);
 
   // Generate smart alerts periodically (every 30 minutes)
   useEffect(() => {
     if (!auth?.user?.uid) return;
 
-    const generateAlerts = () => generateSmartAlerts();
-    generateAlerts(); // Generate immediately
+    const generateAlerts = () => void generateSmartAlerts();
+    void generateAlerts(); // Generate immediately
 
-    const interval = setInterval(generateAlerts, 30 * 60 * 1000); // 30 minutes
+    const interval = setInterval(() => void generateAlerts(), 30 * 60 * 1000); // 30 minutes
     return () => clearInterval(interval);
   }, [auth?.user?.uid, generateSmartAlerts]);
 

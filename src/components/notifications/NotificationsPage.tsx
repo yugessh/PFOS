@@ -43,7 +43,7 @@ const FILTERS = [
 ];
 
 function isMatchingFilter(notification: NotificationModel, filter: string) {
-  const module = notification.module || notification.metadata?.category || '';
+  const moduleKey = notification.module || notification.metadata?.category || '';
   const normalizedPriority = normalizeNotificationPriority(notification.priority);
 
   switch (filter) {
@@ -52,17 +52,17 @@ function isMatchingFilter(notification: NotificationModel, filter: string) {
     case 'critical':
       return normalizedPriority === 'critical';
     case 'finance':
-      return ['transactions', 'budgets', 'goals', 'investments', 'emi', 'bills', 'subscriptions', 'lending', 'reports', 'dashboard'].includes(module);
+      return ['transactions', 'budgets', 'goals', 'investments', 'emi', 'bills', 'subscriptions', 'lending', 'reports', 'dashboard'].includes(moduleKey);
     case 'security':
-      return module === 'security' || notification.type.includes('security');
+      return moduleKey === 'security' || notification.type.includes('security');
     case 'trading':
-      return module === 'trading' || notification.type.includes('trading');
+      return moduleKey === 'trading' || notification.type.includes('trading');
     case 'goals':
-      return module === 'goals' || notification.type.includes('goal');
+      return moduleKey === 'goals' || notification.type.includes('goal');
     case 'calendar':
-      return module === 'calendar' || notification.type === 'calendar_event';
+      return moduleKey === 'calendar' || notification.type === 'calendar_event';
     case 'automation':
-      return module === 'automation' || notification.type === 'automation_update';
+      return moduleKey === 'automation' || notification.type === 'automation_update';
     case 'pinned':
       return Boolean(notification.isPinned);
     default:

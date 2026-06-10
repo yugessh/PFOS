@@ -7,13 +7,17 @@ import { useReminders } from '@/src/hooks/useReminders';
 
 export default function Page() {
   const { reminders } = useReminders();
-  const timelineItems = reminders.slice(0, 12).map((reminder) => ({
-    id: reminder.id,
-    title: reminder.title,
-    date: reminder.reminderDate,
-    priority: reminder.priority,
-    source: reminder.category || 'Reminder',
-  }));
+  const timelineItems = reminders.slice(0, 12).map((reminder) => {
+    const daysBefore = (reminder as any).reminderDaysBefore ?? 7;
+    const priority = daysBefore <= 3 ? 'high' : daysBefore <= 7 ? 'medium' : 'low';
+    return {
+      id: reminder.id,
+      title: reminder.title,
+      date: reminder.dueDate || (reminder as any).dueDate || new Date(),
+      priority: priority as 'high' | 'medium' | 'low',
+      source: reminder.category || 'Reminder',
+    };
+  });
 
   return (
     <div className="space-y-6 p-4">

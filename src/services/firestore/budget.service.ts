@@ -113,7 +113,7 @@ export class BudgetTrackingService extends BaseFirestoreService<BudgetTracking> 
         spent: spentAmount,
         remaining,
         isExceeded,
-        alertsSent: percentUsed >= alertThreshold ? [alertThreshold] : [],
+        alertsSent: percentUsed >= alertThreshold ? [{ threshold: alertThreshold, sentAt: new Date() }] : [],
       };
 
       return this.update(budgetId, update);
