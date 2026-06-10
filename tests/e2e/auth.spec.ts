@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { screenshotEvidence } from './helpers';
+import { screenshotEvidence, ensureDevAuditSignedIn } from './helpers';
 
 test.describe('Authentication', () => {
   test('create test user via Dev Audit and ensure signed-in', async ({ page }) => {
-    await page.goto('/dashboard/dev-audit');
-    await page.waitForSelector('text=Generate Test User & Seed Data');
+    await ensureDevAuditSignedIn(page);
     await screenshotEvidence(page, 'auth-before');
     await page.click('text=Generate Test User & Seed Data');
     // wait for status to show done

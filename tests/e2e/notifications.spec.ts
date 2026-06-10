@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { screenshotEvidence } from './helpers';
+import { screenshotEvidence, ensureDevAuditSignedIn } from './helpers';
 
 test.describe('Notifications UI validation', () => {
   test('simulate notification and capture UI evidence', async ({ page }) => {
-    await page.goto('/dashboard/dev-audit');
-    await page.waitForSelector('text=Generate Test User & Seed Data');
+    await ensureDevAuditSignedIn(page);
     // assume already signed-in from prior test; if not, create
     const status = await page.locator('div.font-mono').innerText().catch(() => '');
     if (!status.includes('Created seed for user')) {
