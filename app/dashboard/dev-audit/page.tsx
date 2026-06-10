@@ -104,6 +104,51 @@ export default function DevAuditPage() {
           Generate Test User & Seed Data
         </button>
       </div>
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-2">Production Readiness</h2>
+        <div className="flex flex-wrap gap-2">
+          <button className="px-3 py-1 bg-violet-600 text-white rounded" onClick={async () => {
+            setRunning(true); setStatus('Running static data detector...');
+            try {
+              const res = await fetch('/api/audit/scan');
+              const json = await res.json();
+              setStatus(JSON.stringify(json, null, 2));
+            } catch (e: any) {
+              setStatus(String(e?.message || e));
+            } finally { setRunning(false); }
+          }} disabled={running}>Run Static Data Detector</button>
+
+          <button className="px-3 py-1 bg-fuchsia-600 text-white rounded" onClick={async () => {
+            setRunning(true); setStatus('Computing readiness...');
+            try {
+              const auth = getAuthSafe(); if (!auth?.currentUser) throw new Error('sign in required');
+              const res = await (await fetch(`/api/internal/readiness?uid=${auth.currentUser.uid}`)).json();
+              setStatus(JSON.stringify(res, null, 2));
+            } catch (e: any) {
+              setStatus(String(e?.message || e));
+            } finally { setRunning(false); }
+          }} disabled={running}>Compute Readiness</button>
+
+          <button className="px-3 py-1 bg-emerald-800 text-white rounded" onClick={async () => {
+            setRunning(true); setStatus('Generating report...');
+            try {
+              const auth = getAuthSafe(); if (!auth?.currentUser) throw new Error('sign in required');
+              const res = await (await fetch(`/api/internal/readiness?uid=${auth.currentUser.uid}`)).json();
+              const mdParts: string[] = [];
+              mdParts.push('# PFOS Production Readiness Report');
+              mdParts.push('Generated: ' + new Date().toISOString());
+              mdParts.push('\n## Overall: ' + (res.results?.overall ?? 'N/A') + '%\n');
+              mdParts.push('```json');
+              mdParts.push(JSON.stringify(res.results || {}, null, 2));
+              mdParts.push('```');
+              const content = mdParts.join('\n\n');
+              const post = await fetch('/api/audit/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content }) });
+              const j = await post.json();
+              setStatus(JSON.stringify(j));
+            } catch (e: any) { setStatus(String(e?.message || e)); } finally { setRunning(false); }
+          }} disabled={running}>Generate Report (audit/production-readiness.md)</button>
+        </div>
+      </div>
       <div className="mt-4">
         <strong>Status:</strong>
         <div className="mt-2 font-mono text-sm break-all">{status || "Idle"}</div>
