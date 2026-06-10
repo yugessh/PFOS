@@ -96,6 +96,7 @@ export function NotificationCard({
       layout
       whileHover={{ y: compact ? -1 : -2 }}
       className={`${baseClasses} relative overflow-hidden ${notification.isPinned ? 'ring-1 ring-[rgba(126,231,199,0.22)]' : ''} ${notification.isRead ? 'opacity-95' : ''}`}
+      data-testid={`notification-card-${notification.id}`}
     >
       <div className={`absolute inset-x-0 top-0 h-24 bg-gradient-to-b ${toneAccent}`} />
       <div className="relative p-4 sm:p-5">
@@ -133,7 +134,7 @@ export function NotificationCard({
               </div>
 
               {!notification.isRead ? (
-                <div className="mt-0.5 size-2.5 rounded-full bg-[var(--accent-mint)] shadow-[0_0_0_4px_rgba(126,231,199,0.14)]" />
+                <div data-testid={`notification-unread-${notification.id}`} className="mt-0.5 size-2.5 rounded-full bg-[var(--accent-mint)] shadow-[0_0_0_4px_rgba(126,231,199,0.14)]" />
               ) : null}
             </div>
 
@@ -163,8 +164,9 @@ export function NotificationCard({
                   </Link>
                 ) : null}
 
-                {!notification.isRead && onMarkAsRead ? (
+                { !notification.isRead && onMarkAsRead ? (
                   <button
+                    data-testid={`notification-read-${notification.id}`}
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -179,6 +181,7 @@ export function NotificationCard({
 
                 {onPin ? (
                   <button
+                    data-testid={`notification-pin-${notification.id}`}
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -206,6 +209,7 @@ export function NotificationCard({
 
                 {onDismiss ? (
                   <button
+                    data-testid={`notification-dismiss-${notification.id}`}
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -218,6 +222,7 @@ export function NotificationCard({
                   </button>
                 ) : onArchive ? (
                   <button
+                    data-testid={`notification-archive-${notification.id}`}
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();

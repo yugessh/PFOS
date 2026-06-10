@@ -98,6 +98,7 @@ export function TopNavbar() {
             </button>
 
             <button
+              data-testid="notif-button"
               type="button"
               onClick={() => setNotificationsOpen(true)}
               className="relative inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-card text-secondary transition hover:border-[#38BDF8]/40 hover:text-foreground"
@@ -105,7 +106,7 @@ export function TopNavbar() {
             >
               <Bell size={18} />
               {unreadCount > 0 ? (
-                <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-[#00F5C4] px-1 text-[10px] font-semibold text-[#071a0d]">
+                <span data-testid="notif-badge" className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-[#00F5C4] px-1 text-[10px] font-semibold text-[#071a0d]">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               ) : null}

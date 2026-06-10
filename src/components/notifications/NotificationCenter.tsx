@@ -78,7 +78,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Notification Center</h2>
-                <p className="text-xs text-secondary">{unreadCount} unread · realtime feed</p>
+                <p data-testid="notif-center-unread" className="text-xs text-secondary">{unreadCount} unread · realtime feed</p>
               </div>
             </div>
             <button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-2xl border border-border bg-white/5 text-secondary transition hover:bg-white/8">
@@ -118,7 +118,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
 
         <div className="border-b border-border px-4 py-3">
           <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="outline" onClick={() => void markAllAsRead()} disabled={saving || unreadCount === 0} className="justify-start gap-2 rounded-[18px] border-border bg-white/5 text-secondary hover:bg-white/8">
+              <Button data-testid="notif-markall" size="sm" variant="outline" onClick={() => void markAllAsRead()} disabled={saving || unreadCount === 0} className="justify-start gap-2 rounded-[18px] border-border bg-white/5 text-secondary hover:bg-white/8">
               <CheckCheck className="size-4" />
               Mark all read
             </Button>
@@ -149,7 +149,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div data-testid="notif-list" className="space-y-3">
               <AnimatePresence initial={false}>
                 {filteredNotifications.map((notification) => (
                   <motion.div key={notification.id} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.18 }} className="group relative">
