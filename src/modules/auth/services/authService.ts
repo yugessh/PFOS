@@ -41,6 +41,12 @@ const getErrorMessage = (code: string): string => {
       return 'Too many failed attempts. Please try again later.';
     case 'auth/network-request-failed':
       return 'Network error. Please check your connection.';
+    case 'auth/multi-factor-auth-required':
+      return 'Multi-factor authentication required. Please complete the second step.';
+    case 'auth/multi-factor-info-not-found':
+      return 'Multi-factor information not found. Please try signing in again.';
+    case 'auth/operation-not-allowed':
+      return 'The requested authentication operation is not allowed.';
     case 'auth/popup-closed-by-user':
       return 'Sign-in popup was closed before completion.';
     case 'auth/operation-not-supported-in-this-environment':

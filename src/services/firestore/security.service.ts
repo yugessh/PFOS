@@ -27,10 +27,9 @@ function assertAuthenticatedUser(userId: string | undefined | null): asserts use
 
 export class SecurityService {
   async registerSession(userId: string, sessionId: string, sessionData: Omit<SecuritySession, 'id' | 'createdAt' | 'updatedAt'>): Promise<SecuritySession> {
-    assertAuthenticatedUser(userId);
-
     const db = getFirestoreClient();
     if (!db) throw new Error('Firestore client not available');
+    assertAuthenticatedUser(userId);
 
     const docRef = doc(db, COLLECTIONS.USERS, userId, COLLECTIONS.SECURITY_SESSIONS, sessionId);
     const now = Timestamp.now();
@@ -54,10 +53,10 @@ export class SecurityService {
   }
 
   async getSecuritySessions(userId: string, limitCount = 20): Promise<SecuritySession[]> {
-    assertAuthenticatedUser(userId);
-
     const db = getFirestoreClient();
     if (!db) return [];
+
+    assertAuthenticatedUser(userId);
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_SESSIONS(userId));
     const q = query(colRef, orderBy('updatedAt', 'desc'), limit(limitCount));
@@ -68,10 +67,10 @@ export class SecurityService {
   }
 
   async logoutOtherSessions(userId: string, currentSessionId: string): Promise<void> {
-    assertAuthenticatedUser(userId);
-
     const db = getFirestoreClient();
     if (!db) return;
+
+    assertAuthenticatedUser(userId);
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_SESSIONS(userId));
     const q = query(colRef, where('sessionStatus', '==', 'active'));
@@ -90,10 +89,10 @@ export class SecurityService {
   }
 
   async getAuditLogs(userId: string, limitCount = 50): Promise<SecurityAuditLog[]> {
-    assertAuthenticatedUser(userId);
-
     const db = getFirestoreClient();
     if (!db) return [];
+
+    assertAuthenticatedUser(userId);
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_AUDIT_LOGS(userId));
     const q = query(colRef, orderBy('createdAt', 'desc'), limit(limitCount));
@@ -104,10 +103,10 @@ export class SecurityService {
   }
 
   async logSecurityEvent(userId: string, event: Omit<SecurityAuditLog, 'id' | 'createdAt' | 'updatedAt'>): Promise<SecurityAuditLog> {
-    assertAuthenticatedUser(userId);
-
     const db = getFirestoreClient();
     if (!db) throw new Error('Firestore client not available');
+
+    assertAuthenticatedUser(userId);
 
     const colRef = collection(db, SUBCOLLECTIONS.USER_SECURITY_AUDIT_LOGS(userId));
     const now = Timestamp.now();

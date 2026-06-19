@@ -204,7 +204,11 @@ service cloud.firestore {
           inEnum('priority', ['low','medium','high','urgent']);
       }
 
-      // Notifications
+        // Notifications
+        // User Audit Logs
+        match /auditLogs/{docId} {
+          allow read, write: if isOwner(userId);
+        }
       match /notifications/{docId} {
         allow read: if isOwner(userId);
         allow create, update: if
