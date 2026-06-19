@@ -15,7 +15,10 @@
     "lint": "eslint .",
     "test:e2e": "npx playwright test",
     "test:e2e:headed": "npx playwright test --headed",
-    "test:e2e:mobile": "npx playwright test --project=Pixel_5"
+    "test:e2e:mobile": "npx playwright test --project=Pixel_5",
+    "emulators:start": "firebase emulators:start --only firestore,auth",
+    "emulators:firestore": "firebase emulators:start --only firestore",
+    "emulators:auth": "firebase emulators:start --only auth"
   },
   "dependencies": {
     "@capacitor/android": "^5.7.8",
