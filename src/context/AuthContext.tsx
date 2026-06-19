@@ -11,6 +11,7 @@ import {
   browserLocalPersistence,
   signInWithPopup,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
   GoogleAuthProvider,
   type User as FirebaseUser,
@@ -38,13 +39,14 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   clearError: () => void;
+  resendVerificationEmail: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function mapFirebaseUser(u: FirebaseUser | null): AuthUser | null {
   if (!u) return null;
-  return { uid: u.uid, email: u.email };
+  return { uid: u.uid, email: u.email, emailVerified: u.emailVerified };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -162,11 +164,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const resetPassword = async (email: string) => {
-    const auth = getAuthSafe();
-    if (!auth) throw new Error('Firebase Auth is not initialized');
-    await sendPasswordResetEmail(auth, email);
-  };
+const resetPassword = async (email: string) => {
+  const auth = getAuthSafe();
+  if (!auth) throw new Error('Firebase Auth is not initialized');
+  await sendPasswordResetEmail(auth, email);
+};
+
+// Resend email verification to the currently signed‑in user
+const resendVerificationEmail = async () => {
+  const auth = getAuthSafe();
+  if (!auth) throw new Error('Firebase Auth is not initialized');
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('No authenticated user');
+  // Firebase will only send if not already verified
+  await sendEmailVerification(currentUser);
+};
 
   const clearError = () => {
     setError(null);
@@ -186,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo(
-    () => ({ user, loading, initialized, error, signUp, signIn, signInWithGoogle, signOut, resetPassword, clearError }),
+    () => ({ user, loading, initialized, error, signUp, signIn, signInWithGoogle, signOut, resetPassword, clearError, resendVerificationEmail }),
     [user, loading, initialized, error]
   );
 

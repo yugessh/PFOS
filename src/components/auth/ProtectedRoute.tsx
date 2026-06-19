@@ -19,6 +19,13 @@ export function ProtectedRoute({
     }
   }, [user, loading, initialized, router, redirectTo]);
 
+  // Redirect unverified users to verification screen
+  useEffect(() => {
+    if (initialized && !loading && user && !user.emailVerified) {
+      router.push('/auth/verify');
+    }
+  }, [user, loading, initialized, router]);
+
   // Show loading screen while initializing or loading
   if (!initialized || loading) {
     return <AuthLoadingScreen />;
