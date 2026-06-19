@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -8,11 +8,15 @@ import { useActiveRoute } from '@/hooks/use-active-route';
 import { useAuthContext } from '@/src/context/AuthContext';
 import { sidebarNavItems, analyticsNavItems, settingsNavItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
+import { useNotifications } from '@/src/hooks/useNotifications';
+import { NotificationCenter } from '@/src/components/notifications/NotificationCenter';
 
 export function Sidebar({ className }: { className?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { unreadCount } = useNotifications();
   const { isActive } = useActiveRoute();
   const { user, signOut } = useAuthContext();
   const router = useRouter();
@@ -42,7 +46,20 @@ export function Sidebar({ className }: { className?: string }) {
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
         <h1 className="text-xs font-semibold tracking-[0.35em] uppercase text-foreground">Neo Finance OS</h1>
-        <Bell size={20} className="text-secondary" />
+        <button
+          data-testid="notif-button-mobile"
+          type="button"
+          onClick={() => setNotificationsOpen(true)}
+          className="relative p-2 rounded-2xl bg-card border border-border text-secondary hover:bg-card-elevated transition-all"
+          aria-label="Notifications"
+        >
+          <Bell size={20} className="text-secondary" />
+          {unreadCount > 0 ? (
+            <span data-testid="notif-badge-mobile" className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-[#00F5C4] px-1 text-[10px] font-semibold text-[#071a0d]">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          ) : null}
+        </button>
       </div>
 
       {isOpen && (
@@ -198,6 +215,7 @@ export function Sidebar({ className }: { className?: string }) {
           </div>
         </div>
       )}
+      <NotificationCenter isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </>
   );
 }

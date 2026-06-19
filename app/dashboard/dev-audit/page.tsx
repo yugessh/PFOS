@@ -33,7 +33,9 @@ export default function DevAuditPage() {
       const userCred = await createUserWithEmailAndPassword(auth, creds.email, creds.password);
       await updateProfile(userCred.user, { displayName: "Audit Tester" });
       setStatus("Seeding test data...");
-      const result = await DevAuditService.seedForUser(userCred.user.uid);
+      const result = await DevAuditService.seedForUser(userCred.user.uid, (prog) => {
+        setStatus(`Seeding progress - ${prog}`);
+      });
       setStatus(`Done. Created seed for user ${userCred.user.uid}. Results: ${JSON.stringify(result)}`);
     } catch (err: any) {
       setStatus(`Error: ${err?.message || String(err)}`);

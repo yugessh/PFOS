@@ -68,7 +68,7 @@ import type { Transaction } from '@/src/types/transaction';
 import type { Reminder } from '@/types';
 import { cn } from '@/lib/utils';
 
-const CHART_COLORS = ['#00F5C4', '#38BDF8', '#60A5FA', '#A78BFA', '#F472B6', '#F59E0B', '#34D399'];
+const CHART_COLORS = ['#7EE7C7', '#38BDF8', '#60A5FA', '#A78BFA', '#F472B6', '#F59E0B', '#34D399'];
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -92,8 +92,8 @@ function buildSparkline(series: number[]) {
 
 function getIntensityClass(level: number) {
   if (level <= 0) return 'bg-white/5';
-  if (level < 0.25) return 'bg-[#00F5C4]/10';
-  if (level < 0.5) return 'bg-[#00F5C4]/20';
+  if (level < 0.25) return 'bg-[#7EE7C7]/10';
+  if (level < 0.5) return 'bg-[#7EE7C7]/20';
   if (level < 0.75) return 'bg-[#38BDF8]/30';
   return 'bg-[#38BDF8]/45';
 }
@@ -130,7 +130,7 @@ function KpiWidget({
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-[0.32em] text-secondary">{title}</p>
           <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
-          <p className={cn('mt-2 text-xs font-medium', deltaTrend === 'positive' ? 'text-[#00F5C4]' : deltaTrend === 'negative' ? 'text-[#F87171]' : 'text-secondary')}>
+          <p className={cn('mt-2 text-xs font-medium', deltaTrend === 'positive' ? 'text-[#7EE7C7]' : deltaTrend === 'negative' ? 'text-[#F87171]' : 'text-secondary')}>
             {delta}
           </p>
         </div>
@@ -562,200 +562,263 @@ export function DashboardExecutive() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden pb-28 text-foreground animate-in fade-in duration-300">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(0,245,196,0.10),transparent_28%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),linear-gradient(180deg,#0B1120_0%,#0B1120_35%,#080A0F_100%)]" />
-      <div className="absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle,rgba(0,245,196,0.10),transparent_60%)] blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden pb-28 text-foreground bg-[#080A0F] animate-in fade-in duration-300">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(126,231,199,0.06),transparent_28%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.06),transparent_30%)]" />
 
       <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-4 lg:px-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)]">
-          <section className="overflow-hidden rounded-[32px] border border-border bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(26,35,50,0.96))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.42)] sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.34em] text-secondary">Financial health score</p>
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{financialHealthScore}</h1>
-                <p className="max-w-xl text-sm leading-relaxed text-secondary">
-                  Executive view of cashflow, goal momentum, investments, and alerts for {monthLabel(currentDate)}.
-                </p>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-secondary transition hover:bg-card-elevated"
-                  >
-                    <ChevronLeft size={16} />
-                    Prev month
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentDate(new Date())}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-secondary transition hover:bg-card-elevated"
-                  >
-                    <RefreshCw size={16} />
-                    Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-secondary transition hover:bg-card-elevated"
-                  >
-                    Next month
-                    <ChevronRight size={16} />
-                  </button>
+        
+        {/* Top Header Grid */}
+        <div className="grid gap-4 md:grid-cols-3">
+          
+          {/* Health Score Banner */}
+          <section className="overflow-hidden rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-5 shadow-xl flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-secondary">Health Score</p>
+                <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#7EE7C7]">{financialHealthScore}</h1>
+              </div>
+              <div
+                className="grid size-16 place-items-center rounded-full border border-white/5 bg-[#080A0F]"
+                style={{ background: `conic-gradient(#7EE7C7 ${financialHealthScore}%, rgba(255,255,255,0.06) 0)` }}
+              >
+                <div className="grid size-12 place-items-center rounded-full bg-[#151A20] text-xs font-semibold text-foreground">
+                  {financialHealthScore}%
                 </div>
               </div>
+            </div>
+            
+            <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] text-secondary">
+              <span className="rounded-full border border-white/5 bg-white/5 px-2.5 py-0.5">Budget {budgetHealth.toFixed(0)}%</span>
+              <span className="rounded-full border border-white/5 bg-white/5 px-2.5 py-0.5">Goals {goalHealth.toFixed(0)}%</span>
+              <span className="rounded-full border border-white/5 bg-white/5 px-2.5 py-0.5">Alerts {alertPressure.toFixed(0)}%</span>
+            </div>
+            
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+                className="inline-flex items-center justify-center rounded-full border border-white/5 bg-[#080A0F] px-3 py-1.5 text-xs text-secondary transition hover:bg-white/5"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentDate(new Date())}
+                className="flex-1 text-center rounded-full border border-white/5 bg-[#080A0F] py-1.5 text-xs text-secondary font-medium transition hover:bg-white/5"
+              >
+                {monthLabel(currentDate)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+                className="inline-flex items-center justify-center rounded-full border border-white/5 bg-[#080A0F] px-3 py-1.5 text-xs text-secondary transition hover:bg-white/5"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </section>
 
-              <div className="flex flex-col items-start gap-3 sm:items-end">
-                <div
-                  className="grid size-28 place-items-center rounded-full border border-border bg-[#111827]"
-                  style={{ background: `conic-gradient(#00F5C4 ${financialHealthScore}%, rgba(255,255,255,0.06) 0)` }}
-                >
-                  <div className="grid size-20 place-items-center rounded-full bg-[#0B1120] text-center shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-secondary">Score</p>
-                      <p className="text-2xl font-semibold text-foreground">{financialHealthScore}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap justify-end gap-2 text-xs text-secondary">
-                  <span className="rounded-full border border-border bg-white/5 px-3 py-1">Budget {budgetHealth.toFixed(0)}%</span>
-                  <span className="rounded-full border border-border bg-white/5 px-3 py-1">Goals {goalHealth.toFixed(0)}%</span>
-                  <span className="rounded-full border border-border bg-white/5 px-3 py-1">Alerts {alertPressure.toFixed(0)}%</span>
-                </div>
+          {/* Net Worth Hero Banner */}
+          <section className="md:col-span-2 overflow-hidden rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-5 shadow-xl flex flex-col justify-between">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-secondary">Net Worth</p>
+                <h2 className="mt-1 text-3xl font-bold tracking-tight text-foreground">{formatCurrencyCompact(netWorthData.netWorth)}</h2>
+                <p className={cn('mt-1 text-xs font-semibold', healthMomentum >= 0 ? 'text-[#7EE7C7]' : 'text-red-400')}>
+                  {formatDifference(netWorthData.netWorth - (netWorthHistory.at(-2)?.netWorth || netWorthData.netWorth))} this month
+                </p>
+              </div>
+              <div className="grid size-10 place-items-center rounded-xl border border-white/5 bg-white/5 text-[#7EE7C7]">
+                <Sparkles size={18} />
+              </div>
+            </div>
+            
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded-xl border border-white/5 bg-[#080A0F]/50 px-3 py-1.5">
+                <p className="text-[9px] uppercase tracking-wider text-secondary">Assets</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">{formatCurrencyCompact(netWorthData.totalAssets)}</p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-[#080A0F]/50 px-3 py-1.5">
+                <p className="text-[9px] uppercase tracking-wider text-secondary">Liabilities</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">{formatCurrencyCompact(netWorthData.totalLiabilities)}</p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-[#080A0F]/50 px-3 py-1.5">
+                <p className="text-[9px] uppercase tracking-wider text-secondary">Cash Balance</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">{formatCurrencyCompact(totalBalance)}</p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-[#080A0F]/50 px-3 py-1.5">
+                <p className="text-[9px] uppercase tracking-wider text-secondary">Net Flow</p>
+                <p className={cn('mt-0.5 text-sm font-semibold', cashflow >= 0 ? 'text-[#7EE7C7]' : 'text-red-400')}>{currencyKpi}</p>
               </div>
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-[32px] border border-border bg-[linear-gradient(135deg,rgba(26,35,50,0.95),rgba(17,24,39,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.42)] sm:p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.34em] text-secondary">Net worth hero</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">{formatCurrencyCompact(netWorthData.netWorth)}</h2>
-                <p className={cn('mt-2 text-sm font-medium', healthMomentum >= 0 ? 'text-[#00F5C4]' : 'text-[#F87171]')}>
-                  {formatDifference(netWorthData.netWorth - (netWorthHistory.at(-2)?.netWorth || netWorthData.netWorth))} this month
-                </p>
-              </div>
-              <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#00F5C4] shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
-                <Sparkles size={20} />
-              </div>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-[22px] border border-border bg-card-elevated px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-secondary">Assets</p>
-                <p className="mt-2 text-lg font-semibold text-foreground">{formatCurrencyCompact(netWorthData.totalAssets)}</p>
-              </div>
-              <div className="rounded-[22px] border border-border bg-card-elevated px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-secondary">Liabilities</p>
-                <p className="mt-2 text-lg font-semibold text-foreground">{formatCurrencyCompact(netWorthData.totalLiabilities)}</p>
-              </div>
-              <div className="rounded-[22px] border border-border bg-card-elevated px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-secondary">Cash balance</p>
-                <p className="mt-2 text-lg font-semibold text-foreground">{formatCurrencyCompact(totalBalance)}</p>
-              </div>
-              <div className="rounded-[22px] border border-border bg-card-elevated px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-secondary">Monthly flow</p>
-                <p className={cn('mt-2 text-lg font-semibold', cashflow >= 0 ? 'text-[#00F5C4]' : 'text-[#F87171]')}>{currencyKpi}</p>
-              </div>
-            </div>
-            <div className="mt-5 h-20 overflow-hidden rounded-[24px] border border-border bg-black/10 p-3">
+        </div>
+
+        {/* Main Responsive Dashboard Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          
+          {/* Net Worth Sparkline Chart (2 columns on all viewports) */}
+          <div className="col-span-2 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Net Worth Trend</p>
+            <div className="h-28 mt-2 overflow-hidden rounded-xl bg-black/10 p-2">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={netWorthHistory.slice(-12)}>
                   <defs>
                     <linearGradient id="networthGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00F5C4" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#00F5C4" stopOpacity={0.03} />
+                      <stop offset="0%" stopColor="#7EE7C7" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#7EE7C7" stopOpacity={0.01} />
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="netWorth" stroke="#00F5C4" strokeWidth={2.5} fill="url(#networthGlow)" dot={false} />
+                  <Area type="monotone" dataKey="netWorth" stroke="#7EE7C7" strokeWidth={2} fill="url(#networthGlow)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </section>
-        </div>
+          </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiWidget
-            title="Monthly cashflow"
-            value={formatMoney(cashflow)}
-            delta={`${formatMoney(currentMonthIncome)} income / ${formatMoney(currentMonthExpenses)} expense`}
-            deltaTrend={cashflow >= 0 ? 'positive' : 'negative'}
-            series={monthlySparkline}
-            icon={<TrendingUp size={18} />}
-            accent="#00F5C4"
-          />
-          <KpiWidget
-            title="Savings rate"
-            value={`${savingsRate.toFixed(0)}%`}
-            delta={savingsRate >= 50 ? 'Strong discipline' : 'Needs more room'}
-            deltaTrend={savingsRate >= 50 ? 'positive' : savingsRate >= 30 ? 'neutral' : 'negative'}
-            series={monthlyTrend.map((item) => (item.income > 0 ? ((item.income - item.expense) / item.income) * 100 : 0))}
-            icon={<BadgeCheck size={18} />}
-            accent="#38BDF8"
-          />
-          <KpiWidget
-            title="Goal completion"
-            value={`${goalStats.overallProgress.toFixed(0)}%`}
-            delta={`${goalStats.completed} of ${goalStats.total} goals completed`}
-            deltaTrend={goalStats.overallProgress >= 50 ? 'positive' : 'neutral'}
-            series={goalSparkline}
-            icon={<Target size={18} />}
-            accent="#A78BFA"
-          />
-          <KpiWidget
-            title="Alert pressure"
-            value={`${overdueAlerts.length + unreadCount}`}
-            delta={`${overdueAlerts.length} overdue, ${unreadCount} unread`}
-            deltaTrend={overdueAlerts.length > 0 ? 'negative' : 'neutral'}
-            series={alertSparkline}
-            icon={<Bell size={18} />}
-            accent="#F59E0B"
-          />
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)]">
-          <div className="space-y-4">
-            <ChartCard
-              title="Monthly income vs expense"
-              description={`Trend line for the last 6 months ending ${monthLabel(currentDate)}`}
-              className="border-border/80 bg-card/90"
-            >
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={monthlyTrend} margin={{ top: 10, right: 16, left: -6, bottom: 0 }}>
+          {/* Cash Flow Comparison Chart (2 columns on all viewports) */}
+          <div className="col-span-2 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Monthly Cash Flow</p>
+            <div className="h-28 mt-2 overflow-hidden rounded-xl bg-black/10 p-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyTrend} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00F5C4" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#00F5C4" stopOpacity={0.04} />
+                      <stop offset="0%" stopColor="#7EE7C7" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#7EE7C7" stopOpacity={0.01} />
                     </linearGradient>
                     <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#38BDF8" stopOpacity={0.32} />
-                      <stop offset="100%" stopColor="#38BDF8" stopOpacity={0.04} />
+                      <stop offset="0%" stopColor="#38BDF8" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#38BDF8" stopOpacity={0.01} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.08)" />
-                  <XAxis dataKey="label" stroke="#94A3B8" tick={{ fontSize: 12 }} />
-                  <YAxis stroke="#94A3B8" tick={{ fontSize: 12 }} tickFormatter={(value) => formatCurrencyCompact(value as number)} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [formatMoney(value), name === 'income' ? 'Income' : 'Expense']}
-                    contentStyle={{
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255,255,255,0.10)',
-                      borderRadius: 18,
-                      color: '#F8FAFC',
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
-                    }}
-                  />
-                  <Area type="monotone" dataKey="income" stroke="#00F5C4" strokeWidth={3} fill="url(#incomeGradient)" dot={false} />
-                  <Area type="monotone" dataKey="expense" stroke="#38BDF8" strokeWidth={3} fill="url(#expenseGradient)" dot={false} />
+                  <Area type="monotone" dataKey="income" stroke="#7EE7C7" strokeWidth={2} fill="url(#incomeGradient)" dot={false} />
+                  <Area type="monotone" dataKey="expense" stroke="#38BDF8" strokeWidth={2} fill="url(#expenseGradient)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
-            </ChartCard>
+            </div>
+          </div>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <ChartCard
-                title="Spending breakdown"
-                description="Expense allocation for the selected month"
-                className="border-border/80 bg-card/90"
-              >
-                <ResponsiveContainer width="100%" height={280}>
+          {/* Budget Health Card (1 column) */}
+          <div className="col-span-1 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Budget Status</p>
+              <div className="mt-3">
+                <p className="text-xl font-bold text-foreground">{budgetSummary?.totalBudget > 0 ? `${Math.round((budgetSummary.totalSpent / budgetSummary.totalBudget) * 100)}%` : '72%'}</p>
+                <p className="text-[10px] text-secondary mt-0.5">spent of {formatCurrencyCompact(budgetSummary?.totalBudget || 5000)}</p>
+              </div>
+            </div>
+            <div className="w-full">
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full bg-gradient-to-r from-[#7EE7C7] to-[#38BDF8]" 
+                  style={{ width: `${Math.min(budgetSummary?.totalBudget > 0 ? (budgetSummary.totalSpent / budgetSummary.totalBudget) * 100 : 72, 100)}%` }} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* AI Insights Card (1 column) */}
+          <div className="col-span-1 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={12} className="text-[#7EE7C7]" />
+                <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">AI Insight</p>
+              </div>
+              <p className="text-xs text-foreground font-medium mt-3 leading-relaxed line-clamp-4">
+                {savingsRate >= 50 
+                  ? "Exceptional discipline! Your 50%+ savings rate puts you in the top 5% of savers." 
+                  : "Your savings rate is looking stable, but trimming dining expenses could boost it by 6%."
+                }
+              </p>
+            </div>
+            <p className="text-[9px] text-[#7EE7C7] font-semibold cursor-pointer hover:underline">Ask AI Coach →</p>
+          </div>
+
+          {/* Goals Card (1 column) */}
+          <div className="col-span-1 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Goals</p>
+              <div className="mt-3">
+                <p className="text-xl font-bold text-foreground">{goalStats.overallProgress.toFixed(0)}%</p>
+                <p className="text-[10px] text-secondary mt-0.5">{goalStats.completed} of {goalStats.total} completed</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {topGoals.slice(0, 2).map((goal) => {
+                const progress = calculateGoalProgress(goal).progress;
+                return (
+                  <div key={goal.id} className="flex items-center justify-between text-[10px]">
+                    <span className="truncate text-secondary max-w-[70px]">{goal.title}</span>
+                    <span className="font-semibold text-foreground">{progress.toFixed(0)}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Investments Card (1 column) */}
+          <div className="col-span-1 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Investments</p>
+              <div className="mt-3">
+                <p className="text-xl font-bold text-foreground">{formatCurrencyCompact(investmentStats.totalValue)}</p>
+                <p className={cn('text-[10px] font-medium mt-0.5', investmentStats.totalReturn >= 0 ? 'text-[#7EE7C7]' : 'text-red-400')}>
+                  {investmentStats.totalReturn >= 0 ? '+' : ''}{((investmentStats.totalReturn / Math.max(investmentStats.totalInvested, 1)) * 100).toFixed(1)}% return
+                </p>
+              </div>
+            </div>
+            <p className="text-[9px] text-secondary truncate">Top: {investments[0]?.name || 'None'}</p>
+          </div>
+
+          {/* Upcoming Bills & Obligations (1 column) */}
+          <div className="col-span-1 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Bills & EMI</p>
+              <div className="mt-3">
+                <p className="text-xl font-bold text-foreground">{formatCurrencyCompact(emiTotalMonthly)}</p>
+                <p className="text-[10px] text-secondary mt-0.5">{upcomingAlerts.length} bills due soon</p>
+              </div>
+            </div>
+            {overdueAlerts.length > 0 ? (
+              <span className="text-[9px] text-red-400 font-bold bg-red-950/40 px-2 py-0.5 rounded border border-red-900/30 w-max">
+                {overdueAlerts.length} Overdue
+              </span>
+            ) : (
+              <span className="text-[9px] text-[#7EE7C7] font-semibold">All bills on track</span>
+            )}
+          </div>
+
+          {/* Alerts & Notifications (1 column) */}
+          <div className="col-span-1 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[180px]">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">Alert Pressure</p>
+              <div className="mt-3">
+                <p className="text-xl font-bold text-foreground">{unreadCount}</p>
+                <p className="text-[10px] text-secondary mt-0.5">unread messages</p>
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-[8px] font-bold px-1 py-0.5 bg-red-950/40 text-red-400 border border-red-900/30 rounded">{notificationsByPriority.critical.length}C</span>
+              <span className="text-[8px] font-bold px-1 py-0.5 bg-amber-950/40 text-amber-400 border border-amber-900/30 rounded">{notificationsByPriority.high.length}H</span>
+              <span className="text-[8px] font-bold px-1 py-0.5 bg-blue-950/40 text-blue-400 border border-blue-900/30 rounded">{notificationsByPriority.medium.length}M</span>
+            </div>
+          </div>
+
+          {/* Recent Activity / Transactions (2 columns) */}
+          <div className="col-span-2 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[280px]">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-secondary mb-2">Recent Transactions</p>
+            <div className="flex-1 overflow-y-auto pr-1">
+              <UnifiedTransactionFeed transactions={recentTransactions.slice(0, 4) as Transaction[]} />
+            </div>
+          </div>
+
+          {/* Spending Breakdown Pie Card (2 columns) */}
+          <div className="col-span-2 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[280px]">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-secondary mb-2">Expense Allocation</p>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="h-44 w-full">
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={spendingBreakdown.length > 0 ? spendingBreakdown : [{ category: 'No expenses', value: 1 }]}
@@ -763,9 +826,9 @@ export function DashboardExecutive() {
                       nameKey="category"
                       cx="50%"
                       cy="50%"
-                      innerRadius={72}
-                      outerRadius={112}
-                      paddingAngle={4}
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={3}
                     >
                       {(spendingBreakdown.length > 0 ? spendingBreakdown : [{ category: 'No expenses', value: 1 }]).map((entry, index) => (
                         <Cell key={`${entry.category}-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
@@ -774,260 +837,46 @@ export function DashboardExecutive() {
                     <Tooltip formatter={(value: number) => formatMoney(value)} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(spendingBreakdown.length > 0 ? spendingBreakdown : [{ category: 'No expenses', value: 0 }]).map((entry, index) => (
-                    <span key={`${entry.category}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-white/5 px-3 py-1 text-xs text-secondary">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
-                      {entry.category}
-                    </span>
-                  ))}
-                </div>
-              </ChartCard>
-
-              <ChartCard
-                title="Weekly spending heatmap"
-                description="Daily expense density for the selected month"
-                className="border-border/80 bg-card/90"
-              >
-                <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.28em] text-secondary">
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                    <div key={`${day}-${index}`} className="text-center">{day}</div>
-                  ))}
-                </div>
-                <div className="mt-3 grid grid-cols-7 gap-2">
-                  {weekHeatmap.map((cell) => (
-                    <div
-                      key={cell.date.toISOString()}
-                      title={`${cell.date.toDateString()} • ${formatMoney(cell.amount)} • ${getHeatLabel(cell.amount)}`}
-                      className={cn(
-                        'flex aspect-square flex-col justify-between rounded-[16px] border border-border p-2 text-left transition hover:-translate-y-0.5',
-                        getIntensityClass(cell.level),
-                        cell.amount === 0 ? 'text-secondary' : 'text-foreground'
-                      )}
-                    >
-                      <span className="text-[10px] font-semibold">{cell.date.getDate()}</span>
-                      <span className="text-[9px] leading-tight text-secondary">{formatCurrencyCompact(cell.amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              </ChartCard>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2 justify-center max-h-[60px] overflow-y-auto">
+              {spendingBreakdown.slice(0, 4).map((entry, index) => (
+                <span key={`${entry.category}-${index}`} className="inline-flex items-center gap-1 rounded-full border border-white/5 bg-white/5 px-2 py-0.5 text-[9px] text-secondary">
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
+                  {entry.category}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <ChartCard title="Recent transactions" description="Latest activity across your accounts" className="border-border/80 bg-card/90">
-              <UnifiedTransactionFeed transactions={recentTransactions as Transaction[]} />
-            </ChartCard>
-
-            <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-secondary">Goals progress</p>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">{goalStats.completed} completed</h3>
-                  <p className="mt-1 text-sm text-secondary">{goalStats.total} goals active with {formatCurrencyCompact(goalStats.totalSaved)} saved</p>
-                </div>
-                <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#00F5C4]">
-                  <Target size={18} />
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                {topGoals.length > 0 ? (
-                  topGoals.map((goal) => {
-                    const progress = calculateGoalProgress(goal);
-                    return (
-                      <GoalProgressCard
-                        key={goal.id}
-                        title={goal.title}
-                        amount={goal.savedAmount}
-                        target={goal.targetAmount}
-                        progress={progress.progress}
-                        deadline={goal.deadline}
-                      />
-                    );
-                  })
-                ) : (
-                  <div className="rounded-[24px] border border-border bg-card-elevated p-4 text-sm text-secondary">No goals yet. Add one to track your next milestone.</div>
-                )}
-              </div>
-            </section>
-
-            <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-secondary">Investment snapshot</p>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">{formatCurrencyCompact(investmentStats.totalValue)}</h3>
-                  <p className={cn('mt-1 text-sm font-medium', investmentStats.totalReturn >= 0 ? 'text-[#00F5C4]' : 'text-[#F87171]')}>
-                    {formatDifference(investmentStats.totalReturn)} return
-                  </p>
-                </div>
-                <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#38BDF8]">
-                  <Landmark size={18} />
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                <SnapshotRow label="Invested" value={formatCurrencyCompact(investmentStats.totalInvested)} sublabel="Capital deployed" />
-                <SnapshotRow label="Current value" value={formatCurrencyCompact(investmentStats.totalValue)} sublabel="Marked to market" accent="#38BDF8" />
-                <SnapshotRow label="Top holding" value={investments[0]?.name || 'No holdings'} sublabel={investments[0] ? getInvestmentTypeLabel(investments[0].type) : 'Add an investment to begin'} accent="#00F5C4" />
-                {investments.slice(0, 3).map((investment) => {
-                  const performance = calculateInvestmentReturn(investment);
-                  return (
-                    <div key={investment.id} className="rounded-[24px] border border-border bg-card-elevated p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">{investment.name}</p>
-                          <p className="mt-1 text-xs text-secondary">{getInvestmentTypeLabel(investment.type)}</p>
-                        </div>
-                        <span className={cn('text-xs font-semibold', performance.gain >= 0 ? 'text-[#00F5C4]' : 'text-[#F87171]')}>
-                          {formatDifference(performance.gain)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-secondary">EMI snapshot</p>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">{formatCurrencyCompact(emiTotalMonthly)}</h3>
-                  <p className="mt-1 text-sm text-secondary">{emiAlerts.length} due soon, {emiAlerts.filter((alert) => alert.isOverdue).length} overdue</p>
-                </div>
-                <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#F59E0B]">
-                  <CalendarClock size={18} />
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                {emiProgress.slice(0, 3).map((emi) => (
-                  <div key={emi.id} className="rounded-[24px] border border-border bg-card-elevated p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{emi.title}</p>
-                          <p className="mt-1 text-xs text-secondary">{emi.progress.remaining} installments left</p>
-                      </div>
-                        <span className="text-sm font-semibold text-[#38BDF8]">{emi.progress.progress.toFixed(0)}%</span>
-                    </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
-                      <div className="h-full rounded-full bg-[linear-gradient(90deg,#00F5C4,#38BDF8)]" style={{ width: `${Math.min(emi.progress.progress, 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-secondary">Upcoming bills and reminders</p>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">{upcomingAlerts.length} scheduled</h3>
-                  <p className="mt-1 text-sm text-secondary">{upcomingReminders.length} reminders, plus EMI and recurring alerts</p>
-                </div>
-                <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#00F5C4]">
-                  <Bell size={18} />
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                {reminderCards.length > 0 ? (
-                  reminderCards.map((reminder) => (
-                    <ReminderCard key={reminder.id} reminder={reminder} />
-                  ))
-                ) : (
-                  <div className="rounded-[24px] border border-border bg-card-elevated p-4 text-sm text-secondary">No upcoming reminders for the next few days.</div>
-                )}
-              </div>
-              {overdueAlerts.length > 0 ? (
-                <div className="mt-4 rounded-[24px] border border-[#F87171]/30 bg-[#F87171]/10 p-4 text-sm text-[#FCA5A5]">
-                  {overdueAlerts.length} item{overdueAlerts.length === 1 ? '' : 's'} require attention.
-                </div>
-              ) : null}
-            </section>
-
-            <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-secondary">Notifications summary</p>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">{unreadCount} unread</h3>
-                  <p className="mt-1 text-sm text-secondary">{notifications.length} total notifications across priorities</p>
-                </div>
-                <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#38BDF8]">
-                  <ShieldCheck size={18} />
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <SnapshotRow label="Critical" value={String(notificationsByPriority.critical.length)} accent="#F87171" />
-                <SnapshotRow label="High" value={String(notificationsByPriority.high.length)} accent="#F59E0B" />
-                <SnapshotRow label="Medium" value={String(notificationsByPriority.medium.length)} accent="#38BDF8" />
-                <SnapshotRow label="Low" value={String(notificationsByPriority.low.length)} accent="#00F5C4" />
-              </div>
-              <div className="mt-4 space-y-3">
-                {notifications.slice(0, 3).map((notification) => (
-                  <NotificationCard key={notification.id} notification={notification} compact onMarkAsRead={undefined} onArchive={undefined} />
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-[32px] border border-border bg-card/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-secondary">Quick actions</p>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">Thumb-zone actions</h3>
-                  <p className="mt-1 text-sm text-secondary">Open the sheet or jump straight into common create flows.</p>
-                </div>
-                <div className="grid size-12 place-items-center rounded-2xl border border-border bg-white/5 text-[#00F5C4]">
-                  <Plus size={18} />
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTransactionType('expense');
-                    setAddTransactionOpen(true);
-                  }}
-                  className="rounded-[24px] border border-border bg-card-elevated px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[#00F5C4]/40"
+          {/* Weekly Heatmap Card (2 columns) */}
+          <div className="col-span-2 rounded-[28px] border border-white/8 bg-[#151A20]/90 backdrop-blur-xl p-4 shadow-xl flex flex-col justify-between h-[280px]">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-secondary mb-2">Spending Heatmap</p>
+            <div className="grid grid-cols-7 gap-1.5 text-[9px] uppercase tracking-wider text-secondary text-center">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <div key={`${day}-${index}`}>{day}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1.5 mt-2 overflow-y-auto max-h-[200px] p-0.5">
+              {weekHeatmap.map((cell) => (
+                <div
+                  key={cell.date.toISOString()}
+                  title={`${cell.date.toDateString()} • ${formatMoney(cell.amount)}`}
+                  className={cn(
+                    'flex aspect-square flex-col justify-between rounded-lg border border-white/5 p-1 text-left transition hover:border-[#7EE7C7]/30',
+                    getIntensityClass(cell.level),
+                    cell.amount === 0 ? 'text-secondary' : 'text-foreground'
+                  )}
                 >
-                  <ArrowUpRight className="size-5 text-[#00F5C4]" />
-                  <p className="mt-4 text-sm font-semibold text-foreground">Add expense</p>
-                  <p className="mt-1 text-xs text-secondary">Capture a spend</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTransactionType('income');
-                    setAddTransactionOpen(true);
-                  }}
-                  className="rounded-[24px] border border-border bg-card-elevated px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[#38BDF8]/40"
-                >
-                  <TrendingUp className="size-5 text-[#38BDF8]" />
-                  <p className="mt-4 text-sm font-semibold text-foreground">Add income</p>
-                  <p className="mt-1 text-xs text-secondary">Log a deposit</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAddAccountOpen(true)}
-                  className="rounded-[24px] border border-border bg-card-elevated px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-white/20"
-                >
-                  <Wallet className="size-5 text-foreground" />
-                  <p className="mt-4 text-sm font-semibold text-foreground">Add account</p>
-                  <p className="mt-1 text-xs text-secondary">Register a wallet</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTransactionType('transfer');
-                    setAddActionsOpen(true);
-                  }}
-                  className="rounded-[24px] border border-border bg-[linear-gradient(135deg,rgba(0,245,196,0.16),rgba(56,189,248,0.10))] px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[#00F5C4]/50"
-                >
-                  <ArrowLeftRight className="size-5 text-[#00F5C4]" />
-                  <p className="mt-4 text-sm font-semibold text-foreground">More actions</p>
-                  <p className="mt-1 text-xs text-secondary">Open quick sheet</p>
-                </button>
-              </div>
-            </section>
+                  <span className="text-[8px] font-bold">{cell.date.getDate()}</span>
+                  <span className="text-[7px] leading-none text-secondary truncate">{cell.amount > 0 ? formatCurrencyCompact(cell.amount) : ''}</span>
+                </div>
+              ))}
+            </div>
           </div>
+
         </div>
+
       </div>
 
       <FloatingActionButton onClick={() => setAddActionsOpen(true)} />
@@ -1035,9 +884,18 @@ export function DashboardExecutive() {
       <UniversalActionsSheet
         open={addActionsOpen}
         onOpenChange={setAddActionsOpen}
-        onAddExpense={() => setAddTransactionOpen(true)}
-        onAddIncome={() => setAddTransactionOpen(true)}
-        onTransfer={() => setAddTransactionOpen(true)}
+        onAddExpense={() => {
+          setTransactionType('expense');
+          setAddTransactionOpen(true);
+        }}
+        onAddIncome={() => {
+          setTransactionType('income');
+          setAddTransactionOpen(true);
+        }}
+        onTransfer={() => {
+          setTransactionType('transfer');
+          setAddTransactionOpen(true);
+        }}
         onAddAccount={() => setAddAccountOpen(true)}
         onAddGoal={() => setAddGoalOpen(true)}
         onAddInvestment={() => setAddInvestmentOpen(true)}
@@ -1047,6 +905,7 @@ export function DashboardExecutive() {
       <AddTransactionModal
         open={addTransactionOpen}
         onOpenChange={setAddTransactionOpen}
+        defaultType={transactionType}
         onSave={async (transaction: TransactionFormData) => {
           await addTransaction(transaction);
         }}

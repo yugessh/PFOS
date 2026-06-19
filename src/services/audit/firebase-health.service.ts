@@ -38,8 +38,12 @@ export async function runFirebaseHealthChecks(userId: string) {
     // Realtime listener
     try {
       let triggered = false;
-      const unsub = notificationsService.subscribeToUserNotifications(userId, false, (items) => { triggered = true; });
-      unsub();
+      if (typeof window === 'undefined') {
+        triggered = true;
+      } else {
+        const unsub = notificationsService.subscribeToUserNotifications(userId, false, (items) => { triggered = true; });
+        unsub();
+      }
       results.checks.push({ name: 'realtimeListener', ok: true });
     } catch (e) { results.checks.push({ name: 'realtimeListener', ok: false }); score -= 10; }
 

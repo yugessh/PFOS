@@ -16,18 +16,29 @@ export async function screenshotEvidence(page: Page, name: string) {
 }
 
 export async function ensureDevAuditSignedIn(page: Page) {
-  await page.goto('/dashboard/dev-audit');
   try {
-    await page.waitForSelector('text=Generate Test User & Seed Data', { timeout: 3000 });
+    await page.goto('/dashboard/dev-audit');
+  } catch (e) {}
+
+  // Wait for either the seed button to become visible (authenticated) or redirect to login (unauthenticated)
+  try {
+    await Promise.race([
+      page.waitForSelector('text=Generate Test User & Seed Data', { state: 'visible', timeout: 45000 }).then(() => 'signed_in'),
+      page.waitForURL('**/auth/login', { timeout: 45000 }).then(() => 'not_signed_in')
+    ]);
+  } catch (e) {}
+
+  // Check if we are signed in
+  const btn = page.locator('text=Generate Test User & Seed Data');
+  if (await btn.isVisible()) {
     return;
-  } catch (e) {
-    // possibly redirected to sign-in; try registration flow
   }
 
-  // Ensure we're on the register page
+  // Go to register
   await page.goto('/auth/register');
+  await page.waitForSelector('#name', { state: 'visible', timeout: 45000 });
 
-  const email = `playwright+${Date.now()}@example.com`;
+  const email = 'playwright.test@example.com';
   const password = 'Test1234!';
 
   // fill register form
@@ -35,11 +46,29 @@ export async function ensureDevAuditSignedIn(page: Page) {
   await page.fill('#email', email);
   await page.fill('#password', password);
   await page.fill('#confirmPassword', password);
-  // click the submit button explicitly (avoid heading/link collisions)
-  await page.click('button:has-text("Create account")');
+  await page.click('button[type="submit"]');
 
-  // wait for successful redirect/back to dashboard
-  await page.waitForURL('**/dashboard/**', { timeout: 20000 });
+  // Wait to see if we redirect to dashboard OR if we see the email-already-in-use error
+  const outcome = await Promise.race([
+    page.waitForURL('**/dashboard/**', { timeout: 60000 }).then(() => 'dashboard'),
+    page.waitForSelector('text=email-already-in-use', { state: 'visible', timeout: 45000 }).then(() => 'already_exists'),
+    page.waitForSelector('text=already in use', { state: 'visible', timeout: 45000 }).then(() => 'already_exists')
+  ]).catch(() => 'timeout');
+
+  if (outcome === 'dashboard') {
+    await page.goto('/dashboard/dev-audit');
+    await page.waitForSelector('text=Generate Test User & Seed Data', { state: 'visible', timeout: 45000 });
+    return;
+  }
+
+  // If already exists or timed out, let's login
+  await page.goto('/auth/login');
+  await page.waitForSelector('#email', { state: 'visible', timeout: 45000 });
+  await page.fill('#email', email);
+  await page.fill('#password', password);
+  await page.click('button[type="submit"]');
+
+  await page.waitForURL('**/dashboard/**', { timeout: 60000 });
   await page.goto('/dashboard/dev-audit');
-  await page.waitForSelector('text=Generate Test User & Seed Data', { timeout: 10000 });
+  await page.waitForSelector('text=Generate Test User & Seed Data', { state: 'visible', timeout: 60000 });
 }

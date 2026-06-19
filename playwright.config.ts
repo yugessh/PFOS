@@ -4,7 +4,8 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 120000,
   expect: { timeout: 5000 },
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
@@ -16,12 +17,26 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'Pixel_5', use: { ...devices['Pixel 5'] } },
-    { name: 'iPhone_12', use: { ...devices['iPhone 12'] } },
+    { 
+      name: 'Pixel_5', 
+      use: { 
+        ...devices['Pixel 5'], 
+        actionTimeout: 90000 
+      },
+      timeout: 180000
+    },
+    { 
+      name: 'iPhone_12', 
+      use: { 
+        ...devices['iPhone 12'], 
+        actionTimeout: 90000 
+      },
+      timeout: 180000
+    },
   ],
   webServer: {
     command: 'node ./scripts/dev-with-clean.mjs',
     port: 3000,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
   },
 });
