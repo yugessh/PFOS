@@ -2,6 +2,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // -----------------------------------------------------------------
+    // Helper functions
+    // -----------------------------------------------------------------
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
@@ -10,175 +13,276 @@ service cloud.firestore {
       return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // User document rules
+    // -----------------------------------------------------------------
+    // Validation helpers – used by collection rules
+    // -----------------------------------------------------------------
+    function fieldExists(field) {
+      return field in request.resource.data;
+    }
+    function isString(field) {
+      return fieldExists(field) && request.resource.data[field] is string && request.resource.data[field].size() > 0;
+    }
+    function isNumber(field) {
+      return fieldExists(field) && request.resource.data[field] is number;
+    }
+    function isBool(field) {
+      return fieldExists(field) && request.resource.data[field] is bool;
+    }
+    function isTimestamp(field) {
+      return fieldExists(field) && request.resource.data[field] is timestamp;
+    }
+    function inEnum(field, allowed) {
+      return fieldExists(field) && request.resource.data[field] in allowed;
+    }
+
+    // -----------------------------------------------------------------
+    // USER TOP-LEVEL DOCUMENT
+    // -----------------------------------------------------------------
     match /users/{userId} {
+      // Base read/write – must be the owner
       allow read, write: if request.auth != null && isOwner(userId);
-      
-      // User subcollections
-      match /accounts/{accountId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /transactions/{transactionId} {
-        allow read, write: if isOwner(userId);
+
+      // Required fields for a user profile – enforced on create / update
+      allow create, update: if
+        isString('uid') &&
+        isString('email') &&
+        isBool('emailVerified') &&
+        isString('currency') &&
+        isString('timezone') &&
+        isTimestamp('createdAt') &&
+        isTimestamp('updatedAt');
+
+      // -----------------------------------------------------------------
+      // Sub‑collections under a user – each validates required fields and
+      // blocks reads of soft‑deleted documents where applicable.
+      // -----------------------------------------------------------------
+
+      // Accounts
+      match /accounts/{docId} {
+        allow read: if isOwner(userId) && (!('deletedAt' in resource.data) || resource.data.deletedAt == null);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('name') &&
+          inEnum('accountType', ['bank_account','cash','upi_wallet','credit_card','savings_account','investment_account','crypto_wallet','custom_account','savings','checking','investment','loan','wallet','debit_card','digital_wallet','other']) &&
+          isNumber('currentBalance') &&
+          isString('currency') && inEnum('currency', ['INR','USD','EUR','GBP']) &&
+          isString('color') &&
+          isString('icon') &&
+          isNumber('monthlyInflow') &&
+          isNumber('monthlyOutflow') &&
+          (request.resource.data.lastTransaction is string || request.resource.data.lastTransaction == null) &&
+          isTimestamp('createdAt') &&
+          isTimestamp('updatedAt');
       }
 
-      match /recurringTransactions/{recurringTransactionId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /categories/{categoryId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      match /budgets/{budgetId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /investments/{investmentId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /goals/{goalId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /emi/{emiId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /reminders/{reminderId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /settlements/{settlementId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      match /policies/{policyId} {
-        allow read, write: if isOwner(userId);
+      // Transactions
+      match /transactions/{docId} {
+        allow read: if isOwner(userId) && (!('deletedAt' in resource.data) || resource.data.deletedAt == null);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('accountId') &&
+          isNumber('amount') &&
+          inEnum('type', ['income','expense','transfer']) &&
+          isString('category') &&
+          isString('description') &&
+          isTimestamp('date') &&
+          isBool('isRecurring');
       }
 
-      match /notifications/{notificationId} {
-        allow read, write: if isOwner(userId);
+      // Recurring Transactions
+      match /recurringTransactions/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('title') &&
+          inEnum('type', ['income','expense','transfer']) &&
+          isNumber('amount') &&
+          isString('category') &&
+          isString('accountId') &&
+          inEnum('frequency', ['daily','weekly','monthly','yearly']) &&
+          isNumber('interval') &&
+          isTimestamp('startDate') &&
+          isBool('isActive');
       }
 
-      match /dashboardWidgets/{widgetId} {
-        allow read, write: if isOwner(userId);
+      // Categories
+      match /categories/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('name') &&
+          inEnum('type', ['income','expense','transfer']) &&
+          isString('color') &&
+          isString('icon') &&
+          isBool('isDefault') &&
+          isBool('isActive');
       }
 
-      match /scheduledReports/{reportId} {
-        allow read, write: if isOwner(userId);
+      // Budgets
+      match /budgets/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('monthKey') &&
+          isString('categoryId') &&
+          isString('categoryName') &&
+          isNumber('monthlyLimit') &&
+          isString('currency') && inEnum('currency', ['INR','USD','EUR','GBP']) &&
+          isBool('isActive');
       }
 
-      match /auditLogs/{logId} {
-        allow read, write: if isOwner(userId);
+      // Investments
+      match /investments/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          inEnum('investmentType', ['stocks','mutual_funds','bonds','real_estate','fixed_deposit','recurring_deposit','ppf','epf','nps','crypto','gold','other']) &&
+          isString('name') &&
+          isNumber('investedAmount') &&
+          isNumber('currentValue') &&
+          isNumber('returns') &&
+          isNumber('returnsPercentage') &&
+          isTimestamp('purchaseDate') &&
+          isString('currency') && inEnum('currency', ['INR','USD','EUR','GBP']) &&
+          isBool('isActive');
       }
 
-      match /errorHistory/{errorId} {
-        allow read, write: if isOwner(userId);
+      // Goals
+      match /goals/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('title') &&
+          isNumber('targetAmount') &&
+          isNumber('currentAmount') &&
+          isTimestamp('targetDate') &&
+          inEnum('status', ['active','completed','paused','cancelled']) &&
+          inEnum('priority', ['low','medium','high','urgent']) &&
+          isString('category') &&
+          isBool('isShared');
       }
 
-      match /repairHistory/{repairId} {
-        allow read, write: if isOwner(userId);
+      // EMI
+      match /emi/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('loanName') &&
+          isNumber('principalAmount') &&
+          isNumber('interestRate') &&
+          isNumber('tenureMonths') &&
+          isNumber('monthlyEmi') &&
+          isTimestamp('startDate') &&
+          isTimestamp('endDate') &&
+          isNumber('remainingAmount') &&
+          isNumber('paidAmount') &&
+          isTimestamp('nextDueDate') &&
+          isBool('isActive') &&
+          (request.resource.data.lenderName is string || request.resource.data.lenderName == null) &&
+          inEnum('loanType', ['home_loan','car_loan','personal_loan','education_loan','business_loan','credit_card','other']);
       }
 
-      match /diagnostics/{diagnosticId} {
-        allow read, write: if isOwner(userId);
+      // Reminders
+      match /reminders/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('title') &&
+          inEnum('reminderType', ['bill_payment','emi_payment','investment_maturity','goal_deadline','document_renewal','appointment','other']) &&
+          isTimestamp('reminderDate') &&
+          isBool('isCompleted') &&
+          isBool('isRecurring') &&
+          inEnum('priority', ['low','medium','high','urgent']);
       }
 
-      match /retirementPlans/{planId} {
-        allow read, write: if isOwner(userId);
+      // Notifications
+      match /notifications/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('title') &&
+          isString('message') &&
+          inEnum('type', ['info','warning','error']) &&
+          isTimestamp('createdAt');
       }
 
-      match /taxProfiles/{profileId} {
-        allow read, write: if isOwner(userId);
+      // Security Sessions
+      match /securitySessions/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          inEnum('securityType', ['app_lock','session','device','biometric','privacy']) &&
+          isBool('enabled') &&
+          isTimestamp('lastUpdated') &&
+          isString('deviceInfo') &&
+          inEnum('sessionStatus', ['active','signed_out','revoked','expired']);
       }
 
-      match /smartAlerts/{smartAlertId} {
-        allow read, write: if isOwner(userId);
+      // Security Audit Logs (treated same as sessions for ownership)
+      match /securityAuditLogs/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          isString('eventType') &&
+          isString('summary') &&
+          isTimestamp('createdAt');
       }
 
-      match /notificationSettings/{settingsId} {
-        allow read, write: if isOwner(userId);
+      // Policies
+      match /policies/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          inEnum('policyType', ['life_insurance','health_insurance','car_insurance','home_insurance','travel_insurance','term_insurance','endowment','other']) &&
+          isString('policyNumber') &&
+          isString('providerName') &&
+          isNumber('premiumAmount') &&
+          inEnum('premiumFrequency', ['monthly','quarterly','half_yearly','yearly']) &&
+          isNumber('coverageAmount') &&
+          isTimestamp('startDate') &&
+          isTimestamp('endDate') &&
+          isBool('isActive') &&
+          isTimestamp('nextPremiumDate');
       }
 
-      // Security module subcollections — user can only access their own security data
-      match /securitySessions/{sessionId} {
-        allow read, write: if request.auth != null && isOwner(userId);
+      // Settlements
+      match /settlements/{docId} {
+        allow read: if isOwner(userId);
+        allow create, update: if
+          isOwner(userId) &&
+          isString('userId') && request.resource.data.userId == userId &&
+          inEnum('settlementType', ['legal','insurance','property','business','personal','other']) &&
+          isString('title') &&
+          isTimestamp('settlementDate') &&
+          isNumber('settlementAmount') &&
+          isString('currency') && inEnum('currency', ['INR','USD','EUR','GBP']) &&
+          inEnum('status', ['pending','in_progress','completed','cancelled']);
       }
 
-      match /securityAuditLogs/{logId} {
-        allow read, write: if request.auth != null && isOwner(userId);
-      }
-
-      // Trading journal subcollection
-      match /tradingJournal/{entryId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Net worth snapshots subcollection
-      match /netWorthSnapshots/{snapshotId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Documents vault subcollection
-      match /documents/{documentId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // AI insights subcollection
-      match /ai_insights/{insightId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Investment transactions subcollection
-      match /investmentTransactions/{txnId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Events subcollection
-      match /events/{eventId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Budget subcollections
-      match /budgetCategories/{catId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      match /budgetTracking/{trackId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      match /budgetAlerts/{alertId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Automations subcollection
-      match /automations/{automationId} {
-        allow read, write: if isOwner(userId);
-      }
+      // -----------------------------------------------------------------
+      // Any other sub‑collection not explicitly defined is denied (falls
+      // through to the default deny block below).
+      // -----------------------------------------------------------------
     }
 
-    // Top-level collection rules: enforce owner-only access and safe creates
-    // These rules ensure any document in the listed collections is owned by
-    // the authenticated user. Queries must therefore be scoped by `userId`
-    // to succeed (the client code already uses `where('userId','==', uid)`).
-    function isOwnerField() {
-      return request.auth != null && (
-        // For reads/updates/deletes resource exists
-        (resource != null && resource.data.userId == request.auth.uid) ||
-        // For creates use request.resource
-        (request.resource != null && request.resource.data.userId == request.auth.uid)
-      );
-    }
-
-    // Generic per-document rules for common collections
-    match /{collection}/{documentId=**} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    // -----------------------------------------------------------------
+    // Default deny – any collection not matched above cannot be accessed.
+    // -----------------------------------------------------------------
+    match /{any=**} {
+      allow read, write: if false;
     }
   }
 }
